@@ -147,6 +147,26 @@ header h1 {
   justify-content: center;
   box-shadow: 0 8px 40px rgba(0,0,0,0.4);
   animation: popIn 0.18s ease;
+  position: relative;
+}
+
+.popup-close {
+  position: absolute;
+  bottom: -16px;
+  right: -16px;
+  width: 44px;
+  height: 44px;
+  background: #1a5fa8;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 10;
 }
 @keyframes popIn {
   from { opacity: 0; transform: scale(0.86); }
@@ -297,7 +317,9 @@ if (localStorage.getItem('kanji_auth') === 'ok') {
 
 <!-- ポップアップ -->
 <div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
-  <div class="popup-inner" id="popupInner" onclick="event.stopPropagation()"></div>
+  <div class="popup-inner" id="popupInner" onclick="event.stopPropagation()">
+    <button class="popup-close" onclick="closePopup()">✕</button>
+  </div>
 </div>
 
 <script>
@@ -339,7 +361,10 @@ function updateHistoryChips() {
 
 function openPopup(ch, hasImage) {
   const inner = document.getElementById('popupInner');
-  inner.innerHTML = '';
+  // 閉じるボタン以外をクリア
+  Array.from(inner.children).forEach(el => {
+    if (!el.classList.contains('popup-close')) el.remove();
+  });
   if (hasImage) {
     const img = document.createElement('img');
     img.src = getImageUrl(ch);
