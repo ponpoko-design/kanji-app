@@ -259,6 +259,7 @@ header h1 {
 function checkPassword() {
   var input = document.getElementById('pwInput').value;
   if (input === 'BU_tensai12230727') {
+    localStorage.setItem('kanji_auth', 'ok');
     document.getElementById('passwordScreen').style.display = 'none';
   } else {
     document.getElementById('pwError').textContent = 'パスワードが違います';
@@ -268,6 +269,10 @@ function checkPassword() {
 document.getElementById('pwInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') checkPassword();
 });
+// すでにログイン済みなら画面をスキップ
+if (localStorage.getItem('kanji_auth') === 'ok') {
+  document.getElementById('passwordScreen').style.display = 'none';
+}
 </script>
 
 <div class="layout">
