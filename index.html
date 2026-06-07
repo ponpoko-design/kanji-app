@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link href="https://fonts.googleapis.com/css2?family=Klee+One&family=BIZ+UDPMincho&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Klee+One&family=BIZ+UDPMincho&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
 <title>漢字表示アプリ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,7 +35,7 @@ header h1 {
   font-size: clamp(18px, 4vw, 26px);
   font-weight: 700;
   letter-spacing: 4px;
-  font-family: 'BIZ UDPMincho', serif;
+  font-family: 'Zen Maru Gothic', serif;
   text-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
@@ -119,9 +119,10 @@ header h1 {
 .empty-msg {
   text-align: center;
   color: #90a8c0;
-  font-size: 16px;
+  font-size: clamp(18px, 4vw, 24px);
   padding: 40px 0;
   line-height: 2.2;
+  font-family: 'Zen Maru Gothic', serif;
 }
 
 /* ポップアップ */
@@ -211,7 +212,7 @@ header h1 {
   padding: 3px 11px;
   font-size: clamp(12px, 3vw, 15px);
   color: #fff;
-  font-family: 'BIZ UDPMincho', serif;
+  font-family: 'Zen Maru Gothic', serif;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -235,7 +236,7 @@ header h1 {
   background: #fff;
   color: #1a2a3a;
   outline: none;
-  font-family: 'Klee One', serif;
+  font-family: 'Zen Maru Gothic', serif;
 }
 .search-row button {
   background: #f0c040;
@@ -246,7 +247,7 @@ header h1 {
   font-size: clamp(16px, 4vw, 20px);
   font-weight: 700;
   cursor: pointer;
-  font-family: 'Klee One', serif;
+  font-family: 'Zen Maru Gothic', serif;
   white-space: nowrap;
   transition: transform 0.1s, background 0.15s;
 }
@@ -302,7 +303,7 @@ if (localStorage.getItem('kanji_auth') === 'ok') {
 
   <div class="main-area">
     <div class="result-area" id="output">
-      <p class="empty-msg">文字を入力して「表示」を押してください。<br>ひらがな・カタカナはゴシックで表示されます。</p>
+      <p class="empty-msg">文字を入力して「表示」を押してください。<br>ひらがな、小学校で習わない漢字は、フォントで表示されます。</p>
     </div>
   </div>
 
