@@ -255,6 +255,34 @@ header h1 {
   transform: scale(0.95);
   background: #d4a820;
 }
+/* iPhone SE など小画面向け調整 */
+@media screen and (max-height: 680px) {
+  header {
+    padding: 6px 16px 4px;
+  }
+  header h1 {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+  .history-row {
+    padding: 4px 10px 2px;
+  }
+  .history-chip {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+  .search-row {
+    padding: 3px 10px 6px;
+  }
+  .search-row input {
+    font-size: 15px;
+    padding: 6px 10px;
+  }
+  .search-row button {
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+}
 </style>
 </head>
 <body>
@@ -448,16 +476,22 @@ document.addEventListener('keydown', e => {
 function fixLayout() {
   const bottomBar = document.querySelector('.bottom-bar');
   const header = document.querySelector('header');
-  const vh = window.innerHeight;
+  // visualViewport対応（キーボード表示時も正確に計算）
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   const headerH = header.offsetHeight;
   const bottomH = bottomBar.offsetHeight;
   const mainArea = document.querySelector('.main-area');
-  mainArea.style.height = (vh - headerH - bottomH) + 'px';
+  const available = vh - headerH - bottomH;
+  mainArea.style.height = Math.max(available, 80) + 'px';
   mainArea.style.flex = 'none';
 }
 
 fixLayout();
 window.addEventListener('resize', fixLayout);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fixLayout);
+  window.visualViewport.addEventListener('scroll', fixLayout);
+}
 updateHistoryChips();
 </script>
 </body>
