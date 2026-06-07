@@ -308,8 +308,8 @@ function getImageUrl(ch) {
 function imageExists(url) {
   return new Promise(resolve => {
     const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
+    img.onload = () => resolve(img);   // 成功時は画像要素を返す
+    img.onerror = () => resolve(null); // 失敗時はnull
     img.src = url;
   });
 }
@@ -367,6 +367,9 @@ async function doDisplay() {
 
   const chars = [...raw].filter(ch => ch.trim() !== '');
 
+  // 全カードを先に作ってからまとめて追加
+  const cards = [];
+
   for (let i = 0; i < chars.length; i++) {
     const ch = chars[i];
     const card = document.createElement('div');
@@ -381,13 +384,11 @@ async function doDisplay() {
       card.appendChild(box);
     } else {
       const url = getImageUrl(ch);
-      const exists = await imageExists(url);
-      if (exists) {
+      const imgEl = await imageExists(url);
+      if (imgEl) {
         card.onclick = () => openPopup(ch, true);
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = ch;
-        card.appendChild(img);
+        imgEl.alt = ch;
+        card.appendChild(imgEl);
       } else {
         card.onclick = () => openPopup(ch, false);
         const box = document.createElement('div');
@@ -396,9 +397,12 @@ async function doDisplay() {
         card.appendChild(box);
       }
     }
-    output.appendChild(card);
-    fixLayout();
+    cards.push(card);
   }
+
+  // まとめてDOMに追加してからfixLayout
+  cards.forEach(c => output.appendChild(c));
+  fixLayout();
 }
 
 document.getElementById('textInput').addEventListener('keydown', e => {
