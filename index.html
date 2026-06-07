@@ -302,7 +302,7 @@ if (localStorage.getItem('kanji_auth') === 'ok') {
 const BASE_URL = 'https://ponpoko-design.github.io/kanji-app/images/';
 
 function getImageUrl(ch) {
-  return BASE_URL + encodeURIComponent(ch) + '.png';
+  return BASE_URL + 'kanji_' + encodeURIComponent(ch) + '.png';
 }
 
 function imageExists(url) {
