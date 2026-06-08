@@ -92,7 +92,7 @@ header h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(32px, 8vw, 110px);
+  font-size: clamp(60px, 15vw, 220px);
   color: #1a2a3a;
   font-family: 'Klee One', serif;
   font-weight: 400;
@@ -106,8 +106,9 @@ header h1 {
   align-items: center;
   justify-content: center;
   color: #1a2a3a;
-  font-size: clamp(32px, 8vw, 110px);
+  font-size: clamp(60px, 15vw, 220px);
   font-family: 'Klee One', serif;
+  line-height: 1;
 }
 .no-image-note {
   display: none;
@@ -331,7 +332,7 @@ if (localStorage.getItem('kanji_auth') === 'ok') {
 
   <div class="main-area">
     <div class="result-area" id="output">
-      <p class="empty-msg">文字を入力して「表示」を押してください。<br>ひらがな、小学校で習わない漢字は、フォントで表示されます。</p>
+      <p class="empty-msg">文字を入力して「表示」をクリック。<br>ひらがな･小学校で習わない漢字は、<br>フォントで表示されます。</p>
     </div>
   </div>
 
@@ -464,6 +465,18 @@ async function doDisplay() {
   // まとめてDOMに追加してからfixLayout
   cards.forEach(c => output.appendChild(c));
   fixLayout();
+
+  // カードの高さに合わせてフォントサイズを動的に設定
+  requestAnimationFrame(() => {
+    const allCards = output.querySelectorAll('.card');
+    allCards.forEach(card => {
+      const h = card.offsetHeight;
+      const w = card.offsetWidth;
+      const size = Math.floor(Math.min(h, w) * 0.82);
+      const box = card.querySelector('.kana-box, .no-image-box');
+      if (box) box.style.fontSize = size + 'px';
+    });
+  });
 }
 
 document.getElementById('textInput').addEventListener('keydown', e => {
