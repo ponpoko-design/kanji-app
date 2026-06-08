@@ -360,6 +360,10 @@ if (localStorage.getItem('kanji_auth') === 'ok') {
 <script>
 const BASE_URL = 'https://ponpoko-design.github.io/kanji-app/images/';
 
+// 小文字ひらがな・カタカナ判定
+const SMALL_KANA = 'ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ';
+function isSmallKana(ch) { return SMALL_KANA.includes(ch); }
+
 function getImageUrl(ch) {
   return BASE_URL + 'kanji_' + encodeURIComponent(ch) + '.png';
 }
@@ -446,7 +450,7 @@ async function doDisplay() {
     if (ch.match(/[\u3040-\u309F\u30A0-\u30FF]/)) {
       card.onclick = () => openPopup(ch, false);
       const box = document.createElement('div');
-      box.className = 'kana-box';
+      box.className = isSmallKana(ch) ? 'kana-box small-kana' : 'kana-box';
       box.textContent = ch;
       card.appendChild(box);
     } else {
@@ -477,9 +481,21 @@ async function doDisplay() {
     allCards.forEach(card => {
       const h = card.offsetHeight;
       const w = card.offsetWidth;
-      const size = Math.floor(Math.min(h, w) * 0.82);
+      const baseSize = Math.floor(Math.min(h, w) * 0.82);
       const box = card.querySelector('.kana-box, .no-image-box');
-      if (box) box.style.fontSize = size + 'px';
+      if (box) {
+        if (box.classList.contains('small-kana')) {
+          // 小文字：75%サイズ、右上（第1象限）に配置
+          const smallSize = Math.floor(baseSize * 0.75);
+          box.style.fontSize = smallSize + 'px';
+          box.style.alignItems = 'flex-start';
+          box.style.justifyContent = 'flex-end';
+          box.style.paddingTop = Math.floor(h * 0.02) + 'px';
+          box.style.paddingRight = Math.floor(w * 0.04) + 'px';
+        } else {
+          box.style.fontSize = baseSize + 'px';
+        }
+      }
     });
   });
 }
