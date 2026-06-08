@@ -234,8 +234,7 @@ header h1 {
   justify-content: flex-start;
 }
 .search-row input {
-  width: min(64vw, 260px);
-  flex: none;
+  flex: 1;
   min-width: 0;
   font-size: clamp(14px, 3.5vw, 22px);
   padding: clamp(7px, 1.5vw, 9px) 10px;
@@ -252,7 +251,7 @@ header h1 {
   color: #1a3060;
   border: none;
   border-radius: 13px;
-  padding: clamp(7px, 1.5vw, 9px) clamp(40px, 10vw, 80px);
+  padding: clamp(7px, 1.5vw, 9px) clamp(10px, 2.5vw, 20px);
   font-size: clamp(13px, 3.5vw, 20px);
   font-weight: 700;
   cursor: pointer;
@@ -265,6 +264,12 @@ header h1 {
   background: #d4a820;
 }
 /* iPhone SE など小画面向け調整 */
+@media screen and (max-width: 390px) {
+  .search-row input {
+    flex: none;
+    width: 52vw;
+  }
+}
 @media screen and (max-height: 680px) {
   header {
     padding: 6px 16px 4px;
