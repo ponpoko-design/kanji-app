@@ -485,13 +485,17 @@ async function doDisplay() {
       const box = card.querySelector('.kana-box, .no-image-box');
       if (box) {
         if (box.classList.contains('small-kana')) {
-          // 小文字：75%サイズ、右上（第1象限）に配置
+          // 小文字：75%サイズ、右半分・上半分の中心に配置
           const smallSize = Math.floor(baseSize * 0.75);
           box.style.fontSize = smallSize + 'px';
           box.style.alignItems = 'flex-start';
-          box.style.justifyContent = 'flex-end';
-          box.style.paddingTop = Math.floor(h * 0.02) + 'px';
-          box.style.paddingRight = Math.floor(w * 0.04) + 'px';
+          box.style.justifyContent = 'flex-start';
+          // 右半分の中心 = w * 0.75 - smallSize/2
+          // 上半分の中心 = h * 0.25 - smallSize/2
+          const left = Math.floor(w * 0.75 - smallSize / 2);
+          const top = Math.floor(h * 0.25 - smallSize / 2);
+          box.style.paddingLeft = Math.max(left, 0) + 'px';
+          box.style.paddingTop = Math.max(top, 0) + 'px';
         } else {
           box.style.fontSize = baseSize + 'px';
         }
