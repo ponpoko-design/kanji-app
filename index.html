@@ -483,22 +483,25 @@ async function doDisplay() {
       const w = card.offsetWidth;
       const baseSize = Math.floor(Math.min(h, w) * 0.82);
       const box = card.querySelector('.kana-box, .no-image-box');
-      if (box) {
-        if (box.classList.contains('small-kana')) {
-          // 小文字：75%サイズ、右半分・上半分の中心に配置
-          const smallSize = Math.floor(baseSize * 0.75);
-          box.style.fontSize = smallSize + 'px';
-          box.style.alignItems = 'flex-start';
-          box.style.justifyContent = 'flex-start';
-          // 右半分の中心 = w * 0.75 - smallSize/2
-          // 上半分の中心 = h * 0.25 - smallSize/2
-          const left = Math.floor(w * 0.75 - smallSize / 2);
-          const top = Math.floor(h * 0.25 - smallSize / 2);
-          box.style.paddingLeft = Math.max(left, 0) + 'px';
-          box.style.paddingTop = Math.max(top, 0) + 'px';
-        } else {
-          box.style.fontSize = baseSize + 'px';
-        }
+      if (!box) return;
+
+      if (box.classList.contains('small-kana')) {
+        // 小文字：通常サイズの75%、カード中心のすぐ右・上半分中央に絶対配置
+        const smallSize = Math.floor(baseSize * 0.75);
+        box.style.fontSize = smallSize + 'px';
+        box.style.position = 'absolute';
+        box.style.width = 'auto';
+        box.style.height = 'auto';
+        // 横：カード中心（w/2）からすぐ右
+        const left = Math.floor(w / 2 + smallSize * 0.05);
+        // 縦：上半分の中央（h/4）から文字の半分上
+        const top = Math.floor(h / 4 - smallSize / 2);
+        box.style.left = left + 'px';
+        box.style.top = Math.max(top, 4) + 'px';
+        // cardをrelativeに
+        card.style.position = 'relative';
+      } else {
+        box.style.fontSize = baseSize + 'px';
       }
     });
   });
