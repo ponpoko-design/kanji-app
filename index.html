@@ -486,19 +486,17 @@ async function doDisplay() {
       if (!box) return;
 
       if (box.classList.contains('small-kana')) {
-        // 小文字：通常サイズの75%、カード中心のすぐ右・上半分中央に絶対配置
+        // 小文字：通常サイズの75%、左端がカード中心に来るよう配置
         const smallSize = Math.floor(baseSize * 0.75);
         box.style.fontSize = smallSize + 'px';
         box.style.position = 'absolute';
         box.style.width = 'auto';
         box.style.height = 'auto';
-        // 横：カード中心（w/2）からすぐ右
-        const left = Math.floor(w / 2 + smallSize * 0.05);
-        // 縦：上半分の中央（h/4）から文字の半分上
+        // 横：左端 = カード中心（w/2）
+        box.style.left = Math.floor(w / 2) + 'px';
+        // 縦：上半分の中央
         const top = Math.floor(h / 4 - smallSize / 2);
-        box.style.left = left + 'px';
         box.style.top = Math.max(top, 4) + 'px';
-        // cardをrelativeに
         card.style.position = 'relative';
       } else {
         box.style.fontSize = baseSize + 'px';
