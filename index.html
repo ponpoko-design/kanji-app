@@ -85,7 +85,6 @@ header h1 {
   object-fit: contain;
   display: block;
   padding: 4px 10px;
-  pointer-events: none;
 }
 
 .kana-box {
@@ -99,7 +98,6 @@ header h1 {
   font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif;
   font-weight: 400;
   line-height: 1;
-  pointer-events: none;
 }
 
 .no-image-box {
@@ -112,7 +110,6 @@ header h1 {
   font-size: clamp(60px, 15vw, 220px);
   font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif;
   line-height: 1;
-  pointer-events: none;
 }
 .no-image-note {
   display: none;
@@ -127,106 +124,6 @@ header h1 {
   font-family: 'Zen Maru Gothic', serif;
 }
 
-/* ポップアップ内の書き順ボタン */
-.stroke-btn {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: #1a5fa8;
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-family: 'Zen Maru Gothic', serif;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  z-index: 10;
-}
-
-/* 書き順オーバーレイ */
-.stroke-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 600;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-}
-.stroke-overlay.active { display: flex; }
-
-.stroke-box {
-  background: #fff;
-  border-radius: 20px;
-  width: 82vw;
-  height: 62vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  position: relative;
-}
-
-.stroke-box svg {
-  width: 100%;
-  height: 100%;
-}
-
-.stroke-controls {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-}
-
-.stroke-back-btn {
-  background: #f0c040;
-  color: #1a3060;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 28px;
-  font-size: 16px;
-  font-family: 'Zen Maru Gothic', serif;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.stroke-replay-btn {
-  background: #1a5fa8;
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 28px;
-  font-size: 16px;
-  font-family: 'Zen Maru Gothic', serif;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.stroke-title {
-  color: #fff;
-  font-size: 18px;
-  font-family: 'Zen Maru Gothic', serif;
-}
-
-.stroke-loading {
-  color: #fff;
-  font-size: 16px;
-  font-family: 'Zen Maru Gothic', serif;
-}
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  z-index: 500;
-  align-items: center;
-  justify-content: center;
-}
 /* ポップアップ */
 .popup-overlay {
   display: none;
@@ -401,6 +298,90 @@ header h1 {
     padding: 6px 12px;
   }
 }
+
+/* 書き順ボタン */
+.stroke-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: #1a5fa8;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-family: 'Zen Maru Gothic', serif;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+/* 書き順オーバーレイ */
+.stroke-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 600;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+.stroke-overlay.active { display: flex; }
+
+.stroke-box {
+  background: #fff;
+  border-radius: 20px;
+  width: 82vw;
+  height: 62vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+.stroke-box svg {
+  width: 100%;
+  height: 100%;
+}
+.stroke-controls {
+  display: flex;
+  gap: 14px;
+}
+.stroke-back-btn {
+  background: #f0c040;
+  color: #1a3060;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 28px;
+  font-size: 16px;
+  font-family: 'Zen Maru Gothic', serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+.stroke-replay-btn {
+  background: #1a5fa8;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 28px;
+  font-size: 16px;
+  font-family: 'Zen Maru Gothic', serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+.stroke-title {
+  color: #fff;
+  font-size: 20px;
+  font-family: 'Zen Maru Gothic', serif;
+  font-weight: 700;
+}
+.stroke-loading {
+  color: #888;
+  font-size: 16px;
+  font-family: 'Zen Maru Gothic', serif;
+}
 </style>
 </head>
 <body>
@@ -469,18 +450,6 @@ if (localStorage.getItem('kanji_auth') === 'ok') {
   </div>
 </div>
 
-<!-- 書き順オーバーレイ -->
-<div class="stroke-overlay" id="strokeOverlay">
-  <div class="stroke-title" id="strokeTitle">書き順</div>
-  <div class="stroke-box" id="strokeBox">
-    <div class="stroke-loading" id="strokeLoading">読み込み中...</div>
-  </div>
-  <div class="stroke-controls">
-    <button class="stroke-replay-btn" onclick="replayStroke()">もう一度</button>
-    <button class="stroke-back-btn" onclick="closeStroke()">← 戻る</button>
-  </div>
-</div>
-
 <script>
 const BASE_URL = 'https://ponpoko-design.github.io/kanji-app/images/';
 
@@ -538,12 +507,12 @@ function openPopup(ch, hasImage) {
     d.textContent = ch;
     inner.appendChild(d);
   }
-  // 書き順ボタン（漢字のみ）
-  if (!ch.match(/[\u3040-\u309F\u30A0-\u30FF]/)) {
+  // 書き順ボタン（ひらがな・カタカナ以外）
+  if (!ch.match(/[぀-ゟ゠-ヿ]/)) {
     const btn = document.createElement('button');
     btn.className = 'stroke-btn';
     btn.textContent = '書き順を見る ▶';
-    btn.onclick = (e) => { e.stopPropagation(); openStroke(ch); };
+    btn.onclick = function(e) { e.stopPropagation(); openStroke(ch); };
     inner.appendChild(btn);
   }
   document.getElementById('popupOverlay').classList.add('active');
@@ -553,7 +522,7 @@ function closePopup() {
   document.getElementById('popupOverlay').classList.remove('active');
 }
 
-// 書き順表示
+// 書き順機能
 let currentStrokeChar = '';
 
 async function openStroke(ch) {
@@ -561,11 +530,8 @@ async function openStroke(ch) {
   document.getElementById('strokeTitle').textContent = '「' + ch + '」の書き順';
   document.getElementById('strokeBox').innerHTML = '<div class="stroke-loading">読み込み中...</div>';
   document.getElementById('strokeOverlay').classList.add('active');
-
-  // Unicode コードポイントを16進数5桁に変換
   const code = ch.codePointAt(0).toString(16).padStart(5, '0');
   const url = 'https://kan-g.vnaka.dev/k/' + code + '.svg';
-
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error('not found');
@@ -576,34 +542,26 @@ async function openStroke(ch) {
     if (svg) {
       svg.setAttribute('width', '100%');
       svg.setAttribute('height', '100%');
-      animateStrokes(svg);
+      const paths = svg.querySelectorAll('path');
+      paths.forEach((path, i) => {
+        const len = path.getTotalLength ? path.getTotalLength() : 300;
+        path.style.strokeDasharray = len;
+        path.style.strokeDashoffset = len;
+        path.style.stroke = '#1a2a3a';
+        path.style.strokeWidth = '4';
+        path.style.fill = 'none';
+        path.style.transition = 'stroke-dashoffset 0.5s ease ' + (i * 0.7) + 's';
+        setTimeout(() => { path.style.strokeDashoffset = '0'; }, 50);
+      });
     }
   } catch(e) {
-    document.getElementById('strokeBox').innerHTML = '<div class="stroke-loading">書き順データが見つかりませんでした</div>';
+    document.getElementById('strokeBox').innerHTML = '<div class="stroke-loading">データが見つかりませんでした</div>';
   }
 }
 
-function animateStrokes(svg) {
-  const paths = svg.querySelectorAll('path');
-  paths.forEach((path, i) => {
-    const len = path.getTotalLength ? path.getTotalLength() : 300;
-    path.style.strokeDasharray = len;
-    path.style.strokeDashoffset = len;
-    path.style.stroke = '#1a2a3a';
-    path.style.strokeWidth = '3';
-    path.style.fill = 'none';
-    path.style.transition = `stroke-dashoffset 0.5s ease ${i * 0.6}s`;
-    setTimeout(() => { path.style.strokeDashoffset = '0'; }, 50);
-  });
-}
+function replayStroke() { openStroke(currentStrokeChar); }
+function closeStroke() { document.getElementById('strokeOverlay').classList.remove('active'); }
 
-function replayStroke() {
-  openStroke(currentStrokeChar);
-}
-
-function closeStroke() {
-  document.getElementById('strokeOverlay').classList.remove('active');
-}
 
 async function doDisplay() {
   const raw = document.getElementById('textInput').value;
@@ -613,13 +571,6 @@ async function doDisplay() {
   if (!raw.trim()) {
     output.innerHTML = '<p class="empty-msg">文字を入力して「表示」を押してください。</p>';
     return;
-  }
-
-  // FONTPLUSフォントの読み込み完了を待つ
-  if (document.fonts) {
-    try {
-      await document.fonts.load('1em "I-OTF-G教科書Pro L"');
-    } catch(e) {}
   }
 
   searchHistory = [raw, ...searchHistory.filter(h => h !== raw)].slice(0, 5);
@@ -638,26 +589,24 @@ async function doDisplay() {
     card.style.animationDelay = (i * 60) + 'ms';
 
     if (ch.match(/[\u3040-\u309F\u30A0-\u30FF]/)) {
+      card.onclick = () => openPopup(ch, false);
       const box = document.createElement('div');
       box.className = isSmallKana(ch) ? 'kana-box small-kana' : 'kana-box';
       box.textContent = ch;
       card.appendChild(box);
-      card.addEventListener('click', () => openPopup(ch, false));
     } else {
       const url = getImageUrl(ch);
       const imgEl = await imageExists(url);
       if (imgEl) {
+        card.onclick = () => openPopup(ch, true);
         imgEl.alt = ch;
-        imgEl.style.pointerEvents = 'none';
         card.appendChild(imgEl);
-        card.addEventListener('click', () => openPopup(ch, true));
       } else {
+        card.onclick = () => openPopup(ch, false);
         const box = document.createElement('div');
         box.className = 'no-image-box';
-        box.style.pointerEvents = 'none';
-        box.innerHTML = '<div>' + ch + '</div>';
+        box.innerHTML = '<div>' + ch + '</div><div class="no-image-note">（画像なし）</div>';
         card.appendChild(box);
-        card.addEventListener('click', () => openPopup(ch, false));
       }
     }
     cards.push(card);
@@ -723,13 +672,19 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', fixLayout);
   window.visualViewport.addEventListener('scroll', fixLayout);
 }
-
-// ページ読み込み時にFONTPLUSフォントをプリロード
-if (document.fonts) {
-  document.fonts.load('1em "I-OTF-G教科書Pro L"').catch(() => {});
-}
-
 updateHistoryChips();
 </script>
+
+<!-- 書き順オーバーレイ -->
+<div class="stroke-overlay" id="strokeOverlay">
+  <div class="stroke-title" id="strokeTitle">書き順</div>
+  <div class="stroke-box" id="strokeBox">
+    <div class="stroke-loading">読み込み中...</div>
+  </div>
+  <div class="stroke-controls">
+    <button class="stroke-replay-btn" onclick="replayStroke()">もう一度</button>
+    <button class="stroke-back-btn" onclick="closeStroke()">← 戻る</button>
+  </div>
+</div>
 </body>
 </html>
