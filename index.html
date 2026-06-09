@@ -441,6 +441,13 @@ async function doDisplay() {
     return;
   }
 
+  // FONTPLUSフォントの読み込み完了を待つ
+  if (document.fonts) {
+    try {
+      await document.fonts.load('1em "I-OTF-G教科書Pro L"');
+    } catch(e) {}
+  }
+
   searchHistory = [raw, ...searchHistory.filter(h => h !== raw)].slice(0, 5);
   saveHistory();
   updateHistoryChips();
@@ -540,6 +547,12 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', fixLayout);
   window.visualViewport.addEventListener('scroll', fixLayout);
 }
+
+// ページ読み込み時にFONTPLUSフォントをプリロード
+if (document.fonts) {
+  document.fonts.load('1em "I-OTF-G教科書Pro L"').catch(() => {});
+}
+
 updateHistoryChips();
 </script>
 </body>
