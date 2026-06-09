@@ -543,6 +543,9 @@ async function openStroke(ch) {
       svg.setAttribute('width', '100%');
       svg.setAttribute('height', '100%');
       const paths = svg.querySelectorAll('path');
+      // 数字要素を取得して一旦非表示に
+      const numberEls = svg.querySelectorAll('text, [id*="StrokeNumbers"], [id*="Number"]');
+      numberEls.forEach(el => el.style.opacity = '0');
       // まず全部非表示に
       paths.forEach((path) => {
         const len = path.getTotalLength ? path.getTotalLength() : 300;
@@ -553,16 +556,23 @@ async function openStroke(ch) {
         path.style.fill = 'none';
         path.style.transition = 'none';
       });
-      // 1秒後に1画ずつアニメーション開始
+      // 0.5秒後に1画ずつアニメーション開始
+      const totalDuration = 500 + paths.length * 800 + 600;
       setTimeout(() => {
         paths.forEach((path, i) => {
-          const len = path.getTotalLength ? path.getTotalLength() : 300;
           path.style.transition = 'stroke-dashoffset 0.6s ease';
           setTimeout(() => {
             path.style.strokeDashoffset = '0';
           }, i * 800);
         });
-      }, 750);
+        // 全画描き終わったら数字をフェードイン
+        setTimeout(() => {
+          numberEls.forEach(el => {
+            el.style.transition = 'opacity 0.5s ease';
+            el.style.opacity = '1';
+          });
+        }, paths.length * 800 + 700);
+      }, 500);
     }
   } catch(e) {
     document.getElementById('strokeBox').innerHTML = '<div class="stroke-loading">データが見つかりませんでした</div>';
