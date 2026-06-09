@@ -638,24 +638,26 @@ async function doDisplay() {
     card.style.animationDelay = (i * 60) + 'ms';
 
     if (ch.match(/[\u3040-\u309F\u30A0-\u30FF]/)) {
-      card.onclick = () => openPopup(ch, false);
       const box = document.createElement('div');
       box.className = isSmallKana(ch) ? 'kana-box small-kana' : 'kana-box';
       box.textContent = ch;
       card.appendChild(box);
+      card.addEventListener('click', () => openPopup(ch, false));
     } else {
       const url = getImageUrl(ch);
       const imgEl = await imageExists(url);
       if (imgEl) {
-        card.onclick = () => openPopup(ch, true);
         imgEl.alt = ch;
+        imgEl.style.pointerEvents = 'none';
         card.appendChild(imgEl);
+        card.addEventListener('click', () => openPopup(ch, true));
       } else {
-        card.onclick = () => openPopup(ch, false);
         const box = document.createElement('div');
         box.className = 'no-image-box';
-        box.innerHTML = '<div>' + ch + '</div><div class="no-image-note">（画像なし）</div>';
+        box.style.pointerEvents = 'none';
+        box.innerHTML = '<div>' + ch + '</div>';
         card.appendChild(box);
+        card.addEventListener('click', () => openPopup(ch, false));
       }
     }
     cards.push(card);
