@@ -550,7 +550,7 @@ async function openStroke(ch) {
       // グレーアウトライン用にcloneを作って背景に敷く
       paths.forEach((path) => {
         const clone = path.cloneNode(true);
-        clone.style.stroke = '#dcdddd';
+        clone.style.stroke = '#f0f0f0';
         clone.style.strokeWidth = '3';
         clone.style.fill = 'none';
         clone.style.strokeDasharray = '';
