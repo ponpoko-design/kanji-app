@@ -547,7 +547,8 @@ async function openStroke(ch) {
       const numberEls = svg.querySelectorAll('text, [id*="StrokeNumbers"], [id*="Number"]');
       numberEls.forEach(el => el.style.opacity = '0');
 
-      // グレーアウトライン用にcloneを作って背景に敷く
+      // グレーアウトライン用グループをSVGの最初に追加（常に黒より下に）
+      const grayGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       paths.forEach((path) => {
         const clone = path.cloneNode(true);
         clone.style.stroke = '#f0f0f0';
@@ -557,8 +558,9 @@ async function openStroke(ch) {
         clone.style.strokeDashoffset = '';
         clone.style.transition = 'none';
         clone.style.pointerEvents = 'none';
-        path.parentNode.insertBefore(clone, path);
+        grayGroup.appendChild(clone);
       });
+      svg.insertBefore(grayGroup, svg.firstChild);
 
       // 元のpathをなぞるアニメーション用に設定
       paths.forEach((path) => {
