@@ -547,23 +547,36 @@ async function openStroke(ch) {
       const numberEls = svg.querySelectorAll('text, [id*="StrokeNumbers"], [id*="Number"]');
       numberEls.forEach(el => el.style.opacity = '0');
 
-      // まず全部グレーのアウトラインで表示
+      // グレーアウトライン用にcloneを作って背景に敷く
+      paths.forEach((path) => {
+        const clone = path.cloneNode(true);
+        clone.style.stroke = '#dcdddd';
+        clone.style.strokeWidth = '3';
+        clone.style.fill = 'none';
+        clone.style.strokeDasharray = '';
+        clone.style.strokeDashoffset = '';
+        clone.style.transition = 'none';
+        clone.style.pointerEvents = 'none';
+        path.parentNode.insertBefore(clone, path);
+      });
+
+      // 元のpathをなぞるアニメーション用に設定
       paths.forEach((path) => {
         const len = path.getTotalLength ? path.getTotalLength() : 300;
         path.style.strokeDasharray = len;
-        path.style.strokeDashoffset = '0';
-        path.style.stroke = '#dcdddd';
+        path.style.strokeDashoffset = len;
+        path.style.stroke = '#1a2a3a';
         path.style.strokeWidth = '4';
         path.style.fill = 'none';
         path.style.transition = 'none';
       });
 
-      // 0.5秒後に1画ずつ濃く塗っていく
+      // 0.5秒後に1画ずつなぞるアニメーション開始
       setTimeout(() => {
         paths.forEach((path, i) => {
           setTimeout(() => {
-            path.style.transition = 'stroke 0.3s ease';
-            path.style.stroke = '#1a2a3a';
+            path.style.transition = 'stroke-dashoffset 0.6s ease';
+            path.style.strokeDashoffset = '0';
           }, i * 800);
         });
         // 全画描き終わったら数字をフェードイン
