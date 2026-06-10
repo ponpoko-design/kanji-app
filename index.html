@@ -546,23 +546,24 @@ async function openStroke(ch) {
       // 数字要素を取得して一旦非表示に
       const numberEls = svg.querySelectorAll('text, [id*="StrokeNumbers"], [id*="Number"]');
       numberEls.forEach(el => el.style.opacity = '0');
-      // まず全部非表示に
+
+      // まず全部グレーのアウトラインで表示
       paths.forEach((path) => {
         const len = path.getTotalLength ? path.getTotalLength() : 300;
         path.style.strokeDasharray = len;
-        path.style.strokeDashoffset = len;
-        path.style.stroke = '#1a2a3a';
+        path.style.strokeDashoffset = '0';
+        path.style.stroke = '#dcdddd';
         path.style.strokeWidth = '4';
         path.style.fill = 'none';
         path.style.transition = 'none';
       });
-      // 0.5秒後に1画ずつアニメーション開始
-      const totalDuration = 500 + paths.length * 800 + 600;
+
+      // 0.5秒後に1画ずつ濃く塗っていく
       setTimeout(() => {
         paths.forEach((path, i) => {
-          path.style.transition = 'stroke-dashoffset 0.6s ease';
           setTimeout(() => {
-            path.style.strokeDashoffset = '0';
+            path.style.transition = 'stroke 0.3s ease';
+            path.style.stroke = '#1a2a3a';
           }, i * 800);
         });
         // 全画描き終わったら数字をフェードイン
