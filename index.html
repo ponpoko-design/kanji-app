@@ -340,6 +340,7 @@ header h1 {
   align-items: center;
   justify-content: center;
   padding: 10px;
+  position: relative;
 }
 .stroke-box svg {
   width: 100%;
@@ -543,6 +544,11 @@ async function openStroke(ch) {
       svg.setAttribute('width', '100%');
       svg.setAttribute('height', '100%');
       const paths = svg.querySelectorAll('path');
+      // 画数を右上に表示
+      const countEl = document.createElement('div');
+      countEl.textContent = paths.length + '画';
+      countEl.style.cssText = 'position:absolute; top:10px; right:12px; font-size:16px; font-family:"Zen Maru Gothic",serif; font-weight:700; color:#1a5fa8; background:#f0f6ff; border:1.5px solid #b0ccee; border-radius:8px; padding:3px 10px; z-index:10;';
+      document.getElementById('strokeBox').appendChild(countEl);
       // 数字要素を取得して一旦非表示に
       const numberEls = svg.querySelectorAll('text, [id*="StrokeNumbers"], [id*="Number"]');
       numberEls.forEach(el => el.style.opacity = '0');
