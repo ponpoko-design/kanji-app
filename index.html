@@ -361,7 +361,7 @@ header {
   min-height: 0;
   background: #fff;
   border-radius: 12px;
-  padding: 14px 10px;
+  padding: 16px 10px 10px;
   display: flex;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -375,14 +375,17 @@ header {
   overflow-x: auto;
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 /* 問題文テキスト */
 #qText {
-  font-size: 18px;
+  font-size: 29px;
   color: #1A1A1A;
-  line-height: 1.9;
+  line-height: 1.25;
   letter-spacing: 0.12em;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif;
+}
+#qText, #qText * {
   font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif;
 }
 .underline-word { border-right: 2.5px solid #1A1A1A; padding-right: 2px; }
@@ -1386,7 +1389,7 @@ function buildAnswerImages(q) {
     const chars = [...q.answerText];
     // 1文字あたりの最大サイズ（縦に並べた場合）
     const perChar = Math.floor((avail - gap * (chars.length - 1)) / chars.length);
-    const fs = Math.min(perChar * 0.85, 106);  // 160の2/3
+    const fs = Math.min(perChar * 0.85, 53);  // 半分サイズ
     chars.forEach(ch => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
@@ -1470,9 +1473,9 @@ function loadQuestion(i) {
     const inner = document.getElementById('qVerticalInner');
     const text = document.getElementById('qText');
     if (inner && text) {
-      text.style.fontSize = '18px';
-      let size = 18;
-      while (inner.scrollWidth > inner.clientWidth + 2 && size > 10) {
+      text.style.fontSize = '29px';
+      let size = 29;
+      while (inner.scrollWidth > inner.clientWidth + 2 && size > 12) {
         size -= 1;
         text.style.fontSize = size + 'px';
       }
