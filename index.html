@@ -13,6 +13,7 @@ html, body {
   overflow: hidden;
   font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif;
   background: #f0f4f8;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ===== 全体レイアウト ===== */
@@ -284,9 +285,10 @@ header {
   text-orientation: mixed;
   height: 100%;
   font-size: 25px;
+  font-weight: bold;
   line-height: 1.9;
   color: #1A1A1A;
-  font-family: 'I-OTF-G教科書Pro D','IwaGTxtPro-Md',serif;
+  font-family: 'I-OTF-G教科書Pro D','IwaGTxtPro-Md','I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -779,8 +781,8 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
       まちがい一覧
     </div>
-    <div class="menu-item" onclick="menuSettings()">
-      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+    <div class="menu-item" style="color:#ccc; cursor:default;">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
     <div class="menu-item" onclick="closeMenu()">
@@ -790,13 +792,12 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
   </div>
 </div>
 
-<!-- 設定オーバーレイ -->
+<!-- 設定オーバーレイ（今後実装予定） -->
 <div class="menu-overlay" id="settingsOverlay" onclick="closeSettings()">
   <div class="menu-panel" onclick="event.stopPropagation()" style="width:280px;">
     <div style="padding:16px 20px 8px; font-size:13px; color:#999; font-family:'Zen Maru Gothic',serif; border-bottom:1px solid #f0f4f8;">設定</div>
-    <div class="menu-item" onclick="menuShowData()">
-      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
-      まちがい一覧
+    <div style="padding:20px; font-size:14px; color:#aaa; font-family:'Zen Maru Gothic',serif; text-align:center;">
+      準備中です
     </div>
     <div class="menu-item" onclick="closeSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
@@ -1036,7 +1037,7 @@ function buildAnswerImages(q) {
     const kanaEl = document.createElement('div');
     kanaEl.style.cssText = `
       writing-mode:vertical-rl; text-orientation:mixed;
-      font-size:clamp(32px,8vw,56px);
+      font-size:clamp(64px,16vw,110px);
       font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
       color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
       text-align:center;
@@ -1086,6 +1087,8 @@ function recordResult(correct) {
       savePracticeData(data);
     }
   }
+  // 即座に答えを隠す
+  document.getElementById('answerImagesWrap').classList.remove('visible');
   document.getElementById('resultButtons').style.display = 'none';
   document.getElementById('btnNext').style.display = 'flex';
 }
