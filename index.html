@@ -797,8 +797,9 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 <div class="menu-overlay" id="settingsOverlay" onclick="closeSettings()">
   <div class="menu-panel" onclick="event.stopPropagation()" style="width:280px;">
     <div style="padding:16px 20px 8px; font-size:13px; color:#999; font-family:'Zen Maru Gothic',serif; border-bottom:1px solid #f0f4f8;">設定</div>
-    <div style="padding:20px; font-size:14px; color:#aaa; font-family:'Zen Maru Gothic',serif; text-align:center;">
-      準備中です
+    <div class="menu-item" onclick="closeSettings();showApiKeySetup();">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+      APIキーを設定
     </div>
     <div class="menu-item" onclick="closeSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
@@ -867,12 +868,18 @@ function menuSettings() {
   openSettings();
 }
 
-// ===== APIキー =====
-const OPENAI_API_KEY = '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';
-const CLAUDE_API_KEY = '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';
+// ===== APIキー（LocalStorageから取得） =====
+function getOpenAIKey() { return localStorage.getItem('kanji_openai_key') || ''; }
+function getClaudeKey() { return localStorage.getItem('kanji_claude_key') || ''; }
 
 async function menuLoadQuestions() {
   closeMenu();
+
+  // APIキー未設定なら設定画面へ
+  if (!getOpenAIKey() || !getClaudeKey()) {
+    showApiKeySetup();
+    return;
+  }
 
   // 単元番号を聞く
   const unit = prompt('単元番号を入力してください（例：16）');
@@ -923,8 +930,46 @@ async function menuLoadQuestions() {
   overlay.remove();
 }
 
+// ===== APIキー設定画面 =====
+function showApiKeySetup() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const openaiVal = getOpenAIKey();
+  const claudeVal = getClaudeKey();
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;">
+      <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">APIキーの設定</div>
+      <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:20px;">このiPhoneにのみ保存されます</div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">OpenAI APIキー</div>
+        <input id="openaiKeyInput" type="password" placeholder="sk-proj-..." value="${openaiVal}"
+          style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
+      </div>
+      <div style="margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">Claude APIキー</div>
+        <input id="claudeKeyInput" type="password" placeholder="sk-ant-..." value="${claudeVal}"
+          style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
+        <button onclick="saveApiKeys(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">保存する</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function saveApiKeys(btn) {
+  const openai = document.getElementById('openaiKeyInput').value.trim();
+  const claude = document.getElementById('claudeKeyInput').value.trim();
+  if (!openai || !claude) { alert('両方のキーを入力してください'); return; }
+  localStorage.setItem('kanji_openai_key', openai);
+  localStorage.setItem('kanji_claude_key', claude);
+  btn.closest('[style*=fixed]').remove();
+  alert('✅ APIキーを保存しました！\nメニューから「問題を読み込む」を押してください。');
+}
+
 // 読み込みオーバーレイ
-function showLoadingOverlay(msg) {
   const overlay = document.createElement('div');
   overlay.id = 'loadingOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
@@ -957,7 +1002,7 @@ async function callGPT4oOCR(base64) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`
+      'Authorization': `Bearer ${getOpenAIKey()}`
     },
     body: JSON.stringify({
       model: 'gpt-4o',
@@ -1001,7 +1046,7 @@ async function callClaudeForAnswers(ocrQuestions, grade, unit) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': CLAUDE_API_KEY,
+      'x-api-key': getClaudeKey(),
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
