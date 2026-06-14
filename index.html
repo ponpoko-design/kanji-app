@@ -5,6 +5,66 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Klee+One&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
 <script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDT59s6lmSwo_OhEJirmZuTSRLFxCGWhAw",
+    authDomain: "kanji-app-4e239.firebaseapp.com",
+    projectId: "kanji-app-4e239",
+    storageBucket: "kanji-app-4e239.firebasestorage.app",
+    messagingSenderId: "821632146248",
+    appId: "1:821632146248:web:120abb6eb74128f64cb17d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const DATA_DOC = doc(db, 'kanji', 'practiceData');
+
+  // Firestoreからデータ読み込み
+  async function loadFromFirestore() {
+    try {
+      const snap = await getDoc(DATA_DOC);
+      if (snap.exists()) {
+        const data = snap.data().questions || [];
+        localStorage.setItem('kanji_practice_data', JSON.stringify(data));
+      }
+    } catch(e) {
+      console.log('Firestore読み込みエラー:', e);
+    }
+  }
+
+  // Firestoreにデータ保存
+  async function saveToFirestore(data) {
+    try {
+      await setDoc(DATA_DOC, { questions: data, updatedAt: new Date().toISOString() });
+    } catch(e) {
+      console.log('Firestore保存エラー:', e);
+    }
+  }
+
+  // リアルタイム同期：他デバイスの変更を自動反映
+  onSnapshot(DATA_DOC, (snap) => {
+    if (snap.exists()) {
+      const data = snap.data().questions || [];
+      localStorage.setItem('kanji_practice_data', JSON.stringify(data));
+      // 漢字道場を開いていれば再読み込み
+      if (document.getElementById('page-practice').classList.contains('active')) {
+        if (typeof initPractice === 'function') initPractice();
+      }
+    }
+  });
+
+  // グローバルに公開
+  window.firestoreSave = saveToFirestore;
+  window.firestoreLoad = loadFromFirestore;
+
+  // 初回読み込み
+  loadFromFirestore().then(() => {
+    console.log('Firestore初期読み込み完了');
+  });
+</script>
 <title>漢字アプリ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1222,6 +1282,8 @@ function loadPracticeData() {
 }
 function savePracticeData(data) {
   localStorage.setItem('kanji_practice_data', JSON.stringify(data));
+  // Firestoreにも保存（非同期）
+  if (window.firestoreSave) window.firestoreSave(data);
 }
 
 // サンプルデータ（APIが使えるまでの仮データ）
