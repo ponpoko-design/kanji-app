@@ -664,7 +664,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
     </div>
     <div class="tabs">
       <div class="tab active" onclick="switchTab('display',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>漢字表示
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>お手本を表示
       </div>
       <div class="tab" onclick="switchTab('practice',this)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>漢字道場
@@ -901,7 +901,7 @@ function menuShowData() {
   const max = Math.max(...sorted.map(q => q.missCount));
 
   const rows = sorted.map(q => {
-    const label = q.grade ? `${q.grade}年 #${q.unit}` : `${q.id}番`;
+    const label = q.grade ? `${q.grade}年 単元${q.unit}` : `${q.id}番`;
     const pct = max > 0 ? (q.missCount / max) * 100 : 0;
     const text = q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question;
     return `
@@ -947,9 +947,9 @@ function loadSampleData(grade, unit) {
   unit = unit || 1;
   const today = new Date().toISOString().split('T')[0];
   const sample = [
-    { id:1, grade:grade, unit:unit, registeredAt:today, type:"よみがなを書く", question:"北海道から空輸される。", underline:"空輸", answerKanji:["空","輸"], missCount:1 },
-    { id:5, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"大事な荷物をアズカル。", underline:"アズカル", answerKanji:["預"], missCount:1 },
-    { id:8, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"説明をショウリャクする。", underline:"ショウリャク", answerKanji:["省","略"], missCount:1 },
+    { id:1, grade:grade, unit:unit, registeredAt:today, type:"よみがなを書く", question:"北海道から空輸される。", underline:"空輸", answerKanji:[], answerText:"くうゆ", missCount:1 },
+    { id:5, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"大事な荷物をアズカル。", underline:"アズカル", answerKanji:["預"], answerText:"かる", missCount:1 },
+    { id:8, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"説明をショウリャクする。", underline:"ショウリャク", answerKanji:["省","略"], answerText:"", missCount:1 },
   ];
   savePracticeData(sample);
   initPractice();
@@ -993,37 +993,69 @@ function buildQ(question, underline) {
   return span;
 }
 
-function buildAnswerImages(answerKanji) {
+function buildAnswerImages(q) {
   const wrap = document.getElementById('answerImagesWrap');
   wrap.innerHTML = '';
-  answerKanji.forEach(kanji => {
-    const box = document.createElement('div');
-    box.className = 'kanji-img-box';
-    const img = document.createElement('img');
-    img.src = getImageUrl(kanji);
-    img.alt = kanji;
-    img.onerror = function() {
-      this.style.display = 'none';
-      const ph = document.createElement('div');
-      ph.className = 'kanji-placeholder';
-      ph.textContent = kanji;
-      box.insertBefore(ph, this);
-    };
-    box.appendChild(img);
-    wrap.appendChild(box);
-  });
+
+  // よみがなのみ（画像なし） → 縦書きテキストだけ
+  if (q.type === 'よみがなを書く' && (!q.answerKanji || q.answerKanji.length === 0) && q.answerText) {
+    const textEl = document.createElement('div');
+    textEl.style.cssText = `
+      writing-mode:vertical-rl; text-orientation:mixed;
+      font-size:clamp(48px,12vw,80px);
+      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
+    `;
+    textEl.textContent = q.answerText;
+    wrap.appendChild(textEl);
+    return;
+  }
+
+  // 漢字画像（複数可）＋ ひらがな（あれば）を縦1列・中央揃えで表示
+  if (q.answerKanji && q.answerKanji.length > 0) {
+    q.answerKanji.forEach(kanji => {
+      const box = document.createElement('div');
+      box.className = 'kanji-img-box';
+      const img = document.createElement('img');
+      img.src = getImageUrl(kanji);
+      img.alt = kanji;
+      img.onerror = function() {
+        this.style.display = 'none';
+        const ph = document.createElement('div');
+        ph.className = 'kanji-placeholder';
+        ph.textContent = kanji;
+        box.insertBefore(ph, this);
+      };
+      box.appendChild(img);
+      wrap.appendChild(box);
+    });
+  }
+
+  // ひらがな部分（送り仮名など）
+  if (q.answerText) {
+    const kanaEl = document.createElement('div');
+    kanaEl.style.cssText = `
+      writing-mode:vertical-rl; text-orientation:mixed;
+      font-size:clamp(32px,8vw,56px);
+      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
+      text-align:center;
+    `;
+    kanaEl.textContent = q.answerText;
+    wrap.appendChild(kanaEl);
+  }
 }
 
 function loadQuestion(i) {
   const q = session[i];
   answerShown = false;
   const maxMiss = Math.max(...session.map(x => x.missCount));
-  document.getElementById('qId').textContent = q.grade ? `${q.grade}年 #${q.unit}` : `${q.id}番`;
+  document.getElementById('qId').textContent = q.grade ? `${q.grade}年 単元${q.unit}` : `${q.id}番`;
   document.getElementById('qType').textContent = q.type;
   const qt = document.getElementById('qText');
   qt.innerHTML = '';
   qt.appendChild(buildQ(q.question, q.underline));
-  buildAnswerImages(q.answerKanji);
+  buildAnswerImages(q);
   document.getElementById('missBarFill').style.width = (maxMiss > 0 ? (q.missCount/maxMiss)*100 : 0) + '%';
   document.getElementById('missBarCount').textContent = q.missCount + '回';
   // リセット
