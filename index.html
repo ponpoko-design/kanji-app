@@ -371,7 +371,7 @@ header {
   align-items: flex-start;
 }
 
-/* 問題文：教科書ProLのみ、他フォント一切排除 */
+/* 問題文：教科書ProLのみ */
 #qText {
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -380,15 +380,15 @@ header {
   line-height: 1.7;
   color: #1A1A1A;
   font-family: 'I-OTF-G教科書Pro L' !important;
-  font-weight: normal !important;
+  font-weight: 400 !important;
   font-style: normal !important;
   font-synthesis: none !important;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
-#qText, #qText * {
+#qText * {
   font-family: 'I-OTF-G教科書Pro L' !important;
-  font-weight: normal !important;
+  font-weight: 400 !important;
   font-style: normal !important;
   font-synthesis: none !important;
 }
@@ -1359,22 +1359,40 @@ function initPractice() {
   setTimeout(fixLayout, 10);
 }
 
+const KYOKASHO = "'I-OTF-G教科書Pro L'";
+function setKyokashoFont(el) {
+  el.style.fontFamily = KYOKASHO;
+  el.style.fontWeight = '400';
+  el.style.fontStyle = 'normal';
+  el.style.fontSynthesis = 'none';
+}
 function buildQ(question, underline) {
   // 先頭の句点を除去
   const cleaned = question.replace(/^[。、・\s]+/, '');
-  if (!underline) return document.createTextNode(cleaned);
+  // テキストのみの場合もspanで包んでフォントを明示
+  const wrap = document.createElement('span');
+  setKyokashoFont(wrap);
+  if (!underline) {
+    wrap.textContent = cleaned;
+    return wrap;
+  }
   const parts = cleaned.split(underline);
-  const span = document.createElement('span');
   parts.forEach((p, i) => {
-    span.appendChild(document.createTextNode(p));
+    if (p) {
+      const t = document.createElement('span');
+      setKyokashoFont(t);
+      t.textContent = p;
+      wrap.appendChild(t);
+    }
     if (i < parts.length - 1) {
       const u = document.createElement('span');
       u.className = 'underline-word';
+      setKyokashoFont(u);
       u.textContent = underline;
-      span.appendChild(u);
+      wrap.appendChild(u);
     }
   });
-  return span;
+  return wrap;
 }
 
 function buildAnswerImages(q) {
@@ -1392,7 +1410,7 @@ function buildAnswerImages(q) {
     const chars = [...q.answerText];
     // 1文字あたりの最大サイズ（縦に並べた場合）
     const perChar = Math.floor((avail - gap * (chars.length - 1)) / chars.length);
-    const fs = Math.min(perChar * 0.85, 160);
+    const fs = Math.min(perChar * 0.85, 106);  // 160の2/3
     chars.forEach(ch => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
