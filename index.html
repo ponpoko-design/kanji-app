@@ -144,7 +144,7 @@ header {
   display:flex; align-items:center; justify-content:center;
   font-size: clamp(60px,15vw,220px);
   color:#1a2a3a;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt','Klee One',serif;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   font-weight:400; line-height:1;
 }
 .no-image-box {
@@ -152,7 +152,7 @@ header {
   display:flex; align-items:center; justify-content:center;
   color:#1a2a3a;
   font-size: clamp(60px,15vw,220px);
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt','Klee One',serif;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   line-height:1;
 }
 .empty-msg {
@@ -263,7 +263,7 @@ header {
   width:80px; height:140px; background:#eee; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:40px; color:#666;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt','Klee One',serif;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
 }
 
 #rightPanel {
@@ -315,7 +315,7 @@ header {
   flex: 1;
   background: #2C2C2C; color: #fff;
   font-size: 16px; font-weight: 700;
-  border: none; border-radius: 12px; cursor: pointer;
+  border: none; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
@@ -331,7 +331,7 @@ header {
   flex: 1;
   background: #E8F5E9; color: #2E7D32;
   font-size: 15px; font-weight: 700;
-  border: 2px solid #A5D6A7; border-radius: 12px; cursor: pointer;
+  border: 2px solid #A5D6A7; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
@@ -341,7 +341,7 @@ header {
   flex: 1;
   background: #FFEBEE; color: #C62828;
   font-size: 15px; font-weight: 700;
-  border: 2px solid #EF9A9A; border-radius: 12px; cursor: pointer;
+  border: 2px solid #EF9A9A; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
@@ -351,7 +351,7 @@ header {
   flex: 1;
   background: #1A6B3A; color: #fff;
   font-size: 16px; font-weight: 700;
-  border: none; border-radius: 12px; cursor: pointer;
+  border: none; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
@@ -381,7 +381,7 @@ header {
   margin-top:8px; padding:14px 36px;
   background:#2C2C2C; color:#fff;
   font-size:15px; font-weight:700;
-  border:none; border-radius:12px; cursor:pointer;
+  border:none; border-radius:999px; cursor:pointer;
   font-family:'Zen Maru Gothic',serif;
 }
 
@@ -425,7 +425,7 @@ header {
   background:#eee; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:36px; color:#999;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt','Klee One',serif;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
 }
 
 .result-buttons {
@@ -486,7 +486,7 @@ header {
 .q-text {
   font-size:18px; font-weight:500; color:#1A1A1A;
   line-height:1.9; letter-spacing:0.12em;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt','Klee One',serif;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
 }
 .underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
 
@@ -523,7 +523,7 @@ header {
   margin-top:8px; padding:14px 36px;
   background:#2C2C2C; color:#fff;
   font-size:15px; font-weight:700;
-  border:none; border-radius:12px; cursor:pointer;
+  border:none; border-radius:999px; cursor:pointer;
   font-family:'Zen Maru Gothic',serif;
 }
 
@@ -594,7 +594,7 @@ header {
 .popup-kana {
   font-size:clamp(200px,55vw,500px);
   color:#1a2a3a;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt','Klee One',serif;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   font-weight:400; line-height:1; padding:10px;
   width:100%; height:100%;
   display:flex; align-items:center; justify-content:center;
@@ -989,10 +989,7 @@ function buildAnswerImages(answerKanji) {
       ph.textContent = kanji;
       box.insertBefore(ph, this);
     };
-    const label = document.createElement('div');
-    label.className = 'k-label';
-    label.textContent = kanji;
-    box.appendChild(img); box.appendChild(label);
+    box.appendChild(img);
     wrap.appendChild(box);
   });
 }
