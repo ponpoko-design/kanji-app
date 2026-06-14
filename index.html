@@ -970,6 +970,7 @@ function saveApiKeys(btn) {
 }
 
 // 読み込みオーバーレイ
+function showLoadingOverlay(msg) {
   const overlay = document.createElement('div');
   overlay.id = 'loadingOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
