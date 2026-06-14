@@ -44,13 +44,15 @@
     }
   }
 
-  // リアルタイム同期：他デバイスの変更を自動反映
+  // リアルタイム同期：他デバイスの変更を自動反映（練習中はinitを呼ばない）
+  let _localSaving = false;
+  window._setLocalSaving = (v) => { _localSaving = v; };
   onSnapshot(DATA_DOC, (snap) => {
     if (snap.exists()) {
       const data = snap.data().questions || [];
       localStorage.setItem('kanji_practice_data', JSON.stringify(data));
-      // 漢字道場を開いていれば再読み込み
-      if (document.getElementById('page-practice').classList.contains('active')) {
+      // 自分の保存によるスナップショットは無視する
+      if (!_localSaving && !document.getElementById('page-practice').classList.contains('active')) {
         if (typeof initPractice === 'function') initPractice();
       }
     }
@@ -1448,12 +1450,14 @@ function menuShowData() {
     const sorted = [...data].sort((a,b) => b.missCount - a.missCount);
     const max = Math.max(...sorted.map(q => q.missCount), 1);
     return sorted.map(q => {
+      const grade = q.grade ? `${q.grade}年` : '−';
       const unit = q.unit ? `${q.unit}` : '−';
       const answerKanji = (q.answerKanji || []).join('');
       const answerText = q.answerText || '';
       const answer = answerKanji + answerText || '−';
       const pct = (q.missCount / max) * 100;
       return `<tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
         <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
         <td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td>
         <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
@@ -1464,18 +1468,22 @@ function menuShowData() {
 
   function renderKanjiBetsu() {
     const map = {};
+    const gradeMap = {};
     data.forEach(q => {
       (q.answerKanji || []).forEach(k => {
         const miss = (q.charMiss && q.charMiss[k]) ? q.charMiss[k] : 0;
         map[k] = (map[k] || 0) + miss;
+        if (q.grade && !gradeMap[k]) gradeMap[k] = q.grade;
       });
     });
     const sorted = Object.entries(map).sort((a,b) => b[1]-a[1]);
-    if (!sorted.length) return `<tr><td colspan="3" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
+    if (!sorted.length) return `<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
     const max = Math.max(...sorted.map(e => e[1]), 1);
     return sorted.map(([k, cnt]) => {
+      const grade = gradeMap[k] ? `${gradeMap[k]}年` : '−';
       const pct = (cnt / max) * 100;
       return `<tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
         <td style="padding:8px 6px;font-size:20px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;width:40px;">${k}</td>
         <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${cnt}回</td>
         <td style="padding:8px 6px;width:80px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
@@ -1500,6 +1508,7 @@ function menuShowData() {
         <div id="missPane1">
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
@@ -1511,6 +1520,7 @@ function menuShowData() {
         <div id="missPane2" style="display:none;">
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;font-weight:600;">漢字</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
               <th style="padding:8px 6px;font-size:11px;width:80px;"></th>
@@ -1542,6 +1552,8 @@ function loadPracticeData() {
   return JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
 }
 function savePracticeData(data) {
+  if (window._setLocalSaving) window._setLocalSaving(true);
+  setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 2000);
   localStorage.setItem('kanji_practice_data', JSON.stringify(data));
   // Firestoreにも保存（非同期）
   if (window.firestoreSave) window.firestoreSave(data);
