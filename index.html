@@ -199,7 +199,6 @@ header {
   color:#1a2a3a;
   font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   font-weight:400; line-height:1;
-  font-synthesis:none; -webkit-font-smoothing:antialiased;
 }
 .no-image-box {
   width:100%; height:100%;
@@ -281,59 +280,90 @@ header {
   overflow: hidden;
 }
 
+/* 左2/3：正解エリア */
 #leftPanel {
   flex: 0 0 66%;
   background: #f0f4f8;
   border-right: 1px solid #ccc;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 10px;
   overflow: hidden;
 }
 
+/* 正解を包む1つの白ボックス */
 #answerImagesWrap {
-  width: 100%; height: 100%;
+  width: 100%;
   background: #fff;
   border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 10px;
+  gap: 6px;
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-.kanji-img-box { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex-shrink:0; overflow:hidden; }
-.kanji-img-box img { width:auto; max-width:100%; object-fit:contain; }
-.kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
+/* 各アイテム（漢字画像 or 送り仮名1文字）— JSで高さを設定する */
+.kanji-img-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.kanji-img-box img {
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
+}
 .kanji-placeholder {
-  width:80px; height:140px; background:#eee; border-radius:8px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:40px; color:#666;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  display: flex; align-items: center; justify-content: center;
+  background: #f5f5f5; border-radius: 8px; width: 80%; cursor: pointer;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif;
+  color: #1a2a3a;
+}
+/* よみがな問題（テキストのみ）*/
+.answer-kana-text {
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+  font-weight: normal !important;
+  font-synthesis: none !important;
+  -webkit-font-smoothing: antialiased;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: #1a2a3a;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
+/* 右1/3：問題文エリア */
 #rightPanel {
   flex: 0 0 34%;
   display: flex;
   flex-direction: column;
-  padding: 12px 10px;
-  gap: 8px;
   overflow: hidden;
 }
 
+/* 問題文ボックス：縦全体を使う */
 #qVerticalWrap {
   flex: 1;
   min-height: 0;
   background: #fff;
   border-radius: 12px;
-  padding: 12px 8px;
+  padding: 10px 6px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
@@ -341,28 +371,37 @@ header {
   align-items: flex-start;
 }
 
+/* 問題文：教科書ProLのみ、他フォント一切排除 */
 #qText {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   height: 100%;
-  font-size: 29px;
-  line-height: 1.9;
+  font-size: 28px;
+  line-height: 1.7;
   color: #1A1A1A;
   font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
   font-style: normal !important;
   font-synthesis: none !important;
   -webkit-font-smoothing: antialiased;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: hidden;
 }
-#qText, #qText *, #qText span, #qText .underline-word {
+#qText, #qText * {
   font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
   font-style: normal !important;
   font-synthesis: none !important;
 }
-.underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
+.underline-word { border-right: 2.5px solid #1A1A1A; padding-right: 2px; }
+
+/* 単元情報・まちがいバー：右パネル下部にコンパクトに */
+#qMeta {
+  flex-shrink: 0;
+  padding: 6px 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 #practiceBottom {
   flex-shrink: 0;
@@ -768,17 +807,17 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           </div>
           <!-- 右1/3：問題 -->
           <div id="rightPanel">
-            <div style="flex-shrink:0;">
-              <div id="qId" style="font-size:20px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">1番</div>
-              <div id="qType" style="font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;">漢字を書く</div>
-            </div>
             <div id="qVerticalWrap">
               <div id="qText"></div>
             </div>
-            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-              <span style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;">まちがい</span>
-              <div style="flex:1;height:3px;background:#eee;border-radius:2px;overflow:hidden;"><div id="missBarFill" style="height:100%;background:#FF4D4D;border-radius:2px;transition:width 0.4s;"></div></div>
-              <span id="missBarCount" style="font-size:10px;color:#FF4D4D;font-weight:700;min-width:24px;text-align:right;font-family:'Zen Maru Gothic',serif;"></span>
+            <div id="qMeta">
+              <div id="qId" style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">1番</div>
+              <div id="qType" style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;">漢字を書く</div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:9px;color:#999;font-family:'Zen Maru Gothic',serif;">まちがい</span>
+                <div style="flex:1;height:3px;background:#eee;border-radius:2px;overflow:hidden;"><div id="missBarFill" style="height:100%;background:#FF4D4D;border-radius:2px;transition:width 0.4s;"></div></div>
+                <span id="missBarCount" style="font-size:9px;color:#FF4D4D;font-weight:700;min-width:20px;text-align:right;font-family:'Zen Maru Gothic',serif;"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -1342,72 +1381,75 @@ function buildAnswerImages(q) {
   const wrap = document.getElementById('answerImagesWrap');
   wrap.innerHTML = '';
 
-  // よみがなのみ（画像なし） → 縦書きテキストだけ
+  // leftPanelの高さからアイテム1つ分の高さを計算
+  const leftH = document.getElementById('leftPanel').offsetHeight;
+  const padding = 20;  // wrap padding 10px×2
+  const gap = 6;
+
+  // よみがなのみ（画像なし）→ 大きく縦書きテキスト
   if (q.type === 'よみがなを書く' && (!q.answerKanji || q.answerKanji.length === 0) && q.answerText) {
-    const textEl = document.createElement('div');
-    textEl.style.cssText = `
-      writing-mode:vertical-rl; text-orientation:mixed;
-      font-size:clamp(96px,24vw,165px);
-      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
-      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
-    `;
-    textEl.textContent = q.answerText;
-    wrap.appendChild(textEl);
+    const avail = leftH - padding;
+    const chars = [...q.answerText];
+    // 1文字あたりの最大サイズ（縦に並べた場合）
+    const perChar = Math.floor((avail - gap * (chars.length - 1)) / chars.length);
+    const fs = Math.min(perChar * 0.85, 160);
+    chars.forEach(ch => {
+      const box = document.createElement('div');
+      box.className = 'kanji-img-box';
+      box.style.height = perChar + 'px';
+      const t = document.createElement('div');
+      t.className = 'answer-kana-text';
+      t.style.fontSize = fs + 'px';
+      t.textContent = ch;
+      box.appendChild(t);
+      wrap.appendChild(box);
+    });
     return;
   }
 
-  // 漢字画像（複数可）＋ ひらがな（あれば）を縦1列・上詰めで表示
-  // 全アイテム数（漢字枚数＋送り仮名文字数）から1アイテムの高さを計算
-  const kanjiCount = (q.answerKanji || []).length;
-  const kanaCount = q.answerText ? [...q.answerText].length : 0;
-  const totalItems = kanjiCount + kanaCount;
-  // leftPanelの実際の高さから計算（padding・gap考慮）
-  const leftH = document.getElementById('leftPanel').offsetHeight;
-  const padding = 24; // padding:12px × 2
-  const gap = 8;
-  const itemH = totalItems > 0
-    ? Math.floor((leftH - padding - gap * (totalItems - 1)) / totalItems)
+  // 漢字＋送り仮名：全アイテム数で高さを均等割り
+  const kanjiList = q.answerKanji || [];
+  const kanaChars = q.answerText ? [...q.answerText] : [];
+  const total = kanjiList.length + kanaChars.length;
+  const itemH = total > 0
+    ? Math.floor((leftH - padding - gap * (total - 1)) / total)
     : leftH - padding;
 
-  if (q.answerKanji && q.answerKanji.length > 0) {
-    q.answerKanji.forEach(kanji => {
-      const box = document.createElement('div');
-      box.className = 'kanji-img-box';
-      box.style.cursor = 'pointer';
-      box.style.height = itemH + 'px';
-      const img = document.createElement('img');
-      img.src = getImageUrl(kanji);
-      img.alt = kanji;
-      img.style.maxHeight = itemH + 'px';
-      img.onerror = function() {
-        this.style.display = 'none';
-        const ph = document.createElement('div');
-        ph.className = 'kanji-placeholder';
-        ph.textContent = kanji;
-        ph.style.cursor = 'pointer';
-        ph.onclick = () => openPopup(kanji, false);
-        box.insertBefore(ph, this);
-      };
-      box.onclick = () => openPopup(kanji, true);
-      box.appendChild(img);
-      wrap.appendChild(box);
-    });
-  }
+  kanjiList.forEach(kanji => {
+    const box = document.createElement('div');
+    box.className = 'kanji-img-box';
+    box.style.height = itemH + 'px';
+    const img = document.createElement('img');
+    img.src = getImageUrl(kanji);
+    img.alt = kanji;
+    img.style.maxHeight = itemH + 'px';
+    img.style.cursor = 'pointer';
+    img.onerror = function() {
+      this.style.display = 'none';
+      const ph = document.createElement('div');
+      ph.className = 'kanji-placeholder';
+      ph.style.height = itemH + 'px';
+      ph.style.fontSize = Math.floor(itemH * 0.7) + 'px';
+      ph.textContent = kanji;
+      ph.onclick = () => openPopup(kanji, false);
+      box.appendChild(ph);
+    };
+    img.onclick = () => openPopup(kanji, true);
+    box.appendChild(img);
+    wrap.appendChild(box);
+  });
 
-  // 送り仮名: 1文字ずつkanji-img-boxに入れる
-  if (q.answerText) {
-    [...q.answerText].forEach(ch => {
-      const box = document.createElement('div');
-      box.className = 'kanji-img-box';
-      box.style.height = itemH + 'px';
-      const kana = document.createElement('div');
-      kana.className = 'kana-box';
-      kana.style.fontSize = Math.min(itemH * 0.75, 160) + 'px';
-      kana.textContent = ch;
-      box.appendChild(kana);
-      wrap.appendChild(box);
-    });
-  }
+  kanaChars.forEach(ch => {
+    const box = document.createElement('div');
+    box.className = 'kanji-img-box';
+    box.style.height = itemH + 'px';
+    const t = document.createElement('div');
+    t.className = 'answer-kana-text';
+    t.style.fontSize = Math.min(Math.floor(itemH * 0.8), 160) + 'px';
+    t.textContent = ch;
+    box.appendChild(t);
+    wrap.appendChild(box);
+  });
 }
 
 function loadQuestion(i) {
@@ -1428,18 +1470,22 @@ function loadQuestion(i) {
   document.getElementById('resultButtons').style.display = 'none';
   document.getElementById('btnNext').style.display = 'none';
 
-  // フォントサイズ自動調整（枠に収まるまで縮小）
+  // フォントサイズ自動調整＋正解欄の高さ確定後に再描画
   setTimeout(() => {
+    // 問題文フォントサイズ調整
     const wrap = document.getElementById('qVerticalWrap');
     const text = document.getElementById('qText');
-    if (!wrap || !text) return;
-    text.style.fontSize = '29px';
-    let size = 29;
-    while (text.scrollWidth > wrap.clientHeight + 2 && size > 12) {
-      size -= 1;
-      text.style.fontSize = size + 'px';
+    if (wrap && text) {
+      text.style.fontSize = '28px';
+      let size = 28;
+      while (text.scrollWidth > wrap.clientHeight + 2 && size > 12) {
+        size -= 1;
+        text.style.fontSize = size + 'px';
+      }
     }
-  }, 60);
+    // 正解欄: leftPanelの高さが確定してから再描画
+    buildAnswerImages(session[current]);
+  }, 80);
 }
 
 function toggleAnswer() {
