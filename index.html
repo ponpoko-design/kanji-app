@@ -361,14 +361,16 @@ header {
   min-height: 0;
   background: #fff;
   border-radius: 12px;
-  padding: 16px 10px 10px;
+  padding: 16px 6px 10px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 /* 縦書きラッパー */
 #qVerticalInner {
   writing-mode: vertical-rl;
-  width: 100%;
   height: 100%;
   overflow: hidden;
 }
@@ -376,7 +378,7 @@ header {
 #qText {
   font-size: 27px;
   color: #1A1A1A;
-  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif;
+  font-family: 'Klee One', serif;
 }
 .underline-word { border-right: 2.5px solid #1A1A1A; padding-right: 2px; }
 
@@ -860,6 +862,10 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
       まちがい一覧
     </div>
+    <div class="menu-item" onclick="closeMenu();showShutsudaiSelect();">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      出題選択
+    </div>
     <div class="menu-item" onclick="menuSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
@@ -871,7 +877,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
   </div>
 </div>
 
-<!-- 設定オーバーレイ（今後実装予定） -->
+<!-- 設定オーバーレイ -->
 <div class="menu-overlay" id="settingsOverlay" onclick="closeSettings()">
   <div class="menu-panel" onclick="event.stopPropagation()" style="width:280px;">
     <div style="padding:16px 20px 8px; font-size:13px; color:#999; font-family:'Zen Maru Gothic',serif; border-bottom:1px solid #f0f4f8;">設定</div>
@@ -879,9 +885,13 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
       APIキーを設定
     </div>
-    <div class="menu-item" onclick="closeSettings();deleteAllData();" style="color:#C62828;">
+    <div class="menu-item" onclick="closeSettings();deleteResultData();" style="color:#C62828;">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>
-      データを全削除
+      結果を削除
+    </div>
+    <div class="menu-item" onclick="closeSettings();showDeleteQuestions();" style="color:#C62828;">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span>
+      問題文を削除
     </div>
     <div class="menu-item" onclick="closeSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
@@ -1075,6 +1085,191 @@ ${inputText}
   return JSON.parse(clean);
 }
 
+// ===== 結果を削除（missCount・charMissをリセット）=====
+function deleteResultData() {
+  const pw = prompt('パスワードを入力してください');
+  if (pw !== '1223') { alert('パスワードが違います'); return; }
+  const data = loadPracticeData();
+  const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {} }));
+  savePracticeData(reset);
+  alert('✅ 結果を削除しました');
+  initPractice();
+}
+
+// ===== 問題文を削除（選択式）=====
+function showDeleteQuestions() {
+  const data = loadPracticeData();
+  if (!data.length) { alert('問題がありません'); return; }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  const rows = data.map((q, i) => {
+    const unit = q.unit || '−';
+    const ans = (q.answerKanji||[]).join('') + (q.answerText||'');
+    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f4f8;cursor:pointer;">
+      <input type="checkbox" data-idx="${i}" style="width:18px;height:18px;cursor:pointer;">
+      <span style="font-size:13px;color:#666;font-family:'Zen Maru Gothic',serif;min-width:28px;">${unit}</span>
+      <span style="font-size:15px;font-family:'Zen Maru Gothic',serif;flex:1;">${ans}</span>
+    </label>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;font-family:'Zen Maru Gothic',serif;">問題文を削除</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="padding:8px 16px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;gap:8px;">
+        <button onclick="document.querySelectorAll('#delQList input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全選択</button>
+        <button onclick="document.querySelectorAll('#delQList input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全解除</button>
+      </div>
+      <div id="delQList" style="overflow-y:auto;flex:1;">${rows}</div>
+      <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
+        <button onclick="execDeleteQuestions()" style="width:100%;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">選択した問題を削除</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function execDeleteQuestions() {
+  const checked = [...document.querySelectorAll('#delQList input:checked')];
+  if (!checked.length) { alert('問題を選択してください'); return; }
+  const pw = prompt('パスワードを入力してください');
+  if (pw !== '1223') { alert('パスワードが違います'); return; }
+  const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
+  const data = loadPracticeData();
+  const newData = data.filter((_, i) => !idxSet.has(i));
+  savePracticeData(newData);
+  document.querySelector('[style*="fixed"]').remove();
+  alert(`✅ ${idxSet.size}問を削除しました`);
+  initPractice();
+}
+
+// ===== 出題選択 =====
+function showShutsudaiSelect() {
+  const data = loadPracticeData();
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  // 単元リストを取得
+  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;">
+        <div style="font-size:17px;font-weight:700;font-family:'Zen Maru Gothic',serif;">出題選択</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <!-- ラジオ選択 -->
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #3B82F6;border-radius:12px;cursor:pointer;background:#EFF6FF;">
+          <input type="radio" name="shutsudai" value="miss" checked style="accent-color:#3B82F6;">
+          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;">間違いが多い順（上位7問）</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioRandom">
+          <input type="radio" name="shutsudai" value="random" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
+          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">ランダム</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioUnit">
+          <input type="radio" name="shutsudai" value="unit" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
+          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">単元範囲指定</span>
+        </label>
+        <div id="unitRange" style="display:none;padding:8px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">単元</span>
+          <select id="unitFrom" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">${unitOpts}</select>
+          <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">〜</span>
+          <select id="unitTo" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">${unitOpts}</select>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioDate">
+          <input type="radio" name="shutsudai" value="date" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
+          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">登録日範囲指定</span>
+        </label>
+        <div id="dateRange" style="display:none;padding:8px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input type="date" id="dateFrom" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">
+          <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">〜</span>
+          <input type="date" id="dateTo" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;">
+          <input type="radio" name="shutsudai" value="ebbinghaus" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
+          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">エビングハウス<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span></span>
+        </label>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <button onclick="applyShutsudai()" style="width:100%;background:#3B82F6;color:#fff;border:none;border-radius:999px;padding:13px;font-size:16px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">この設定で出題</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function updateShutsudaiUI() {
+  const v = document.querySelector('input[name="shutsudai"]:checked').value;
+  const ur = document.getElementById('unitRange');
+  const dr = document.getElementById('dateRange');
+  if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
+  if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
+  // ラジオのボーダー更新
+  ['radioRandom','radioUnit','radioDate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const radio = el.querySelector('input');
+    el.style.borderColor = radio.checked ? '#3B82F6' : '#e0e4ea';
+    el.style.background = radio.checked ? '#EFF6FF' : '';
+    el.querySelector('span').style.fontWeight = radio.checked ? '700' : '400';
+  });
+}
+
+function applyShutsudai() {
+  const v = document.querySelector('input[name="shutsudai"]:checked').value;
+  const data = loadPracticeData();
+  let pool = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  if (v === 'miss') {
+    pool = [...data].sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  } else if (v === 'random') {
+    const shuffled = [...data].sort(() => Math.random() - 0.5);
+    pool = shuffled.slice(0, Math.min(7, shuffled.length));
+  } else if (v === 'unit') {
+    const from = parseInt(document.getElementById('unitFrom').value);
+    const to = parseInt(document.getElementById('unitTo').value);
+    const [lo, hi] = [Math.min(from,to), Math.max(from,to)];
+    pool = data.filter(q => q.unit >= lo && q.unit <= hi).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  } else if (v === 'date') {
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    pool = data.filter(q => {
+      if (!q.registeredAt) return false;
+      return (!from || q.registeredAt >= from) && (!to || q.registeredAt <= to);
+    }).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  } else if (v === 'ebbinghaus') {
+    const intervals = [1, 2, 7, 30, 60]; // 日数
+    pool = data.filter(q => {
+      if (!q.lastTestedAt) return true; // 未受験は含める
+      const last = new Date(q.lastTestedAt); last.setHours(0,0,0,0);
+      const diff = Math.floor((today - last) / (1000*60*60*24));
+      return intervals.some(d => diff >= d);
+    }).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  }
+
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+
+  document.querySelector('[style*="fixed"]').remove();
+  session = pool;
+  current = 0;
+  switchTab('practice', document.querySelectorAll('.tab')[1]);
+  setTimeout(() => { loadQuestion(session[0]); }, 100);
+}
+
 function deleteAllData() {
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') {
@@ -1249,57 +1444,96 @@ function menuShowData() {
     return;
   }
 
-  const sorted = [...data].sort((a,b) => b.missCount - a.missCount);
-  const max = Math.max(...sorted.map(q => q.missCount));
-
-  const rows = sorted.map(q => {
-    const grade = q.grade ? `${q.grade}年` : '−';
-    const unit = q.unit ? `単元${q.unit}` : '−';
-    // 回答表示：漢字＋ひらがな
-    const answerKanji = (q.answerKanji || []).join('');
-    const answerText = q.answerText || '';
-    const answer = answerKanji + answerText || '−';
-    const pct = max > 0 ? (q.missCount / max) * 100 : 0;
-    return `
-      <tr style="border-bottom:1px solid #f0f4f8;">
-        <td style="padding:10px 8px;font-size:14px;color:#000000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
-        <td style="padding:10px 8px;font-size:14px;color:#000000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
-        <td style="padding:10px 8px;font-size:15px;color:#000000;font-family:'Klee One',serif;white-space:nowrap;">${answer}</td>
-        <td style="padding:10px 8px;font-size:14px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
-        <td style="padding:10px 8px;width:80px;">
-          <div style="background:#eee;border-radius:999px;height:8px;overflow:hidden;">
-            <div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div>
-          </div>
-        </td>
+  function renderMondaiBetsu() {
+    const sorted = [...data].sort((a,b) => b.missCount - a.missCount);
+    const max = Math.max(...sorted.map(q => q.missCount), 1);
+    return sorted.map(q => {
+      const unit = q.unit ? `${q.unit}` : '−';
+      const answerKanji = (q.answerKanji || []).join('');
+      const answerText = q.answerText || '';
+      const answer = answerKanji + answerText || '−';
+      const pct = (q.missCount / max) * 100;
+      return `<tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
+        <td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td>
+        <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
+        <td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
       </tr>`;
-  }).join('');
+    }).join('');
+  }
+
+  function renderKanjiBetsu() {
+    const map = {};
+    data.forEach(q => {
+      (q.answerKanji || []).forEach(k => {
+        const miss = (q.charMiss && q.charMiss[k]) ? q.charMiss[k] : 0;
+        map[k] = (map[k] || 0) + miss;
+      });
+    });
+    const sorted = Object.entries(map).sort((a,b) => b[1]-a[1]);
+    if (!sorted.length) return '<tr><td colspan="3" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>';
+    const max = Math.max(...sorted.map(e => e[1]), 1);
+    return sorted.map(([k, cnt]) => {
+      const pct = (cnt / max) * 100;
+      return `<tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:8px 6px;font-size:20px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;width:40px;">${k}</td>
+        <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${cnt}回</td>
+        <td style="padding:8px 6px;width:80px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
+      </tr>`;
+    }).join('');
+  }
 
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
-        <div style="font-size:17px;font-weight:700;color:#000000;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
         <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
+      <!-- タブ -->
+      <div style="display:flex;gap:0;padding:12px 20px 0;flex-shrink:0;border-bottom:2px solid #f0f4f8;">
+        <button id="missTab1" onclick="switchMissTab(1)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid #3B82F6;margin-bottom:-2px;font-size:14px;font-weight:700;color:#3B82F6;font-family:'Zen Maru Gothic',serif;cursor:pointer;">問題別</button>
+        <button id="missTab2" onclick="switchMissTab(2)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">漢字別</button>
+      </div>
       <div style="overflow-y:auto;flex:1;">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;width:80px;"></th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div id="missPane1">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
+              <th style="padding:8px 6px;font-size:11px;width:60px;"></th>
+            </tr></thead>
+            <tbody>${renderMondaiBetsu()}</tbody>
+          </table>
+        </div>
+        <div id="missPane2" style="display:none;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;font-weight:600;">漢字</th>
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
+              <th style="padding:8px 6px;font-size:11px;width:80px;"></th>
+            </tr></thead>
+            <tbody>${renderKanjiBetsu()}</tbody>
+          </table>
+        </div>
       </div>
     </div>`;
 
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+}
+
+function switchMissTab(n) {
+  document.getElementById('missPane1').style.display = n===1 ? '' : 'none';
+  document.getElementById('missPane2').style.display = n===2 ? '' : 'none';
+  document.getElementById('missTab1').style.borderBottomColor = n===1 ? '#3B82F6' : 'transparent';
+  document.getElementById('missTab1').style.color = n===1 ? '#3B82F6' : '#999';
+  document.getElementById('missTab1').style.fontWeight = n===1 ? '700' : '400';
+  document.getElementById('missTab2').style.borderBottomColor = n===2 ? '#3B82F6' : 'transparent';
+  document.getElementById('missTab2').style.color = n===2 ? '#3B82F6' : '#999';
+  document.getElementById('missTab2').style.fontWeight = n===2 ? '700' : '400';
 }
 
 
@@ -1465,8 +1699,7 @@ function loadQuestion(i) {
     if (inner && text) {
       text.style.fontSize = '27px';
       let size = 27;
-      // 縦書きなのでscrollHeightで判定
-      while (text.scrollHeight > inner.clientHeight + 2 && size > 12) {
+      while (inner.scrollHeight > inner.clientHeight + 4 && size > 12) {
         size -= 1;
         text.style.fontSize = size + 'px';
       }
@@ -1485,17 +1718,22 @@ function toggleAnswer() {
 }
 
 function recordResult(correct) {
-  if (correct) correctCount++;
-  else {
-    const data = loadPracticeData();
-    const q = session[current];
-    const item = data.find(d => d.id === q.id);
-    if (item) {
+  const today = new Date().toISOString().split('T')[0];
+  const data = loadPracticeData();
+  const q = session[current];
+  const item = data.find(d => d.id === q.id);
+  if (item) {
+    item.lastTestedAt = today;
+    if (correct) {
+      correctCount++;
+    } else {
       item.missCount++;
       if (!item.charMiss) item.charMiss = {};
       q.answerKanji.forEach(k => { item.charMiss[k] = (item.charMiss[k] || 0) + 1; });
-      savePracticeData(data);
     }
+    savePracticeData(data);
+  } else {
+    if (correct) correctCount++;
   }
   // 即座に答えを隠す
   document.getElementById('answerImagesWrap').classList.remove('visible');
