@@ -355,34 +355,35 @@ header {
   overflow: hidden;
 }
 
-/* 問題文ボックス：縦全体を使う */
+/* 問題文ボックス */
 #qVerticalWrap {
   flex: 1;
   min-height: 0;
   background: #fff;
   border-radius: 12px;
-  padding: 10px 6px;
+  padding: 14px 10px;
+  display: flex;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-start;
 }
-
-/* 問題文：教科書ProLのみ */
-#qText {
+/* 縦書きラッパー */
+#qVerticalInner {
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  height: 100%;
-  font-size: 28px;
-  line-height: 1.25;
-  color: #1A1A1A;
-  font-family: "I-OTF-G教科書Pro L" !important;
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  direction: rtl;
+  width: 100%;
+  overflow-x: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
-#qText * {
-  font-family: "I-OTF-G教科書Pro L" !important;
+/* 問題文テキスト */
+#qText {
+  font-size: 18px;
+  color: #1A1A1A;
+  line-height: 1.9;
+  letter-spacing: 0.12em;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif;
 }
 .underline-word { border-right: 2.5px solid #1A1A1A; padding-right: 2px; }
 
@@ -800,7 +801,9 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           <!-- 右1/3：問題 -->
           <div id="rightPanel">
             <div id="qVerticalWrap">
-              <div id="qText"></div>
+              <div id="qVerticalInner">
+                <span id="qText"></span>
+              </div>
             </div>
             <div id="qMeta">
               <div id="qId" style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">1番</div>
@@ -1351,37 +1354,21 @@ function initPractice() {
   setTimeout(fixLayout, 10);
 }
 
-const KYOKASHO = '"I-OTF-G教科書Pro L"';
-function setKyokashoFont(el) {
-  el.style.fontFamily = KYOKASHO;
-}
 function buildQ(question, underline) {
-  // 先頭の句点を除去
   const cleaned = question.replace(/^[。、・\s]+/, '');
-  // テキストのみの場合もspanで包んでフォントを明示
-  const wrap = document.createElement('span');
-  setKyokashoFont(wrap);
-  if (!underline) {
-    wrap.textContent = cleaned;
-    return wrap;
-  }
+  if (!underline) return document.createTextNode(cleaned);
   const parts = cleaned.split(underline);
+  const span = document.createElement('span');
   parts.forEach((p, i) => {
-    if (p) {
-      const t = document.createElement('span');
-      setKyokashoFont(t);
-      t.textContent = p;
-      wrap.appendChild(t);
-    }
+    span.appendChild(document.createTextNode(p));
     if (i < parts.length - 1) {
       const u = document.createElement('span');
       u.className = 'underline-word';
-      setKyokashoFont(u);
       u.textContent = underline;
-      wrap.appendChild(u);
+      span.appendChild(u);
     }
   });
-  return wrap;
+  return span;
 }
 
 function buildAnswerImages(q) {
@@ -1479,13 +1466,13 @@ function loadQuestion(i) {
 
   // フォントサイズ自動調整＋正解欄の高さ確定後に再描画
   setTimeout(() => {
-    // 問題文フォントサイズ調整
-    const wrap = document.getElementById('qVerticalWrap');
+    // 問題文フォントサイズ自動調整
+    const inner = document.getElementById('qVerticalInner');
     const text = document.getElementById('qText');
-    if (wrap && text) {
-      text.style.fontSize = '28px';
-      let size = 28;
-      while (text.scrollWidth > wrap.clientHeight + 2 && size > 12) {
+    if (inner && text) {
+      text.style.fontSize = '18px';
+      let size = 18;
+      while (inner.scrollWidth > inner.clientWidth + 2 && size > 10) {
         size -= 1;
         text.style.fontSize = size + 'px';
       }
