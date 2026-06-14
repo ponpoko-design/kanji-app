@@ -383,7 +383,11 @@ header {
   color: #1A1A1A;
   font-family: 'Klee One', serif;
 }
-.underline-word { box-shadow: 3px 0 0 0 #1A1A1A; padding-right: 3px; }
+.underline-word {
+  text-decoration: overline;
+  text-decoration-color: #1A1A1A;
+  text-decoration-thickness: 2px;
+}
 
 /* 単元情報・まちがいバー：右パネル下部にコンパクトに */
 #qMeta {
@@ -565,7 +569,11 @@ header {
 .q-meta { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
 .q-id { font-size:20px; font-weight:700; color:#1A1A1A; font-family:'Zen Maru Gothic',serif; }
 .q-type { font-size:11px; color:#999; letter-spacing:0.05em; font-family:'Zen Maru Gothic',serif; }
-.underline-word { box-shadow: 3px 0 0 0 #1A1A1A; padding-right: 3px; }
+.underline-word {
+  text-decoration: overline;
+  text-decoration-color: #1A1A1A;
+  text-decoration-thickness: 2px;
+}
 
 .miss-bar { display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .miss-bar-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
