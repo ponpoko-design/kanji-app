@@ -5,6 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Klee+One&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
 <script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1"></script>
+<style>
+/* 教科書フォント適用要素：FONTPLUS読み込み前は非表示にしてserif混入を防ぐ */
+#qText, #qVerticalWrap {
+  visibility: hidden;
+}
+body.fontplus-loaded #qText,
+body.fontplus-loaded #qVerticalWrap {
+  visibility: visible;
+}
+</style>
+<script>
+// FONTPLUSコールバック
+(function() {
+  function markFontLoaded() {
+    document.body.classList.add('fontplus-loaded');
+  }
+  // FONTPLUSのコールバック設定
+  if (window.FONTPLUS) {
+    window.FONTPLUS.ready(markFontLoaded);
+  }
+  // フォールバック: 最大1.5秒後に強制表示
+  setTimeout(markFontLoaded, 1500);
+  // loadイベントでも確認
+  window.addEventListener('load', function() {
+    setTimeout(markFontLoaded, 200);
+  });
+})();
+</script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -293,23 +321,35 @@ header {
 
 #answerImagesWrap {
   width: 100%; height: 100%;
-  background: #fff;
+  background: #f0f4f8;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 8px;
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-height:0; width:100%; }
-.kanji-img-box img { width:auto; height:100%; max-width:100%; object-fit:contain; display:block; }
+.kanji-img-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  cursor: pointer;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.kanji-img-box img { width: auto; max-width: 100%; height: 100%; object-fit: contain; display: block; }
 .kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
 .kanji-placeholder {
   width:80px; height:140px; background:#eee; border-radius:8px;
@@ -336,7 +376,7 @@ header {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: flex-start;
 }
 
@@ -344,16 +384,17 @@ header {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   height: 100%;
-  font-size: 29px;
-  line-height: 1.9;
+  width: auto;
+  max-width: 100%;
+  font-size: 26px;
+  line-height: 1.5;
   color: #1A1A1A;
   font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
   font-style: normal !important;
   font-synthesis: none !important;
   -webkit-font-smoothing: antialiased;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
 }
 #qText *, #qText span, #qText .underline-word {
   font-family: 'I-OTF-G教科書Pro L' !important;
@@ -1049,7 +1090,7 @@ ${inputText}
 
 function deleteAllData() {
   const pw = prompt('パスワードを入力してください');
-  if (pw !== 'BU_tensai12230727') {
+  if (pw !== '1223') {
     alert('パスワードが違います');
     return;
   }
@@ -1343,12 +1384,19 @@ function buildAnswerImages(q) {
 
   // よみがなのみ（画像なし） → 縦書きテキストだけ
   if (q.type === 'よみがなを書く' && (!q.answerKanji || q.answerKanji.length === 0) && q.answerText) {
+    // 文字数に応じてfont-sizeを調整
+    const charLen = q.answerText.length;
+    const fs = charLen <= 2 ? 'clamp(80px,20vw,160px)' : charLen <= 4 ? 'clamp(50px,13vw,110px)' : 'clamp(36px,9vw,80px)';
     const textEl = document.createElement('div');
     textEl.style.cssText = `
+      background:#fff; border-radius:12px; padding:8px 6px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.07);
+      display:flex; align-items:center; justify-content:center;
       writing-mode:vertical-rl; text-orientation:mixed;
-      font-size:clamp(96px,24vw,165px);
+      font-size:${fs};
       font-family:'I-OTF-G教科書Pro L';
-      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
+      color:#1a2a3a; line-height:1.4; letter-spacing:0.05em;
+      cursor:pointer; flex:1; min-height:0; overflow:hidden;
     `;
     textEl.textContent = q.answerText;
     wrap.appendChild(textEl);
@@ -1360,7 +1408,6 @@ function buildAnswerImages(q) {
     q.answerKanji.forEach(kanji => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
-      box.style.cursor = 'pointer';
       const img = document.createElement('img');
       img.src = getImageUrl(kanji);
       img.alt = kanji;
@@ -1383,11 +1430,15 @@ function buildAnswerImages(q) {
   if (q.answerText) {
     const kanaEl = document.createElement('div');
     kanaEl.style.cssText = `
+      background:#fff; border-radius:12px; padding:6px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.07);
+      display:flex; align-items:center; justify-content:center;
       writing-mode:vertical-rl; text-orientation:mixed;
-      font-size:clamp(96px,24vw,165px);
+      font-size:clamp(40px,10vw,90px);
       font-family:'I-OTF-G教科書Pro L';
-      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
-      text-align:center;
+      color:#1a2a3a; line-height:1.4; letter-spacing:0.05em;
+      text-align:center; cursor:pointer;
+      flex:1; min-height:0; overflow:hidden;
     `;
     kanaEl.textContent = q.answerText;
     wrap.appendChild(kanaEl);
@@ -1648,20 +1699,17 @@ document.querySelectorAll('.tab')[1].addEventListener('click', () => {
   setTimeout(() => { initPractice(); fixLayout(); }, 50);
 });
 
-// FONTPLUSフォント読み込み完了後に再描画（教科書フォント要素全体）
+// FONTPLUSフォント読み込み完了後に再描画
 function redrawKyokashoFonts() {
+  document.body.classList.add('fontplus-loaded');
   const qText = document.getElementById('qText');
   if (qText && qText.innerHTML) {
-    const c = qText.innerHTML; qText.innerHTML = ''; qText.innerHTML = c;
-  }
-  const wrap = document.getElementById('answerImagesWrap');
-  if (wrap && wrap.innerHTML) {
-    const c = wrap.innerHTML; wrap.innerHTML = ''; wrap.innerHTML = c;
+    const tmp = qText.innerHTML; qText.innerHTML = ''; qText.innerHTML = tmp;
   }
 }
 window.addEventListener('load', () => {
-  setTimeout(redrawKyokashoFonts, 500);
-  setTimeout(redrawKyokashoFonts, 1200);
+  setTimeout(redrawKyokashoFonts, 300);
+  setTimeout(redrawKyokashoFonts, 900);
 });
 </script>
 </body>
