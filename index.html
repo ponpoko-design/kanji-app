@@ -886,9 +886,8 @@ function menuShowData() {
   closeSettings();
   const data = loadPracticeData();
 
-  // オーバーレイ作成
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
 
   if (!data.length) {
     overlay.innerHTML = `
@@ -904,31 +903,49 @@ function menuShowData() {
   const max = Math.max(...sorted.map(q => q.missCount));
 
   const rows = sorted.map(q => {
-    const label = q.grade ? `${q.grade}年 単元${q.unit}` : `${q.id}番`;
+    const grade = q.grade ? `${q.grade}年` : '−';
+    const unit = q.unit ? `単元${q.unit}` : '−';
+    // 回答表示：漢字＋ひらがな
+    const answerKanji = (q.answerKanji || []).join('');
+    const answerText = q.answerText || '';
+    const answer = answerKanji + answerText || '−';
     const pct = max > 0 ? (q.missCount / max) * 100 : 0;
-    const text = q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question;
     return `
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-          <span style="font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;">${label}</span>
-          <span style="font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;">${text}</span>
-          <span style="font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;">${q.missCount}回</span>
-        </div>
-        <div style="background:#eee;border-radius:999px;height:10px;overflow:hidden;">
-          <div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;transition:width 0.5s;"></div>
-        </div>
-      </div>`;
+      <tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:10px 8px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
+        <td style="padding:10px 8px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
+        <td style="padding:10px 8px;font-size:13px;color:#1a3060;font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;white-space:nowrap;">${answer}</td>
+        <td style="padding:10px 8px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
+        <td style="padding:10px 8px;width:80px;">
+          <div style="background:#eee;border-radius:999px;height:8px;overflow:hidden;">
+            <div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div>
+          </div>
+        </td>
+      </tr>`;
   }).join('');
 
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
         <div style="font-size:17px;font-weight:700;color:#1a3060;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
         <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      ${rows}
+      <div style="overflow-y:auto;flex:1;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
+              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
+              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
+              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
+              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;width:80px;"></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     </div>`;
 
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
