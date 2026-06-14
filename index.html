@@ -5,22 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Klee+One&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
 <script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1"></script>
-<style>
-/* FONTPLUSフォントをブラウザに事前登録 → serif fallbackを防ぐ */
-@font-face {
-  font-family: 'I-OTF-G教科書Pro L';
-  src: local('I-OTF-G教科書Pro L');
-  font-display: block;
-}
-/* 教科書フォントを使う全要素に明示的に指定 */
-#qText, #qText *, .kana-box, .no-image-box, .kanji-placeholder {
-  font-family: 'I-OTF-G教科書Pro L' !important;
-  font-weight: normal !important;
-  font-style: normal !important;
-  font-synthesis: none !important;
-}
-</style>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
@@ -87,7 +71,7 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: 'Zen Maru Gothic', sans-serif;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif;
   background: #f0f4f8;
   -webkit-font-smoothing: antialiased;
 }
@@ -213,7 +197,7 @@ header {
   display:flex; align-items:center; justify-content:center;
   font-size: clamp(60px,15vw,220px);
   color:#1a2a3a;
-  font-family:'I-OTF-G教科書Pro L';
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   font-weight:400; line-height:1;
 }
 .no-image-box {
@@ -221,7 +205,7 @@ header {
   display:flex; align-items:center; justify-content:center;
   color:#1a2a3a;
   font-size: clamp(60px,15vw,220px);
-  font-family:'I-OTF-G教科書Pro L';
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   line-height:1;
 }
 .empty-msg {
@@ -309,36 +293,30 @@ header {
 
 #answerImagesWrap {
   width: 100%; height: 100%;
+  background: #fff;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: clamp(5px,1.2vw,8px);
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow-y: auto;
+  overflow-x: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-/* お手本タブのcardと同じ構造 */
-.kanji-img-box {
-  flex: 1;
-  min-height: 0;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  overflow: hidden;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.kanji-img-box img { width:100%; height:100%; object-fit:contain; display:block; padding:4px 10px; }
+.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.kanji-img-box img { max-height:35vh; width:auto; object-fit:contain; }
 .kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
 .kanji-placeholder {
   width:80px; height:140px; background:#eee; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:40px; color:#666;
-  font-family:'I-OTF-G教科書Pro L';
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
 }
 
 #rightPanel {
@@ -359,7 +337,7 @@ header {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: flex-start;
 }
 
@@ -367,23 +345,20 @@ header {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   height: 100%;
-  width: auto;
-  max-width: 100%;
-  font-size: 26px;
-  line-height: 1.5;
+  font-size: 29px;
+  line-height: 1.9;
   color: #1A1A1A;
-  font-family: 'I-OTF-G教科書Pro L' !important;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
   font-weight: normal !important;
-  font-style: normal !important;
-  font-synthesis: none !important;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
-#qText *, #qText span, #qText .underline-word {
-  font-family: 'I-OTF-G教科書Pro L' !important;
+#qText span, #qText .underline-word {
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
   font-weight: normal !important;
-  font-style: normal !important;
-  font-synthesis: none !important;
+  font-synthesis: none;
 }
 .underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
 
@@ -512,7 +487,7 @@ header {
   background:#eee; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:36px; color:#999;
-  font-family:'I-OTF-G教科書Pro L';
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
 }
 
 .result-buttons {
@@ -664,7 +639,7 @@ header {
 .popup-kana {
   font-size:clamp(200px,55vw,500px);
   color:#1a2a3a;
-  font-family:'I-OTF-G教科書Pro L';
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   font-weight:400; line-height:1; padding:10px;
   width:100%; height:100%;
   display:flex; align-items:center; justify-content:center;
@@ -1073,7 +1048,7 @@ ${inputText}
 
 function deleteAllData() {
   const pw = prompt('パスワードを入力してください');
-  if (pw !== '1223') {
+  if (pw !== 'BU_tensai12230727') {
     alert('パスワードが違います');
     return;
   }
@@ -1367,16 +1342,15 @@ function buildAnswerImages(q) {
 
   // よみがなのみ（画像なし） → 縦書きテキストだけ
   if (q.type === 'よみがなを書く' && (!q.answerKanji || q.answerKanji.length === 0) && q.answerText) {
-    // お手本タブと同じkana-box方式
-    const box = document.createElement('div');
-    box.className = 'kanji-img-box';
-    box.style.cursor = 'pointer';
-    const kana = document.createElement('div');
-    kana.className = 'kana-box';
-    kana.style.cssText = 'writing-mode:vertical-rl; text-orientation:mixed; line-height:1.4;';
-    kana.textContent = q.answerText;
-    box.appendChild(kana);
-    wrap.appendChild(box);
+    const textEl = document.createElement('div');
+    textEl.style.cssText = `
+      writing-mode:vertical-rl; text-orientation:mixed;
+      font-size:clamp(96px,24vw,165px);
+      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
+    `;
+    textEl.textContent = q.answerText;
+    wrap.appendChild(textEl);
     return;
   }
 
@@ -1385,6 +1359,7 @@ function buildAnswerImages(q) {
     q.answerKanji.forEach(kanji => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
+      box.style.cursor = 'pointer';
       const img = document.createElement('img');
       img.src = getImageUrl(kanji);
       img.alt = kanji;
@@ -1403,18 +1378,17 @@ function buildAnswerImages(q) {
     });
   }
 
-  // ひらがな部分（送り仮名など）
+  // ひらがな部分（送り仮名）: 1文字ずつkanji-img-boxに入れる
   if (q.answerText) {
-    // 送り仮名: お手本タブと同じkana-box方式
-    const box = document.createElement('div');
-    box.className = 'kanji-img-box';
-    box.style.cursor = 'pointer';
-    const kana = document.createElement('div');
-    kana.className = 'kana-box';
-    kana.style.cssText = 'writing-mode:vertical-rl; text-orientation:mixed; line-height:1.4;';
-    kana.textContent = q.answerText;
-    box.appendChild(kana);
-    wrap.appendChild(box);
+    [...q.answerText].forEach(ch => {
+      const box = document.createElement('div');
+      box.className = 'kanji-img-box';
+      const kana = document.createElement('div');
+      kana.className = 'kana-box';
+      kana.textContent = ch;
+      box.appendChild(kana);
+      wrap.appendChild(box);
+    });
   }
 }
 
@@ -1673,15 +1647,15 @@ document.querySelectorAll('.tab')[1].addEventListener('click', () => {
 });
 
 // FONTPLUSフォント読み込み完了後に再描画
-function redrawKyokashoFonts() {
-  const qText = document.getElementById('qText');
-  if (qText && qText.innerHTML) {
-    const tmp = qText.innerHTML; qText.innerHTML = ''; qText.innerHTML = tmp;
-  }
-}
 window.addEventListener('load', () => {
-  setTimeout(redrawKyokashoFonts, 300);
-  setTimeout(redrawKyokashoFonts, 1000);
+  setTimeout(() => {
+    const qText = document.getElementById('qText');
+    if (qText) {
+      const content = qText.innerHTML;
+      qText.innerHTML = '';
+      qText.innerHTML = content;
+    }
+  }, 500);
 });
 </script>
 </body>
