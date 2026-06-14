@@ -288,11 +288,16 @@ header {
   line-height: 1.9;
   color: #1A1A1A;
   font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+  font-weight: normal !important;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
   overflow-x: auto;
   overflow-y: hidden;
 }
 #qText span, #qText .underline-word {
   font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+  font-weight: normal !important;
+  font-synthesis: none;
 }
 .underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
 
@@ -1350,6 +1355,19 @@ function loadQuestion(i) {
   document.getElementById('answerBtn').style.display = 'flex';
   document.getElementById('resultButtons').style.display = 'none';
   document.getElementById('btnNext').style.display = 'none';
+
+  // フォントサイズ自動調整（枠に収まるまで縮小）
+  setTimeout(() => {
+    const wrap = document.getElementById('qVerticalWrap');
+    const text = document.getElementById('qText');
+    if (!wrap || !text) return;
+    text.style.fontSize = '29px';
+    let size = 29;
+    while (text.scrollWidth > wrap.clientHeight + 2 && size > 12) {
+      size -= 1;
+      text.style.fontSize = size + 'px';
+    }
+  }, 60);
 }
 
 function toggleAnswer() {
