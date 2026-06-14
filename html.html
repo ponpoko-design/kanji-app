@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://fonts.googleapis.com/css2?family=Klee+One&family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
+<script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1"></script>
+<title>漢字アプリ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif;
+  background: #f0f4f8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== 全体レイアウト ===== */
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: -webkit-fill-available;
+}
+
+/* ===== ヘッダー ===== */
+header {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #0d3d7a 0%, #1a6fc4 50%, #2ec4e8 100%);
+  padding: clamp(8px,2vw,14px) 16px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: clamp(8px,2vw,12px);
+}
+.header-top h1 {
+  color: #fff;
+  font-size: clamp(17px,4vw,24px);
+  font-weight: 700;
+  letter-spacing: 3px;
+  font-family: 'Zen Maru Gothic', serif;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* メニューボタン（右上） */
+.menu-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  border-radius: 10px;
+  padding: 6px 12px;
+  color: #fff;
+  font-size: 13px;
+  font-family: 'Zen Maru Gothic', serif;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.menu-btn:active { background: rgba(255,255,255,0.35); }
+
+/* タブ */
+.tabs {
+  display: flex;
+  gap: 3px;
+}
+.tab {
+  flex: 1;
+  padding: 9px 0;
+  text-align: center;
+  font-size: clamp(12px,3vw,15px);
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  font-family: 'Zen Maru Gothic', serif;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+.tab.active {
+  background: #f0f4f8;
+  color: #1a3060;
+}
+
+/* ===== コンテンツ ===== */
+.content { flex: 1; overflow: hidden; position: relative; }
+.page { display: none; height: 100%; flex-direction: column; }
+.page.active { display: flex; }
+
+/* ===== 漢字表示ページ ===== */
+.main-area {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(6px,1.5vw,10px) clamp(8px,2vw,14px) clamp(4px,1vw,8px);
+  display: flex;
+  flex-direction: column;
+}
+.result-area {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(5px,1.2vw,8px);
+}
+.card {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeSlide 0.25s ease both;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card img { width:100%; height:100%; object-fit:contain; display:block; padding:4px 10px; }
+.kana-box {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  font-size: clamp(60px,15vw,220px);
+  color:#1a2a3a;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-weight:400; line-height:1;
+}
+.no-image-box {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  color:#1a2a3a;
+  font-size: clamp(60px,15vw,220px);
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  line-height:1;
+}
+.empty-msg {
+  text-align:center; color:#90a8c0;
+  font-size:clamp(18px,4vw,24px);
+  padding:40px 0; line-height:2.2;
+  font-family:'Zen Maru Gothic',serif;
+}
+
+/* ボトムバー（漢字表示ページ） */
+.bottom-bar {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #0d3d7a 0%, #1a6fc4 50%, #2ec4e8 100%);
+  box-shadow: 0 -3px 14px rgba(0,0,0,0.18);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.history-row {
+  display:flex; flex-wrap:nowrap; gap:6px;
+  overflow-x:auto;
+  padding: clamp(8px,2vw,11px) 12px clamp(5px,1.5vw,7px);
+  scrollbar-width:none;
+}
+.history-row::-webkit-scrollbar { display:none; }
+.history-chip {
+  background:rgba(255,255,255,0.18);
+  border:1.5px solid rgba(255,255,255,0.55);
+  border-radius:22px;
+  padding:9px 15px;
+  font-size:clamp(13px,3vw,16px);
+  color:#fff;
+  font-family:'Zen Maru Gothic',serif;
+  font-weight:600;
+  cursor:pointer; white-space:nowrap; flex-shrink:0;
+}
+.history-chip:active { background:rgba(255,255,255,0.38); }
+.search-row {
+  display:flex; gap:8px; align-items:center;
+  padding: clamp(3px,1vw,5px) 10px clamp(6px,2vw,10px);
+}
+.search-row input {
+  flex:none; width:220px;
+  font-size:clamp(15px,3.5vw,22px);
+  padding: clamp(11px,2.2vw,14px) 16px;
+  border:none; border-radius:999px;
+  background:#fff; color:#1a2a3a; outline:none;
+  font-family:'Zen Maru Gothic',serif;
+}
+.search-row button {
+  flex-shrink:0;
+  background:#f0c040; color:#000000;
+  border:none; border-radius:999px;
+  padding: clamp(11px,2.2vw,14px) clamp(18px,3.5vw,26px);
+  font-size:clamp(14px,3.5vw,20px);
+  font-weight:700; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+  white-space:nowrap;
+}
+.search-row button:active { background:#d4a820; }
+
+/* ===== れんしゅうページ ===== */
+#page-practice { flex-direction:column; overflow:hidden; position:relative; }
+
+#questionArea {
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#practiceTop {
+  display: flex;
+  overflow: hidden;
+}
+
+#leftPanel {
+  flex: 0 0 66%;
+  background: #f0f4f8;
+  border-right: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  overflow: hidden;
+}
+
+#answerImagesWrap {
+  width: 100%; height: 100%;
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#answerImagesWrap.visible { opacity: 1; }
+
+.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.kanji-img-box img { max-height:35vh; width:auto; object-fit:contain; }
+.kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
+.kanji-placeholder {
+  width:80px; height:140px; background:#eee; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:40px; color:#666;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+}
+
+#rightPanel {
+  flex: 0 0 34%;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  gap: 8px;
+  overflow: hidden;
+}
+
+#qVerticalWrap {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  justify-content: flex-end;
+}
+
+#qText {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  height: 100%;
+  font-size: 29px;
+  line-height: 1.9;
+  color: #1A1A1A;
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif !important;
+  font-weight: normal !important;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+#qText span, #qText .underline-word {
+  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', 'Klee One', serif !important;
+  font-weight: normal !important;
+  font-synthesis: none;
+}
+.underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
+
+#practiceBottom {
+  flex-shrink: 0;
+  height: 80px;
+  background: #f0f4f8;
+  border-top: 1px solid #ddd;
+  padding: 10px 12px;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+#answerBtn {
+  flex: 1;
+  background: #f0c040; color: #1a3060;
+  font-size: 16px; font-weight: 700;
+  border: none; border-radius: 999px; cursor: pointer;
+  font-family: 'Zen Maru Gothic',serif;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+#answerBtn:active { background: #d4a820; }
+
+#resultButtons {
+  flex: 1;
+  gap: 10px;
+}
+#resultButtons.visible { display: flex; }
+
+#btnCorrect {
+  flex: 1;
+  background: #E8F5E9; color: #2E7D32;
+  font-size: 15px; font-weight: 700;
+  border: 2px solid #A5D6A7; border-radius: 999px; cursor: pointer;
+  font-family: 'Zen Maru Gothic',serif;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+#btnCorrect:active { background: #C8E6C9; }
+
+#btnWrong {
+  flex: 1;
+  background: #FFEBEE; color: #C62828;
+  font-size: 15px; font-weight: 700;
+  border: 2px solid #EF9A9A; border-radius: 999px; cursor: pointer;
+  font-family: 'Zen Maru Gothic',serif;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+#btnWrong:active { background: #FFCDD2; }
+
+#btnNext {
+  flex: 1;
+  background: #f0c040; color: #1a3060;
+  font-size: 16px; font-weight: 700;
+  border: none; border-radius: 999px; cursor: pointer;
+  font-family: 'Zen Maru Gothic',serif;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+#btnNext:active { background: #d4a820; }
+
+/* データなし */
+.no-data {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px; padding:40px; text-align:center;
+}
+.no-data-title { font-size:18px; font-weight:700; color:#1a3060; font-family:'Zen Maru Gothic',serif; }
+.no-data-desc { font-size:13px; color:#888; line-height:1.9; font-family:'Zen Maru Gothic',serif; }
+
+/* 完了画面 */
+.complete-screen {
+  display:none; position:absolute; inset:0; z-index:10;
+  background:#f0f4f8;
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:16px;
+  text-align:center; padding:40px;
+}
+.complete-screen.visible { display:flex; }
+.complete-title { font-size:26px; font-weight:700; color:#1A1A1A; font-family:'Zen Maru Gothic',serif; }
+.complete-sub { font-size:15px; color:#777; font-family:'Zen Maru Gothic',serif; }
+.btn-restart {
+  margin-top:8px; padding:14px 36px;
+  background:#2C2C2C; color:#fff;
+  font-size:15px; font-weight:700;
+  border:none; border-radius:999px; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+}
+
+/* 左：正解エリア */
+.left-panel {
+  flex: 0 0 66.666%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 10px 14px 14px;
+  background: #f0f4f8;
+  border-right: 1px solid #ddd;
+  gap: 10px;
+}
+.answer-btn {
+  width:100%; padding:13px;
+  background:#2C2C2C; color:#fff;
+  font-size:15px; font-weight:700;
+  border:none; border-radius:10px; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+  flex-shrink:0;
+}
+.answer-btn:active { background:#444; }
+.answer-btn.shown { background:#555; }
+
+.answer-images-wrap {
+  flex:1;
+  display:flex; flex-direction:row;
+  align-items:center; justify-content:center;
+  gap:12px;
+  opacity:0; transition:opacity 0.3s ease;
+  background:#fff; border-radius:12px;
+  padding:16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.answer-images-wrap.visible { opacity:1; }
+.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.kanji-img-box img { height:140px; width:auto; object-fit:contain; }
+.kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
+.kanji-placeholder {
+  width:80px; height:140px;
+  background:#eee; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; color:#999;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+}
+
+.result-buttons {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; flex-shrink:0;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.3s ease;
+}
+.result-buttons.visible { opacity:1; pointer-events:all; }
+.btn-correct {
+  padding:13px 8px;
+  background:#E8F5E9; color:#2E7D32;
+  font-size:14px; font-weight:700;
+  border:2px solid #A5D6A7; border-radius:10px; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+}
+.btn-correct:active { background:#C8E6C9; }
+.btn-wrong {
+  padding:13px 8px;
+  background:#FFEBEE; color:#C62828;
+  font-size:14px; font-weight:700;
+  border:2px solid #EF9A9A; border-radius:10px; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+}
+.btn-wrong:active { background:#FFCDD2; }
+.btn-next {
+  width:100%; padding:13px;
+  background:#1A6B3A; color:#fff;
+  font-size:15px; font-weight:700;
+  border:none; border-radius:10px; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+  flex-shrink:0; display:none;
+}
+.btn-next.visible { display:block; }
+
+/* 右：問題エリア */
+.right-panel {
+  flex: 0 0 33.333%;
+  display:flex; flex-direction:column;
+  padding:14px 14px 14px 10px;
+  gap:10px; overflow:hidden;
+}
+.q-meta { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+.q-id { font-size:20px; font-weight:700; color:#1A1A1A; font-family:'Zen Maru Gothic',serif; }
+.q-type { font-size:11px; color:#999; letter-spacing:0.05em; font-family:'Zen Maru Gothic',serif; }
+.q-vertical-wrap {
+  flex:1;
+  background:#fff; border-radius:12px;
+  padding:14px 10px;
+  display:flex; overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+.q-vertical {
+  writing-mode:vertical-rl; text-orientation:mixed;
+  width:100%; overflow-x:auto;
+  display:flex; align-items:flex-start; justify-content:flex-start;
+}
+.underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
+
+.miss-bar { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.miss-bar-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
+.miss-bar-track { flex:1; height:4px; background:#eee; border-radius:2px; overflow:hidden; }
+.miss-bar-fill { height:100%; background:#FF4D4D; border-radius:2px; transition:width 0.4s ease; }
+.miss-bar-count { font-size:11px; color:#FF4D4D; font-weight:700; min-width:28px; text-align:right; font-family:'Zen Maru Gothic',serif; }
+
+/* データなし表示 */
+.no-data {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px; padding:40px;
+  text-align:center;
+}
+.no-data-icon { font-size:56px; }
+.no-data-title { font-size:18px; font-weight:700; color:#1a3060; font-family:'Zen Maru Gothic',serif; }
+.no-data-desc { font-size:13px; color:#888; line-height:1.9; font-family:'Zen Maru Gothic',serif; }
+
+/* 完了画面 */
+.complete-screen {
+  display:none; position:absolute; inset:0;
+  background:#f0f4f8;
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:16px;
+  text-align:center; padding:40px;
+}
+.complete-screen.visible { display:flex; }
+.complete-emoji { font-size:64px; }
+.complete-title { font-size:26px; font-weight:700; color:#1A1A1A; font-family:'Zen Maru Gothic',serif; }
+.complete-sub { font-size:15px; color:#777; font-family:'Zen Maru Gothic',serif; }
+.btn-restart {
+  margin-top:8px; padding:14px 36px;
+  background:#2C2C2C; color:#fff;
+  font-size:15px; font-weight:700;
+  border:none; border-radius:999px; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+}
+
+/* ===== メニューオーバーレイ ===== */
+.menu-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.6); z-index:800;
+  align-items:flex-start; justify-content:flex-end;
+  padding-top:60px; padding-right:16px;
+}
+.menu-overlay.active { display:flex; }
+.menu-panel {
+  background:#fff; border-radius:16px;
+  width:240px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.3);
+  overflow:hidden;
+  animation:menuIn 0.18s ease;
+}
+@keyframes menuIn {
+  from { opacity:0; transform:translateY(-10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.menu-item {
+  display:flex; align-items:center; gap:12px;
+  padding:16px 20px;
+  font-size:15px; font-weight:700; color:#000000;
+  font-family:'Zen Maru Gothic',serif;
+  cursor:pointer; border-bottom:1px solid #f0f4f8;
+}
+.menu-item:last-child { border-bottom:none; }
+.menu-item:active { background:#f0f4f8; }
+.menu-item .menu-icon { font-size:20px; }
+.menu-item .menu-badge {
+  margin-left:auto;
+  background:#f0c040; color:#000000;
+  font-size:10px; font-weight:700;
+  padding:2px 7px; border-radius:10px;
+}
+
+/* ポップアップ（漢字表示用） */
+.popup-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.75); z-index:500;
+  align-items:center; justify-content:center;
+}
+.popup-overlay.active { display:flex; }
+.popup-inner {
+  background:#fff; border-radius:20px;
+  padding:12px; width:88vw; height:68vh;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 40px rgba(0,0,0,0.4);
+  animation:popIn 0.18s ease; position:relative;
+}
+@keyframes popIn {
+  from { opacity:0; transform:scale(0.86); }
+  to   { opacity:1; transform:scale(1); }
+}
+.popup-close {
+  position:absolute; bottom:10px; right:10px;
+  width:44px; height:44px;
+  background:#1a5fa8; color:#fff;
+  border:none; border-radius:50%;
+  font-size:22px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3); z-index:10;
+}
+.popup-inner img { width:100%; height:100%; object-fit:contain; }
+.popup-kana {
+  font-size:clamp(200px,55vw,500px);
+  color:#1a2a3a;
+  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-weight:400; line-height:1; padding:10px;
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+.stroke-btn {
+  position:absolute; bottom:10px; left:10px;
+  background:#1a5fa8; color:#fff;
+  border:none; border-radius:20px;
+  padding:8px 16px; font-size:14px;
+  font-family:'Zen Maru Gothic',serif; font-weight:700;
+  cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2); z-index:10;
+}
+
+/* 書き順オーバーレイ */
+.stroke-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.88); z-index:600;
+  flex-direction:column; align-items:center; justify-content:center; gap:20px;
+}
+.stroke-overlay.active { display:flex; }
+.stroke-box {
+  background:#fff; border-radius:20px;
+  width:82vw; height:62vh;
+  display:flex; align-items:center; justify-content:center;
+  padding:10px; position:relative;
+}
+.stroke-box svg { width:100%; height:100%; }
+.stroke-controls { display:flex; gap:14px; }
+.stroke-back-btn { background:#f0c040; color:#000000; border:none; border-radius:20px; padding:10px 28px; font-size:16px; font-family:'Zen Maru Gothic',serif; font-weight:700; cursor:pointer; }
+.stroke-replay-btn { background:#1a5fa8; color:#fff; border:none; border-radius:20px; padding:10px 28px; font-size:16px; font-family:'Zen Maru Gothic',serif; font-weight:700; cursor:pointer; }
+.stroke-title { color:#fff; font-size:20px; font-family:'Zen Maru Gothic',serif; font-weight:700; }
+.stroke-loading { color:#888; font-size:16px; font-family:'Zen Maru Gothic',serif; }
+
+@media screen and (max-width:390px) { .search-row input { width:52vw; } }
+@media screen and (max-height:680px) {
+  header { padding:6px 16px 0; }
+  .header-top h1 { font-size:16px; }
+  .tab { font-size:12px; padding:8px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- パスワード画面 -->
+<div id="passwordScreen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d3d7a 0%,#1a6fc4 50%,#2ec4e8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
+  <div style="font-family:'Zen Maru Gothic',serif;color:#fff;font-size:26px;font-weight:700;letter-spacing:4px;">漢字アプリ</div>
+  <div style="font-family:'Zen Maru Gothic',serif;color:rgba(255,255,255,0.8);font-size:15px;">パスワードを入力してください</div>
+  <input id="pwInput" type="password" placeholder="パスワード" style="font-size:20px;padding:12px 20px;border:none;border-radius:14px;width:240px;outline:none;text-align:center;font-family:'Zen Maru Gothic',serif;"/>
+  <button onclick="checkPassword()" style="background:#f0c040;color:#000000;border:none;border-radius:14px;padding:12px 36px;font-size:20px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">入る</button>
+  <div id="pwError" style="color:#ffcccc;font-size:14px;font-family:'Zen Maru Gothic',serif;min-height:20px;"></div>
+</div>
+<script>
+function checkPassword() {
+  if (document.getElementById('pwInput').value === 'BU_tensai12230727') {
+    localStorage.setItem('kanji_auth','ok');
+    document.getElementById('passwordScreen').style.display='none';
+  } else {
+    document.getElementById('pwError').textContent='パスワードが違います';
+    document.getElementById('pwInput').value='';
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown',e=>{ if(e.key==='Enter')checkPassword(); });
+if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('passwordScreen').style.display='none';
+</script>
+
+<div class="layout">
+
+  <!-- ヘッダー -->
+  <header>
+    <div class="header-top">
+      <h1>漢字アプリ</h1>
+      <button class="menu-btn" onclick="openMenu()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('display',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>お手本を表示
+      </div>
+      <div class="tab" onclick="switchTab('practice',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>漢字道場
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- 漢字表示ページ -->
+    <div class="page active" id="page-display">
+      <div class="main-area">
+        <div class="result-area" id="output">
+          <p class="empty-msg">文字を入力して「表示」をクリック。<br>ひらがな･小学校で習わない漢字は、<br>フォントで表示されます。</p>
+        </div>
+      </div>
+      <div class="bottom-bar">
+        <div class="history-row" id="historyArea"></div>
+        <div class="search-row">
+          <input type="text" id="textInput" placeholder="例：一日千秋" maxlength="30"/>
+          <button onclick="doDisplay()">表示</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- れんしゅうページ -->
+    <div class="page" id="page-practice">
+
+      <!-- データなし -->
+      <div class="no-data" id="noDataMsg">
+        <div style="margin-bottom:8px;">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#90a8c0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        </div>
+        <div class="no-data-title">問題がありません</div>
+        <div class="no-data-desc">右上のメニューから<br>「問題を読み込む」を押して<br>テストの写真を取り込んでください</div>
+      </div>
+
+      <!-- 問題エリア：テスト済みのシンプル構造 -->
+      <div id="questionArea" style="display:none;">
+
+        <!-- 上：左右分割 -->
+        <div id="practiceTop">
+          <!-- 左2/3：正解 -->
+          <div id="leftPanel">
+            <div id="answerImagesWrap"></div>
+          </div>
+          <!-- 右1/3：問題 -->
+          <div id="rightPanel">
+            <div style="flex-shrink:0;">
+              <div id="qId" style="font-size:20px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">1番</div>
+              <div id="qType" style="font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;">漢字を書く</div>
+            </div>
+            <div id="qVerticalWrap">
+              <div id="qText"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;">まちがい</span>
+              <div style="flex:1;height:3px;background:#eee;border-radius:2px;overflow:hidden;"><div id="missBarFill" style="height:100%;background:#FF4D4D;border-radius:2px;transition:width 0.4s;"></div></div>
+              <span id="missBarCount" style="font-size:10px;color:#FF4D4D;font-weight:700;min-width:24px;text-align:right;font-family:'Zen Maru Gothic',serif;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 下：ボタン -->
+        <div id="practiceBottom">
+          <button id="answerBtn" onclick="toggleAnswer()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            答えを見る
+          </button>
+          <div id="resultButtons" style="display:none;">
+            <button id="btnCorrect" onclick="recordResult(true)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              あってた
+            </button>
+            <button id="btnWrong" onclick="recordResult(false)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              まちがえた
+            </button>
+          </div>
+          <button id="btnNext" onclick="nextQuestion()" style="display:none;">
+            次の問題
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 完了画面 -->
+      <div class="complete-screen" id="completeScreen">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        <div class="complete-title">おわったよ！</div>
+        <div class="complete-sub" id="completeSub"></div>
+        <button class="btn-restart" onclick="restartPractice()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>もう一度やる
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- メニューオーバーレイ -->
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()">
+  <div class="menu-panel" onclick="event.stopPropagation()">
+    <div class="menu-item" onclick="menuLoadQuestions()">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+      問題を読み込む
+    </div>
+    <div class="menu-item" onclick="menuShowData()">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+      まちがい一覧
+    </div>
+    <div class="menu-item" onclick="menuSettings()">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+      設定
+    </div>
+    <div class="menu-item" onclick="closeMenu()">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+      閉じる
+    </div>
+  </div>
+</div>
+
+<!-- 設定オーバーレイ（今後実装予定） -->
+<div class="menu-overlay" id="settingsOverlay" onclick="closeSettings()">
+  <div class="menu-panel" onclick="event.stopPropagation()" style="width:280px;">
+    <div style="padding:16px 20px 8px; font-size:13px; color:#999; font-family:'Zen Maru Gothic',serif; border-bottom:1px solid #f0f4f8;">設定</div>
+    <div class="menu-item" onclick="closeSettings();showApiKeySetup();">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+      APIキーを設定
+    </div>
+    <div class="menu-item" onclick="closeSettings();deleteAllData();" style="color:#C62828;">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>
+      データを全削除
+    </div>
+    <div class="menu-item" onclick="closeSettings()">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+      閉じる
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ（漢字表示用） -->
+<div class="popup-overlay" id="popupOverlay" onclick="closePopup()">
+  <div class="popup-inner" id="popupInner" onclick="event.stopPropagation()">
+    <button class="popup-close" onclick="closePopup()">✕</button>
+  </div>
+</div>
+
+<!-- 書き順オーバーレイ -->
+<div class="stroke-overlay" id="strokeOverlay">
+  <div class="stroke-title" id="strokeTitle">書き順</div>
+  <div class="stroke-box" id="strokeBox"><div class="stroke-loading">読み込み中...</div></div>
+  <div class="stroke-controls">
+    <button class="stroke-replay-btn" onclick="replayStroke()">もう一度</button>
+    <button class="stroke-back-btn" onclick="closeStroke()">← 戻る</button>
+  </div>
+</div>
+
+<script>
+// ===== 共通設定 =====
+const BASE_URL = 'https://ponpoko-design.github.io/kanji-app/images/';
+const SMALL_KANA = 'ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ';
+function isSmallKana(ch) { return SMALL_KANA.includes(ch); }
+function getImageUrl(ch) { return BASE_URL + 'kanji_' + encodeURIComponent(ch) + '.png'; }
+function imageExists(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+// ===== タブ切り替え =====
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'display') fixLayout();
+}
+
+// ===== 学年自動判定 =====
+function getCurrentGrade() {
+  const now = new Date();
+  // 2027年2月1日以降は6年
+  if (now >= new Date('2027-02-01')) return 6;
+  return 5;
+}
+
+// ===== メニュー =====
+function openMenu() { document.getElementById('menuOverlay').classList.add('active'); }
+function closeMenu() { document.getElementById('menuOverlay').classList.remove('active'); }
+function openSettings() { document.getElementById('settingsOverlay').classList.add('active'); }
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
+
+function menuSettings() {
+  closeMenu();
+  openSettings();
+}
+
+// ===== APIキー（LocalStorageから取得） =====
+function getOpenAIKey() { return localStorage.getItem('kanji_openai_key') || ''; }
+function getClaudeKey() { return localStorage.getItem('kanji_claude_key') || ''; }
+
+async function menuLoadQuestions() {
+  closeMenu();
+
+  // APIキー未設定なら設定画面へ
+  if (!getClaudeKey()) {
+    showApiKeySetup();
+    return;
+  }
+
+  // テキスト入力画面を表示
+  showTextInputScreen();
+}
+
+function showTextInputScreen() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">問題を入力</div>
+        <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-top:4px;">下線部分を &lt;u&gt;〜&lt;/u&gt; で囲んで入力してください</div>
+      </div>
+      <div style="padding:16px;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;line-height:1.8;">
+          例：<br>
+          一矢&lt;u&gt;ムクイル&lt;/u&gt;<br>
+          &lt;u&gt;余興&lt;/u&gt;を楽しむ
+        </div>
+        <textarea id="questionInput" placeholder="ここに問題をペーストしてください"
+          style="flex:1;min-height:160px;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:'Zen Maru Gothic',serif;outline:none;resize:none;line-height:1.8;"></textarea>
+      </div>
+      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
+        <button onclick="submitQuestionText(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">答えを調べる</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+async function submitQuestionText(btn) {
+  const text = document.getElementById('questionInput').value.trim();
+  if (!text) { alert('問題を入力してください'); return; }
+
+  const overlay = btn.closest('[style*=fixed]');
+  overlay.remove();
+
+  const loading = showLoadingOverlay('🔍 答えを調べています...');
+
+  try {
+    const questions = await callClaudeForAnswers(text);
+    loading.remove();
+    showConfirmQuestions(questions, getCurrentGrade(), null);
+  } catch(e) {
+    loading.remove();
+    alert('エラーが発生しました：' + e.message);
+  }
+}
+
+async function callClaudeForAnswers(inputText) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': getClaudeKey(),
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: `以下は小学生の漢字テストの問題です。<u>タグで囲まれた部分が答えを書く箇所です。
+
+${inputText}
+
+各問題の正解を調べて、以下のJSON形式で返してください：
+[
+  {
+    "no": 1,
+    "question": "一矢ムクイル",
+    "underline": "ムクイル",
+    "type": "漢字を書く",
+    "answerKanji": ["報"],
+    "answerText": "いる"
+  },
+  {
+    "no": 2,
+    "question": "余興を楽しむ",
+    "underline": "余興",
+    "type": "よみがなを書く",
+    "answerKanji": [],
+    "answerText": "よきょう"
+  }
+]
+
+ルール：
+・<u>タグ内がカタカナ→漢字を書く問題：type:"漢字を書く"、answerKanjiに漢字、送り仮名はanswerTextに
+・<u>タグ内が漢字→よみがなを書く問題：type:"よみがなを書く"、answerKanji:[]、answerTextにひらがな
+・noは1から順番に振る
+・questionから<u>タグを除いた文章をquestionに、<u>タグ内の文字をunderlineに入れる
+・JSONのみ出力してください`
+      }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'APIエラー');
+  }
+
+  const data = await res.json();
+  const text = data.content?.[0]?.text || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+function deleteAllData() {
+  if (confirm('全てのデータを削除しますか？\nこの操作は取り消せません。')) {
+    localStorage.removeItem('kanji_practice_data');
+    alert('✅ データを削除しました');
+    location.reload();
+  }
+}
+
+// ===== APIキー設定画面 =====
+function showApiKeySetup() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const openaiVal = getOpenAIKey();
+  const claudeVal = getClaudeKey();
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;">
+      <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">APIキーの設定</div>
+      <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:20px;">このiPhoneにのみ保存されます</div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">OpenAI APIキー</div>
+        <input id="openaiKeyInput" type="password" placeholder="sk-proj-..." value="${openaiVal}"
+          style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
+      </div>
+      <div style="margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">Claude APIキー</div>
+        <input id="claudeKeyInput" type="password" placeholder="sk-ant-..." value="${claudeVal}"
+          style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
+        <button onclick="saveApiKeys(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">保存する</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function saveApiKeys(btn) {
+  const openai = document.getElementById('openaiKeyInput').value.trim();
+  const claude = document.getElementById('claudeKeyInput').value.trim();
+  if (!openai || !claude) { alert('両方のキーを入力してください'); return; }
+  localStorage.setItem('kanji_openai_key', openai);
+  localStorage.setItem('kanji_claude_key', claude);
+  btn.closest('[style*=fixed]').remove();
+  alert('✅ APIキーを保存しました！\nメニューから「問題を読み込む」を押してください。');
+}
+
+// 読み込みオーバーレイ
+function showLoadingOverlay(msg) {
+  const overlay = document.createElement('div');
+  overlay.id = 'loadingOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
+  overlay.innerHTML = `
+    <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#f0c040;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <div id="loadingMsg" style="color:#fff;font-size:16px;font-family:'Zen Maru Gothic',serif;text-align:center;">${msg}</div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+function updateLoadingOverlay(overlay, msg) {
+  const el = overlay.querySelector('#loadingMsg');
+  if (el) el.textContent = msg;
+}
+
+// 画像をbase64に変換
+
+// 確認画面
+function showConfirmQuestions(questions, grade, unit) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  const rows = questions.map((q, i) => {
+    const answer = (q.answerKanji||[]).join('') + (q.answerText||'');
+    return `
+      <tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:8px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;">${q.no}番</td>
+        <td style="padding:8px;font-size:13px;color:#000;font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;">${q.underline}</td>
+        <td style="padding:8px;font-size:14px;color:#000;font-family:'Klee One',serif;font-weight:700;">${answer}</td>
+        <td style="padding:8px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;">${q.type}</td>
+      </tr>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">読み取り結果の確認</div>
+        <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-top:4px;">${grade}年 単元${unit} · ${questions.length}問</div>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:8px 0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f8f9fa;">
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">番号</th>
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">問題箇所</th>
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">正解</th>
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">種類</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">やり直す</button>
+        <button onclick="confirmSaveQuestions(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">✓ これで保存する</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function confirmSaveQuestions(btn) {
+  const questions = JSON.parse(btn.dataset.questions);
+  const grade = parseInt(btn.dataset.grade);
+
+  btn.closest('[style*=fixed]').remove();
+
+  // 単元番号を聞く
+  const unitStr = prompt('単元番号を入力してください（例：16）');
+  if (!unitStr) return;
+  const unit = parseInt(unitStr);
+  const today = new Date().toISOString().split('T')[0];
+
+  const existing = loadPracticeData();
+  const newItems = questions.map(q => ({
+    id: q.no,
+    grade: grade,
+    unit: unit,
+    registeredAt: today,
+    type: q.type,
+    question: q.question,
+    underline: q.underline,
+    answerKanji: q.answerKanji || [],
+    answerText: q.answerText || '',
+    missCount: 0,
+    charMiss: {}
+  }));
+
+  const updated = [...existing.filter(e => !(e.grade === grade && e.unit === unit)), ...newItems];
+  savePracticeData(updated);
+
+  alert(`✅ ${newItems.length}問を保存しました！`);
+  switchTab('practice', document.querySelectorAll('.tab')[1]);
+  setTimeout(() => initPractice(), 100);
+}
+
+function menuShowData() {
+  closeMenu();
+  closeSettings();
+  const data = loadPracticeData();
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  if (!data.length) {
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;padding:32px;text-align:center;font-family:'Zen Maru Gothic',serif;">
+        <div style="font-size:16px;color:#666;margin-bottom:20px;">まだデータがありません</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:#f0c040;color:#000000;border:none;border-radius:999px;padding:10px 28px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">閉じる</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    return;
+  }
+
+  const sorted = [...data].sort((a,b) => b.missCount - a.missCount);
+  const max = Math.max(...sorted.map(q => q.missCount));
+
+  const rows = sorted.map(q => {
+    const grade = q.grade ? `${q.grade}年` : '−';
+    const unit = q.unit ? `単元${q.unit}` : '−';
+    // 回答表示：漢字＋ひらがな
+    const answerKanji = (q.answerKanji || []).join('');
+    const answerText = q.answerText || '';
+    const answer = answerKanji + answerText || '−';
+    const pct = max > 0 ? (q.missCount / max) * 100 : 0;
+    return `
+      <tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:10px 8px;font-size:14px;color:#000000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
+        <td style="padding:10px 8px;font-size:14px;color:#000000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
+        <td style="padding:10px 8px;font-size:15px;color:#000000;font-family:'Klee One',serif;white-space:nowrap;">${answer}</td>
+        <td style="padding:10px 8px;font-size:14px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
+        <td style="padding:10px 8px;width:80px;">
+          <div style="background:#eee;border-radius:999px;height:8px;overflow:hidden;">
+            <div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000000;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="overflow-y:auto;flex:1;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
+              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
+              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
+              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
+              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;width:80px;"></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+
+// ===== れんしゅうデータ管理 =====
+function loadPracticeData() {
+  return JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
+}
+function savePracticeData(data) {
+  localStorage.setItem('kanji_practice_data', JSON.stringify(data));
+}
+
+// サンプルデータ（APIが使えるまでの仮データ）
+function loadSampleData(grade, unit) {
+  grade = grade || getCurrentGrade();
+  unit = unit || 1;
+  const today = new Date().toISOString().split('T')[0];
+  const sample = [
+    { id:1, grade:grade, unit:unit, registeredAt:today, type:"よみがなを書く", question:"北海道から空輸される。", underline:"空輸", answerKanji:[], answerText:"くうゆ", missCount:1 },
+    { id:5, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"大事な荷物をアズカル。", underline:"アズカル", answerKanji:["預"], answerText:"かる", missCount:1 },
+    { id:8, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"説明をショウリャクする。", underline:"ショウリャク", answerKanji:["省","略"], answerText:"", missCount:1 },
+  ];
+  savePracticeData(sample);
+  initPractice();
+}
+
+// ===== れんしゅう =====
+let session = [], current = 0, correctCount = 0, answerShown = false;
+
+function initPractice() {
+  const data = loadPracticeData();
+  if (!data.length) {
+    document.getElementById('noDataMsg').style.display = 'flex';
+    document.getElementById('questionArea').style.display = 'none';
+    return;
+  }
+  session = [...data].sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  current = 0; correctCount = 0;
+  document.getElementById('noDataMsg').style.display = 'none';
+  document.getElementById('questionArea').style.display = 'flex';
+  document.getElementById('questionArea').style.flexDirection = 'column';
+  document.getElementById('completeScreen').classList.remove('visible');
+  loadQuestion(0);
+  setTimeout(fixLayout, 10);
+}
+
+function buildQ(question, underline) {
+  // 先頭の句点を除去
+  const cleaned = question.replace(/^[。、・\s]+/, '');
+  if (!underline) return document.createTextNode(cleaned);
+  const parts = cleaned.split(underline);
+  const span = document.createElement('span');
+  parts.forEach((p, i) => {
+    span.appendChild(document.createTextNode(p));
+    if (i < parts.length - 1) {
+      const u = document.createElement('span');
+      u.className = 'underline-word';
+      u.textContent = underline;
+      span.appendChild(u);
+    }
+  });
+  return span;
+}
+
+function buildAnswerImages(q) {
+  const wrap = document.getElementById('answerImagesWrap');
+  wrap.innerHTML = '';
+
+  // よみがなのみ（画像なし） → 縦書きテキストだけ
+  if (q.type === 'よみがなを書く' && (!q.answerKanji || q.answerKanji.length === 0) && q.answerText) {
+    const textEl = document.createElement('div');
+    textEl.style.cssText = `
+      writing-mode:vertical-rl; text-orientation:mixed;
+      font-size:clamp(96px,24vw,165px);
+      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
+    `;
+    textEl.textContent = q.answerText;
+    wrap.appendChild(textEl);
+    return;
+  }
+
+  // 漢字画像（複数可）＋ ひらがな（あれば）を縦1列・中央揃えで表示
+  if (q.answerKanji && q.answerKanji.length > 0) {
+    q.answerKanji.forEach(kanji => {
+      const box = document.createElement('div');
+      box.className = 'kanji-img-box';
+      box.style.cursor = 'pointer';
+      const img = document.createElement('img');
+      img.src = getImageUrl(kanji);
+      img.alt = kanji;
+      img.onerror = function() {
+        this.style.display = 'none';
+        const ph = document.createElement('div');
+        ph.className = 'kanji-placeholder';
+        ph.textContent = kanji;
+        ph.style.cursor = 'pointer';
+        ph.onclick = () => openPopup(kanji, false);
+        box.insertBefore(ph, this);
+      };
+      box.onclick = () => openPopup(kanji, true);
+      box.appendChild(img);
+      wrap.appendChild(box);
+    });
+  }
+
+  // ひらがな部分（送り仮名など）
+  if (q.answerText) {
+    const kanaEl = document.createElement('div');
+    kanaEl.style.cssText = `
+      writing-mode:vertical-rl; text-orientation:mixed;
+      font-size:clamp(96px,24vw,165px);
+      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
+      text-align:center;
+    `;
+    kanaEl.textContent = q.answerText;
+    wrap.appendChild(kanaEl);
+  }
+}
+
+function loadQuestion(i) {
+  const q = session[i];
+  answerShown = false;
+  const maxMiss = Math.max(...session.map(x => x.missCount));
+  document.getElementById('qId').textContent = q.grade ? `${q.grade}年 単元${q.unit}` : `${q.id}番`;
+  document.getElementById('qType').textContent = q.type;
+  const qt = document.getElementById('qText');
+  qt.innerHTML = '';
+  qt.appendChild(buildQ(q.question, q.underline));
+  buildAnswerImages(q);
+  document.getElementById('missBarFill').style.width = (maxMiss > 0 ? (q.missCount/maxMiss)*100 : 0) + '%';
+  document.getElementById('missBarCount').textContent = q.missCount + '回';
+  // リセット
+  document.getElementById('answerImagesWrap').classList.remove('visible');
+  document.getElementById('answerBtn').style.display = 'flex';
+  document.getElementById('resultButtons').style.display = 'none';
+  document.getElementById('btnNext').style.display = 'none';
+
+  // フォントサイズ自動調整（枠に収まるまで縮小）
+  setTimeout(() => {
+    const wrap = document.getElementById('qVerticalWrap');
+    const text = document.getElementById('qText');
+    if (!wrap || !text) return;
+    text.style.fontSize = '29px';
+    let size = 29;
+    while (text.scrollWidth > wrap.clientHeight + 2 && size > 12) {
+      size -= 1;
+      text.style.fontSize = size + 'px';
+    }
+  }, 60);
+}
+
+function toggleAnswer() {
+  if (answerShown) return;
+  answerShown = true;
+  document.getElementById('answerImagesWrap').classList.add('visible');
+  document.getElementById('answerBtn').style.display = 'none';
+  document.getElementById('resultButtons').style.display = 'flex';
+}
+
+function recordResult(correct) {
+  if (correct) correctCount++;
+  else {
+    const data = loadPracticeData();
+    const q = session[current];
+    const item = data.find(d => d.id === q.id);
+    if (item) {
+      item.missCount++;
+      if (!item.charMiss) item.charMiss = {};
+      q.answerKanji.forEach(k => { item.charMiss[k] = (item.charMiss[k] || 0) + 1; });
+      savePracticeData(data);
+    }
+  }
+  // 即座に答えを隠す
+  document.getElementById('answerImagesWrap').classList.remove('visible');
+  document.getElementById('resultButtons').style.display = 'none';
+  document.getElementById('btnNext').style.display = 'flex';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= session.length) showComplete();
+  else loadQuestion(current);
+}
+
+function showComplete() {
+  document.getElementById('completeScreen').classList.add('visible');
+  document.getElementById('completeSub').textContent = `${session.length}問中 ${correctCount}問 正解`;
+}
+
+function restartPractice() {
+  document.getElementById('completeScreen').classList.remove('visible');
+  initPractice();
+}
+
+// ===== 漢字表示機能 =====
+let searchHistory = JSON.parse(localStorage.getItem('kanji_history') || '["木目","野矢","油薬","問門役訳約","夜の木"]');
+function saveHistory() { localStorage.setItem('kanji_history', JSON.stringify(searchHistory)); }
+function updateHistoryChips() {
+  const area = document.getElementById('historyArea');
+  area.innerHTML = '';
+  searchHistory.slice(0,5).forEach(h => {
+    const chip = document.createElement('span');
+    chip.className = 'history-chip';
+    chip.textContent = h;
+    chip.onclick = () => { document.getElementById('textInput').value = h; doDisplay(); };
+    area.appendChild(chip);
+  });
+}
+
+function openPopup(ch, hasImage) {
+  const inner = document.getElementById('popupInner');
+  Array.from(inner.children).forEach(el => { if (!el.classList.contains('popup-close')) el.remove(); });
+  if (hasImage) {
+    const img = document.createElement('img');
+    img.src = getImageUrl(ch); img.alt = ch;
+    inner.appendChild(img);
+  } else {
+    const d = document.createElement('div');
+    d.className = 'popup-kana'; d.textContent = ch;
+    inner.appendChild(d);
+  }
+  if (!ch.match(/[぀-ゟ゠-ヿ]/)) {
+    const btn = document.createElement('button');
+    btn.className = 'stroke-btn'; btn.textContent = '書き順を見る ▶';
+    btn.onclick = e => { e.stopPropagation(); openStroke(ch); };
+    inner.appendChild(btn);
+  }
+  document.getElementById('popupOverlay').classList.add('active');
+}
+function closePopup() { document.getElementById('popupOverlay').classList.remove('active'); }
+
+let currentStrokeChar = '';
+async function openStroke(ch) {
+  currentStrokeChar = ch;
+  document.getElementById('strokeTitle').textContent = '「' + ch + '」の書き順';
+  document.getElementById('strokeBox').innerHTML = '<div class="stroke-loading">読み込み中...</div>';
+  document.getElementById('strokeOverlay').classList.add('active');
+  const code = ch.codePointAt(0).toString(16).padStart(5,'0');
+  try {
+    const res = await fetch('https://kan-g.vnaka.dev/k/' + code + '.svg');
+    if (!res.ok) throw new Error();
+    const svgText = await res.text();
+    const box = document.getElementById('strokeBox');
+    box.innerHTML = svgText;
+    const svg = box.querySelector('svg');
+    if (svg) {
+      svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
+      const paths = svg.querySelectorAll('path');
+      const countEl = document.createElement('div');
+      countEl.textContent = paths.length + '画';
+      countEl.style.cssText = 'position:absolute;top:10px;right:12px;font-size:16px;font-family:"Zen Maru Gothic",serif;font-weight:700;color:#1a5fa8;background:#f0f6ff;border:1.5px solid #b0ccee;border-radius:8px;padding:3px 10px;z-index:10;';
+      box.appendChild(countEl);
+      const numberEls = svg.querySelectorAll('text,[id*="StrokeNumbers"],[id*="Number"]');
+      numberEls.forEach(el => el.style.opacity = '0');
+      const grayGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+      paths.forEach(path => {
+        const clone = path.cloneNode(true);
+        clone.style.stroke='#f0f0f0'; clone.style.strokeWidth='3'; clone.style.fill='none';
+        grayGroup.appendChild(clone);
+      });
+      svg.insertBefore(grayGroup, svg.firstChild);
+      paths.forEach(path => {
+        const len = path.getTotalLength ? path.getTotalLength() : 300;
+        path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+        path.style.stroke='#1a2a3a'; path.style.strokeWidth='4'; path.style.fill='none';
+        path.style.transition='none';
+      });
+      setTimeout(() => {
+        paths.forEach((path,i) => {
+          setTimeout(() => { path.style.transition='stroke-dashoffset 0.6s ease'; path.style.strokeDashoffset='0'; }, i*800);
+        });
+        setTimeout(() => {
+          numberEls.forEach(el => { el.style.transition='opacity 0.5s ease'; el.style.opacity='1'; });
+        }, paths.length*800+700);
+      }, 500);
+    }
+  } catch(e) {
+    document.getElementById('strokeBox').innerHTML = '<div class="stroke-loading">データが見つかりませんでした</div>';
+  }
+}
+function replayStroke() { openStroke(currentStrokeChar); }
+function closeStroke() { document.getElementById('strokeOverlay').classList.remove('active'); }
+
+async function doDisplay() {
+  const raw = document.getElementById('textInput').value;
+  const output = document.getElementById('output');
+  output.innerHTML = '';
+  if (!raw.trim()) { output.innerHTML = '<p class="empty-msg">文字を入力して「表示」を押してください。</p>'; return; }
+  searchHistory = [raw, ...searchHistory.filter(h => h !== raw)].slice(0,5);
+  saveHistory(); updateHistoryChips();
+  const chars = [...raw].filter(ch => ch.trim() !== '');
+  const cards = [];
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
+    const card = document.createElement('div');
+    card.className = 'card'; card.style.animationDelay = (i*60)+'ms';
+    if (ch.match(/[\u3040-\u309F\u30A0-\u30FF]/)) {
+      card.onclick = () => openPopup(ch, false);
+      const box = document.createElement('div');
+      box.className = isSmallKana(ch) ? 'kana-box small-kana' : 'kana-box';
+      box.textContent = ch; card.appendChild(box);
+    } else {
+      const url = getImageUrl(ch);
+      const imgEl = await imageExists(url);
+      if (imgEl) {
+        card.onclick = () => openPopup(ch, true);
+        imgEl.alt = ch; card.appendChild(imgEl);
+      } else {
+        card.onclick = () => openPopup(ch, false);
+        const box = document.createElement('div');
+        box.className = 'no-image-box';
+        box.innerHTML = '<div>' + ch + '</div>';
+        card.appendChild(box);
+      }
+    }
+    cards.push(card);
+  }
+  cards.forEach(c => output.appendChild(c));
+  fixLayout();
+  requestAnimationFrame(() => {
+    output.querySelectorAll('.card').forEach(card => {
+      const h = card.offsetHeight, w = card.offsetWidth;
+      const baseSize = Math.floor(Math.min(h,w)*0.82);
+      const box = card.querySelector('.kana-box,.no-image-box');
+      if (!box) return;
+      if (box.classList.contains('small-kana')) {
+        const smallSize = Math.floor(baseSize*0.75);
+        box.style.fontSize = smallSize+'px';
+        box.style.position='absolute'; box.style.width='auto'; box.style.height='auto';
+        box.style.left = Math.floor(w/2-smallSize*0.15)+'px';
+        box.style.top = Math.max(Math.floor(h/4-smallSize/2),4)+'px';
+        card.style.position='relative';
+      } else { box.style.fontSize = baseSize+'px'; }
+    });
+  });
+}
+
+document.getElementById('textInput').addEventListener('keydown', e => { if(e.key==='Enter') doDisplay(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closePopup(); });
+
+function fixLayout() {
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const headerH = document.querySelector('header').offsetHeight;
+
+  // 漢字表示ページ
+  const bottomH = document.querySelector('.bottom-bar') ? document.querySelector('.bottom-bar').offsetHeight : 0;
+  const mainArea = document.querySelector('.main-area');
+  if (mainArea) { mainArea.style.height = Math.max(vh-headerH-bottomH,80)+'px'; mainArea.style.flex='none'; }
+
+  // れんしゅうページ：ヘッダー分を引いた残りをquestionAreaに設定
+  const contentH = Math.max(vh - headerH, 100);
+  const practiceBottom = document.getElementById('practiceBottom');
+  const bottomBtnH = practiceBottom ? practiceBottom.offsetHeight || 80 : 80;
+  const qa = document.getElementById('questionArea');
+  if (qa && qa.style.display !== 'none') {
+    qa.style.height = contentH + 'px';
+    const pt = document.getElementById('practiceTop');
+    if (pt) pt.style.height = (contentH - bottomBtnH) + 'px';
+  }
+}
+fixLayout();
+window.addEventListener('resize', fixLayout);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fixLayout);
+  window.visualViewport.addEventListener('scroll', fixLayout);
+}
+updateHistoryChips();
+
+// れんしゅうページを開いたらデータ確認
+document.querySelectorAll('.tab')[1].addEventListener('click', () => {
+  setTimeout(() => { initPractice(); fixLayout(); }, 50);
+});
+
+// FONTPLUSフォント読み込み完了後に再描画
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const qText = document.getElementById('qText');
+    if (qText) {
+      const content = qText.innerHTML;
+      qText.innerHTML = '';
+      qText.innerHTML = content;
+    }
+  }, 500);
+});
+</script>
+</body>
+</html>
