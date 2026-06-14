@@ -71,7 +71,7 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif;
+  font-family: 'Zen Maru Gothic', sans-serif;
   background: #f0f4f8;
   -webkit-font-smoothing: antialiased;
 }
@@ -197,7 +197,7 @@ header {
   display:flex; align-items:center; justify-content:center;
   font-size: clamp(60px,15vw,220px);
   color:#1a2a3a;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-family:'I-OTF-G教科書Pro L';
   font-weight:400; line-height:1;
 }
 .no-image-box {
@@ -205,7 +205,7 @@ header {
   display:flex; align-items:center; justify-content:center;
   color:#1a2a3a;
   font-size: clamp(60px,15vw,220px);
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-family:'I-OTF-G教科書Pro L';
   line-height:1;
 }
 .empty-msg {
@@ -300,23 +300,22 @@ header {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px;
+  padding: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:4px; }
-.kanji-img-box img { max-height:35vh; width:auto; object-fit:contain; }
+.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-height:0; width:100%; }
+.kanji-img-box img { width:auto; height:100%; max-width:100%; object-fit:contain; display:block; }
 .kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
 .kanji-placeholder {
   width:80px; height:140px; background:#eee; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:40px; color:#666;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-family:'I-OTF-G教科書Pro L';
 }
 
 #rightPanel {
@@ -348,17 +347,19 @@ header {
   font-size: 29px;
   line-height: 1.9;
   color: #1A1A1A;
-  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+  font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
-  font-synthesis: none;
+  font-style: normal !important;
+  font-synthesis: none !important;
   -webkit-font-smoothing: antialiased;
   overflow-x: auto;
   overflow-y: hidden;
 }
-#qText span, #qText .underline-word {
-  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+#qText *, #qText span, #qText .underline-word {
+  font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
-  font-synthesis: none;
+  font-style: normal !important;
+  font-synthesis: none !important;
 }
 .underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
 
@@ -487,7 +488,7 @@ header {
   background:#eee; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   font-size:36px; color:#999;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-family:'I-OTF-G教科書Pro L';
 }
 
 .result-buttons {
@@ -639,7 +640,7 @@ header {
 .popup-kana {
   font-size:clamp(200px,55vw,500px);
   color:#1a2a3a;
-  font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+  font-family:'I-OTF-G教科書Pro L';
   font-weight:400; line-height:1; padding:10px;
   width:100%; height:100%;
   display:flex; align-items:center; justify-content:center;
@@ -1346,7 +1347,7 @@ function buildAnswerImages(q) {
     textEl.style.cssText = `
       writing-mode:vertical-rl; text-orientation:mixed;
       font-size:clamp(96px,24vw,165px);
-      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      font-family:'I-OTF-G教科書Pro L';
       color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
     `;
     textEl.textContent = q.answerText;
@@ -1384,7 +1385,7 @@ function buildAnswerImages(q) {
     kanaEl.style.cssText = `
       writing-mode:vertical-rl; text-orientation:mixed;
       font-size:clamp(96px,24vw,165px);
-      font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
+      font-family:'I-OTF-G教科書Pro L';
       color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
       text-align:center;
     `;
@@ -1647,16 +1648,20 @@ document.querySelectorAll('.tab')[1].addEventListener('click', () => {
   setTimeout(() => { initPractice(); fixLayout(); }, 50);
 });
 
-// FONTPLUSフォント読み込み完了後に再描画
+// FONTPLUSフォント読み込み完了後に再描画（教科書フォント要素全体）
+function redrawKyokashoFonts() {
+  const qText = document.getElementById('qText');
+  if (qText && qText.innerHTML) {
+    const c = qText.innerHTML; qText.innerHTML = ''; qText.innerHTML = c;
+  }
+  const wrap = document.getElementById('answerImagesWrap');
+  if (wrap && wrap.innerHTML) {
+    const c = wrap.innerHTML; wrap.innerHTML = ''; wrap.innerHTML = c;
+  }
+}
 window.addEventListener('load', () => {
-  setTimeout(() => {
-    const qText = document.getElementById('qText');
-    if (qText) {
-      const content = qText.innerHTML;
-      qText.innerHTML = '';
-      qText.innerHTML = content;
-    }
-  }, 500);
+  setTimeout(redrawKyokashoFonts, 500);
+  setTimeout(redrawKyokashoFonts, 1200);
 });
 </script>
 </body>
