@@ -4,15 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
-<script>
-// FONTPLUSを最優先で読み込む
-(function(){
-  var s = document.createElement('script');
-  s.src = 'https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1';
-  s.async = false;
-  document.head.appendChild(s);
-})();
-</script>
+<script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1&sync=1"></script>
 <title>漢字アプリ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -313,13 +305,13 @@ header {
 
 #answerBtn {
   flex: 1;
-  background: #2C2C2C; color: #fff;
+  background: #f0c040; color: #1a3060;
   font-size: 16px; font-weight: 700;
   border: none; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-#answerBtn:active { background: #444; }
+#answerBtn:active { background: #d4a820; }
 
 #resultButtons {
   flex: 1;
@@ -349,13 +341,13 @@ header {
 
 #btnNext {
   flex: 1;
-  background: #1A6B3A; color: #fff;
+  background: #f0c040; color: #1a3060;
   font-size: 16px; font-weight: 700;
   border: none; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-#btnNext:active { background: #145530; }
+#btnNext:active { background: #d4a820; }
 
 /* データなし */
 .no-data {
@@ -806,11 +798,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
       まちがい一覧
     </div>
-    <div style="padding:8px 20px 4px; font-size:11px; color:#FF4D4D; font-family:'Zen Maru Gothic',serif;">⚠️ 操作注意</div>
-    <div class="menu-item" onclick="menuClearData()" style="color:#C62828;">
-      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>
-      データをリセット
-    </div>
     <div class="menu-item" onclick="closeSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
       閉じる
@@ -895,23 +882,56 @@ function menuShowData() {
   closeMenu();
   closeSettings();
   const data = loadPracticeData();
-  if (!data.length) { alert('まだデータがありません。'); return; }
-  const lines = data.map(q => {
+
+  // オーバーレイ作成
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  if (!data.length) {
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;padding:32px;text-align:center;font-family:'Zen Maru Gothic',serif;">
+        <div style="font-size:16px;color:#666;margin-bottom:20px;">まだデータがありません</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:#f0c040;color:#1a3060;border:none;border-radius:999px;padding:10px 28px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">閉じる</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    return;
+  }
+
+  const sorted = [...data].sort((a,b) => b.missCount - a.missCount);
+  const max = Math.max(...sorted.map(q => q.missCount));
+
+  const rows = sorted.map(q => {
     const label = q.grade ? `${q.grade}年 #${q.unit}` : `${q.id}番`;
-    return `${label}：${q.question}\nまちがい ${q.missCount}回`;
-  }).join('\n\n');
-  alert('📊 まちがい一覧\n\n' + lines);
+    const pct = max > 0 ? (q.missCount / max) * 100 : 0;
+    const text = q.question.length > 12 ? q.question.slice(0,12) + '…' : q.question;
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <span style="font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;">${label}</span>
+          <span style="font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;">${text}</span>
+          <span style="font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;">${q.missCount}回</span>
+        </div>
+        <div style="background:#eee;border-radius:999px;height:10px;overflow:hidden;">
+          <div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;transition:width 0.5s;"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div style="font-size:17px;font-weight:700;color:#1a3060;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      ${rows}
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
-function menuClearData() {
-  closeSettings();
-  if (confirm('本当にリセットしますか？\nすべてのまちがいデータが消えます。')) {
-    if (confirm('もう一度確認します。\nリセットしてもよいですか？')) {
-      localStorage.removeItem('kanji_practice_data');
-      location.reload();
-    }
-  }
-}
 
 // ===== れんしゅうデータ管理 =====
 function loadPracticeData() {
