@@ -309,8 +309,8 @@ header {
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-.kanji-img-box { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex:1; min-height:0; overflow:hidden; }
-.kanji-img-box img { width:auto; max-width:100%; height:100%; object-fit:contain; }
+.kanji-img-box { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex-shrink:0; overflow:hidden; }
+.kanji-img-box img { width:auto; max-width:100%; object-fit:contain; }
 .kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
 .kanji-placeholder {
   width:80px; height:140px; background:#eee; border-radius:8px;
@@ -348,17 +348,19 @@ header {
   font-size: 29px;
   line-height: 1.9;
   color: #1A1A1A;
-  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+  font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
-  font-synthesis: none;
+  font-style: normal !important;
+  font-synthesis: none !important;
   -webkit-font-smoothing: antialiased;
   overflow-x: auto;
   overflow-y: hidden;
 }
-#qText span, #qText .underline-word {
-  font-family: 'I-OTF-G教科書Pro L', 'IwaGTxtPro-Lt', serif !important;
+#qText, #qText *, #qText span, #qText .underline-word {
+  font-family: 'I-OTF-G教科書Pro L' !important;
   font-weight: normal !important;
-  font-synthesis: none;
+  font-style: normal !important;
+  font-synthesis: none !important;
 }
 .underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
 
@@ -1354,15 +1356,29 @@ function buildAnswerImages(q) {
     return;
   }
 
-  // 漢字画像（複数可）＋ ひらがな（あれば）を縦1列・中央揃えで表示
+  // 漢字画像（複数可）＋ ひらがな（あれば）を縦1列・上詰めで表示
+  // 全アイテム数（漢字枚数＋送り仮名文字数）から1アイテムの高さを計算
+  const kanjiCount = (q.answerKanji || []).length;
+  const kanaCount = q.answerText ? [...q.answerText].length : 0;
+  const totalItems = kanjiCount + kanaCount;
+  // leftPanelの実際の高さから計算（padding・gap考慮）
+  const leftH = document.getElementById('leftPanel').offsetHeight;
+  const padding = 24; // padding:12px × 2
+  const gap = 8;
+  const itemH = totalItems > 0
+    ? Math.floor((leftH - padding - gap * (totalItems - 1)) / totalItems)
+    : leftH - padding;
+
   if (q.answerKanji && q.answerKanji.length > 0) {
     q.answerKanji.forEach(kanji => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
       box.style.cursor = 'pointer';
+      box.style.height = itemH + 'px';
       const img = document.createElement('img');
       img.src = getImageUrl(kanji);
       img.alt = kanji;
+      img.style.maxHeight = itemH + 'px';
       img.onerror = function() {
         this.style.display = 'none';
         const ph = document.createElement('div');
@@ -1378,13 +1394,15 @@ function buildAnswerImages(q) {
     });
   }
 
-  // ひらがな部分（送り仮名）: 1文字ずつkanji-img-boxに入れる
+  // 送り仮名: 1文字ずつkanji-img-boxに入れる
   if (q.answerText) {
     [...q.answerText].forEach(ch => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
+      box.style.height = itemH + 'px';
       const kana = document.createElement('div');
       kana.className = 'kana-box';
+      kana.style.fontSize = Math.min(itemH * 0.75, 160) + 'px';
       kana.textContent = ch;
       box.appendChild(kana);
       wrap.appendChild(box);
