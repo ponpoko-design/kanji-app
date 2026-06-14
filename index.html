@@ -378,18 +378,12 @@ header {
   font-size: 20px;
   line-height: 1.7;
   color: #1A1A1A;
-  font-family: 'I-OTF-G教科書Pro L' !important;
-  font-weight: 400 !important;
-  font-style: normal !important;
-  font-synthesis: none !important;
+  font-family: "I-OTF-G教科書Pro L" !important;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 #qText * {
-  font-family: 'I-OTF-G教科書Pro L' !important;
-  font-weight: 400 !important;
-  font-style: normal !important;
-  font-synthesis: none !important;
+  font-family: "I-OTF-G教科書Pro L" !important;
 }
 .underline-word { border-right: 2.5px solid #1A1A1A; padding-right: 2px; }
 
@@ -1358,12 +1352,9 @@ function initPractice() {
   setTimeout(fixLayout, 10);
 }
 
-const KYOKASHO = "'I-OTF-G教科書Pro L'";
+const KYOKASHO = '"I-OTF-G教科書Pro L"';
 function setKyokashoFont(el) {
   el.style.fontFamily = KYOKASHO;
-  el.style.fontWeight = '400';
-  el.style.fontStyle = 'normal';
-  el.style.fontSynthesis = 'none';
 }
 function buildQ(question, underline) {
   // 先頭の句点を除去
