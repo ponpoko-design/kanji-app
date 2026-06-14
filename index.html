@@ -199,6 +199,7 @@ header {
   color:#1a2a3a;
   font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
   font-weight:400; line-height:1;
+  font-synthesis:none; -webkit-font-smoothing:antialiased;
 }
 .no-image-box {
   width:100%; height:100%;
@@ -297,20 +298,19 @@ header {
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 8px;
-  padding: 16px;
+  padding: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-.kanji-img-box { display:flex; flex-direction:column; align-items:center; gap:4px; }
-.kanji-img-box img { max-height:35vh; width:auto; object-fit:contain; }
+.kanji-img-box { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex:1; min-height:0; overflow:hidden; }
+.kanji-img-box img { width:auto; max-width:100%; height:100%; object-fit:contain; }
 .kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
 .kanji-placeholder {
   width:80px; height:140px; background:#eee; border-radius:8px;
@@ -337,7 +337,7 @@ header {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: flex-start;
 }
 
