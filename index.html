@@ -1019,6 +1019,7 @@ function buildAnswerImages(q) {
     q.answerKanji.forEach(kanji => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
+      box.style.cursor = 'pointer';
       const img = document.createElement('img');
       img.src = getImageUrl(kanji);
       img.alt = kanji;
@@ -1027,8 +1028,11 @@ function buildAnswerImages(q) {
         const ph = document.createElement('div');
         ph.className = 'kanji-placeholder';
         ph.textContent = kanji;
+        ph.style.cursor = 'pointer';
+        ph.onclick = () => openPopup(kanji, false);
         box.insertBefore(ph, this);
       };
+      box.onclick = () => openPopup(kanji, true);
       box.appendChild(img);
       wrap.appendChild(box);
     });
