@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic&display=swap" rel="stylesheet">
-<script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&delay=1&aa=1&ab=1"></script>
+<script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1"></script>
 <title>漢字アプリ</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1288,6 +1288,18 @@ updateHistoryChips();
 // れんしゅうページを開いたらデータ確認
 document.querySelectorAll('.tab')[1].addEventListener('click', () => {
   setTimeout(() => { initPractice(); fixLayout(); }, 50);
+});
+
+// FONTPLUSフォント読み込み完了後に再描画
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const qText = document.getElementById('qText');
+    if (qText) {
+      const content = qText.innerHTML;
+      qText.innerHTML = '';
+      qText.innerHTML = content;
+    }
+  }, 500);
 });
 </script>
 </body>
