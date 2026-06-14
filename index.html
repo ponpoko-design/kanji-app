@@ -777,7 +777,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
     <div class="menu-item" onclick="menuLoadQuestions()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
       問題を読み込む
-      <span class="menu-badge">近日公開</span>
     </div>
     <div class="menu-item" onclick="menuShowData()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
@@ -868,17 +867,259 @@ function menuSettings() {
   openSettings();
 }
 
-function menuLoadQuestions() {
+// ===== APIキー =====
+const OPENAI_API_KEY = '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';
+const CLAUDE_API_KEY = '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';
+
+async function menuLoadQuestions() {
   closeMenu();
+
   // 単元番号を聞く
   const unit = prompt('単元番号を入力してください（例：16）');
   if (!unit) return;
   const grade = getCurrentGrade();
-  const today = new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit', day:'2-digit'});
-  alert(`📷 この機能はAPIキー設定後に使えるようになります！\n\n今は「サンプルデータ」で練習できます。\n\n学年：${grade}年\n単元：#${unit}\n登録日：${today}`);
-  loadSampleData(grade, parseInt(unit));
-  closeMenu();
+
+  // 読み込みオーバーレイ表示
+  const overlay = showLoadingOverlay('📷 写真を選んでください');
+
+  // カメラ/写真ライブラリから画像を選択
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'environment';
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) { overlay.remove(); return; }
+
+    try {
+      updateLoadingOverlay(overlay, '🔍 問題文を読み取り中...');
+
+      // 画像をbase64に変換
+      const base64 = await fileToBase64(file);
+
+      // GPT-4oでOCR
+      const ocrResult = await callGPT4oOCR(base64);
+      if (!ocrResult) throw new Error('OCRに失敗しました');
+
+      updateLoadingOverlay(overlay, '🧠 正解を検索中...');
+
+      // ClaudeAPIで正解を取得
+      const questions = await callClaudeForAnswers(ocrResult, grade, unit);
+      if (!questions || !questions.length) throw new Error('問題の解析に失敗しました');
+
+      overlay.remove();
+
+      // 確認画面を表示
+      showConfirmQuestions(questions, grade, parseInt(unit));
+
+    } catch(e) {
+      overlay.remove();
+      alert('エラーが発生しました：' + e.message);
+    }
+  };
+
+  input.click();
+  overlay.remove();
+}
+
+// 読み込みオーバーレイ
+function showLoadingOverlay(msg) {
+  const overlay = document.createElement('div');
+  overlay.id = 'loadingOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
+  overlay.innerHTML = `
+    <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#f0c040;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <div id="loadingMsg" style="color:#fff;font-size:16px;font-family:'Zen Maru Gothic',serif;text-align:center;">${msg}</div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  `;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+function updateLoadingOverlay(overlay, msg) {
+  const el = overlay.querySelector('#loadingMsg');
+  if (el) el.textContent = msg;
+}
+
+// 画像をbase64に変換
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// GPT-4o OCR
+async function callGPT4oOCR(base64) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: `この画像は小学生の漢字テストのプリントです。
+問題文を全て読み取ってください。
+下線（___）が引いてある部分、またはカタカナで書かれた部分が答えを書く箇所です。
+
+以下のJSON形式で出力してください：
+[
+  {"no": 1, "question": "北海道から空輸される。", "underline": "空輸"},
+  {"no": 2, "question": "説明をショウリャクする。", "underline": "ショウリャク"}
+]
+
+JSONのみ出力してください。`
+          },
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'high' }
+          }
+        ]
+      }]
+    })
+  });
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// Claude APIで正解を取得
+async function callClaudeForAnswers(ocrQuestions, grade, unit) {
+  const questionList = ocrQuestions.map(q => `${q.no}番: ${q.question}（答える箇所: ${q.underline}）`).join('\n');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': CLAUDE_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: `以下の小学${grade}年生の漢字問題の正解を答えてください。
+
+${questionList}
+
+以下のJSON形式で出力してください：
+[
+  {
+    "no": 1,
+    "question": "北海道から空輸される。",
+    "underline": "空輸",
+    "type": "よみがなを書く",
+    "answerKanji": [],
+    "answerText": "くうゆ"
+  },
+  {
+    "no": 8,
+    "question": "説明をショウリャクする。",
+    "underline": "ショウリャク",
+    "type": "漢字を書く",
+    "answerKanji": ["省", "略"],
+    "answerText": ""
+  }
+]
+
+ルール：
+- よみがなを書く問題（漢字→ひらがな）: typeは"よみがなを書く"、answerKanjiは[]、answerTextにひらがなを入れる
+- 漢字を書く問題（カタカナ→漢字）: typeは"漢字を書く"、answerKanjiに漢字1文字ずつ配列で、送り仮名があればanswerTextに入れる
+- JSONのみ出力してください。`
+      }]
+    })
+  });
+  const data = await res.json();
+  const text = data.content?.[0]?.text || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+// 確認画面
+function showConfirmQuestions(questions, grade, unit) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  const rows = questions.map((q, i) => {
+    const answer = (q.answerKanji||[]).join('') + (q.answerText||'');
+    return `
+      <tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:8px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;">${q.no}番</td>
+        <td style="padding:8px;font-size:13px;color:#000;font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;">${q.underline}</td>
+        <td style="padding:8px;font-size:14px;color:#000;font-family:'Klee One',serif;font-weight:700;">${answer}</td>
+        <td style="padding:8px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;">${q.type}</td>
+      </tr>`;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">読み取り結果の確認</div>
+        <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-top:4px;">${grade}年 単元${unit} · ${questions.length}問</div>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:8px 0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f8f9fa;">
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">番号</th>
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">問題箇所</th>
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">正解</th>
+              <th style="padding:8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;">種類</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">やり直す</button>
+        <button onclick="confirmSaveQuestions(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}" data-unit="${unit}" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">✓ これで保存する</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function confirmSaveQuestions(btn) {
+  const questions = JSON.parse(btn.dataset.questions);
+  const grade = parseInt(btn.dataset.grade);
+  const unit = parseInt(btn.dataset.unit);
+  const today = new Date().toISOString().split('T')[0];
+
+  const existing = loadPracticeData();
+  const newItems = questions.map(q => ({
+    id: q.no,
+    grade: grade,
+    unit: unit,
+    registeredAt: today,
+    type: q.type,
+    question: q.question,
+    underline: q.underline,
+    answerKanji: q.answerKanji || [],
+    answerText: q.answerText || '',
+    missCount: 0,
+    charMiss: {}
+  }));
+
+  // 同じ単元の問題は上書き、新しいものは追加
+  const updated = [...existing.filter(e => !(e.grade === grade && e.unit === unit)), ...newItems];
+  savePracticeData(updated);
+
+  btn.closest('[style*=fixed]').remove();
+  alert(`✅ ${newItems.length}問を保存しました！`);
   switchTab('practice', document.querySelectorAll('.tab')[1]);
+  setTimeout(() => initPractice(), 100);
 }
 
 function menuShowData() {
