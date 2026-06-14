@@ -393,10 +393,10 @@ header {
 
 #practiceBottom {
   flex-shrink: 0;
-  height: 80px;
+  height: 64px;
   background: #f0f4f8;
   border-top: 1px solid #ddd;
-  padding: 10px 12px;
+  padding: 8px 12px;
   display: flex;
   align-items: stretch;
   gap: 10px;
@@ -1735,10 +1735,11 @@ function recordResult(correct) {
   } else {
     if (correct) correctCount++;
   }
-  // 即座に答えを隠す
+  // 即座に次の問題へ
   document.getElementById('answerImagesWrap').classList.remove('visible');
   document.getElementById('resultButtons').style.display = 'none';
-  document.getElementById('btnNext').style.display = 'flex';
+  document.getElementById('btnNext').style.display = 'none';
+  setTimeout(() => nextQuestion(), 300);
 }
 
 function nextQuestion() {
