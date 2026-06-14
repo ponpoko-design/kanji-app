@@ -287,9 +287,12 @@ header {
   font-size: 25px;
   line-height: 1.9;
   color: #1A1A1A;
-  font-family: "I-OTF-G教科書Pro DA";
+  font-family: "I-OTF-G教科書Pro DA" !important;
   overflow-x: auto;
   overflow-y: hidden;
+}
+#qText span, #qText .underline-word {
+  font-family: "I-OTF-G教科書Pro DA" !important;
 }
 .underline-word { border-right:2.5px solid #1A1A1A; padding-right:2px; }
 
@@ -1002,7 +1005,7 @@ function buildAnswerImages(q) {
     const textEl = document.createElement('div');
     textEl.style.cssText = `
       writing-mode:vertical-rl; text-orientation:mixed;
-      font-size:clamp(48px,12vw,80px);
+      font-size:clamp(96px,24vw,165px);
       font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;
       color:#1a2a3a; line-height:1.6; letter-spacing:0.1em;
     `;
