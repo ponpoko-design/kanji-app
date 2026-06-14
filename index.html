@@ -876,58 +876,121 @@ async function menuLoadQuestions() {
   closeMenu();
 
   // APIキー未設定なら設定画面へ
-  if (!getOpenAIKey() || !getClaudeKey()) {
+  if (!getClaudeKey()) {
     showApiKeySetup();
     return;
   }
 
-  // 単元番号を聞く
-  const unit = prompt('単元番号を入力してください（例：16）');
-  if (!unit) return;
-  const grade = getCurrentGrade();
+  // テキスト入力画面を表示
+  showTextInputScreen();
+}
 
-  // 読み込みオーバーレイ表示
-  const overlay = showLoadingOverlay('📷 写真を選んでください');
+function showTextInputScreen() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
 
-  // カメラ/写真ライブラリから画像を選択
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.capture = 'environment';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">問題を入力</div>
+        <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-top:4px;">下線部分を &lt;u&gt;〜&lt;/u&gt; で囲んで入力してください</div>
+      </div>
+      <div style="padding:16px;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;line-height:1.8;">
+          例：<br>
+          一矢&lt;u&gt;ムクイル&lt;/u&gt;<br>
+          &lt;u&gt;余興&lt;/u&gt;を楽しむ
+        </div>
+        <textarea id="questionInput" placeholder="ここに問題をペーストしてください"
+          style="flex:1;min-height:160px;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;outline:none;resize:none;line-height:1.8;"></textarea>
+      </div>
+      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
+        <button onclick="submitQuestionText(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">答えを調べる</button>
+      </div>
+    </div>`;
 
-  input.onchange = async () => {
-    const file = input.files[0];
-    if (!file) { overlay.remove(); return; }
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
 
-    try {
-      updateLoadingOverlay(overlay, '🔍 問題文を読み取り中...');
+async function submitQuestionText(btn) {
+  const text = document.getElementById('questionInput').value.trim();
+  if (!text) { alert('問題を入力してください'); return; }
 
-      // 画像をbase64に変換
-      const base64 = await fileToBase64(file);
-
-      // GPT-4oでOCR
-      const ocrResult = await callGPT4oOCR(base64);
-      if (!ocrResult) throw new Error('OCRに失敗しました');
-
-      updateLoadingOverlay(overlay, '🧠 正解を検索中...');
-
-      // ClaudeAPIで正解を取得
-      const questions = await callClaudeForAnswers(ocrResult, grade, unit);
-      if (!questions || !questions.length) throw new Error('問題の解析に失敗しました');
-
-      overlay.remove();
-
-      // 確認画面を表示
-      showConfirmQuestions(questions, grade, parseInt(unit));
-
-    } catch(e) {
-      overlay.remove();
-      alert('エラーが発生しました：' + e.message);
-    }
-  };
-
-  input.click();
+  const overlay = btn.closest('[style*=fixed]');
   overlay.remove();
+
+  const loading = showLoadingOverlay('🔍 答えを調べています...');
+
+  try {
+    const questions = await callClaudeForAnswers(text);
+    loading.remove();
+    showConfirmQuestions(questions, getCurrentGrade(), null);
+  } catch(e) {
+    loading.remove();
+    alert('エラーが発生しました：' + e.message);
+  }
+}
+
+async function callClaudeForAnswers(inputText) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': getClaudeKey(),
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: `以下は小学生の漢字テストの問題です。<u>タグで囲まれた部分が答えを書く箇所です。
+
+${inputText}
+
+各問題の正解を調べて、以下のJSON形式で返してください：
+[
+  {
+    "no": 1,
+    "question": "一矢ムクイル",
+    "underline": "ムクイル",
+    "type": "漢字を書く",
+    "answerKanji": ["報"],
+    "answerText": "いる"
+  },
+  {
+    "no": 2,
+    "question": "余興を楽しむ",
+    "underline": "余興",
+    "type": "よみがなを書く",
+    "answerKanji": [],
+    "answerText": "よきょう"
+  }
+]
+
+ルール：
+・<u>タグ内がカタカナ→漢字を書く問題：type:"漢字を書く"、answerKanjiに漢字、送り仮名はanswerTextに
+・<u>タグ内が漢字→よみがなを書く問題：type:"よみがなを書く"、answerKanji:[]、answerTextにひらがな
+・noは1から順番に振る
+・questionから<u>タグを除いた文章をquestionに、<u>タグ内の文字をunderlineに入れる
+・JSONのみ出力してください`
+      }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'APIエラー');
+  }
+
+  const data = await res.json();
+  const text = data.content?.[0]?.text || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
 }
 
 // ===== APIキー設定画面 =====
@@ -988,112 +1051,6 @@ function updateLoadingOverlay(overlay, msg) {
 }
 
 // 画像をbase64に変換
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// GPT-4o OCR
-async function callGPT4oOCR(base64) {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${getOpenAIKey()}`
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: `この画像は小学生の漢字テストのプリントです。
-問題文を全て読み取ってください。
-下線（___）が引いてある部分、またはカタカナで書かれた部分が答えを書く箇所です。
-
-以下のJSON形式で出力してください：
-[
-  {"no": 1, "question": "北海道から空輸される。", "underline": "空輸"},
-  {"no": 2, "question": "説明をショウリャクする。", "underline": "ショウリャク"}
-]
-
-JSONのみ出力してください。`
-          },
-          {
-            type: 'image_url',
-            image_url: { url: `data:image/jpeg;base64,${base64}`, detail: 'high' }
-          }
-        ]
-      }]
-    })
-  });
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content || '';
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
-}
-
-// Claude APIで正解を取得
-async function callClaudeForAnswers(ocrQuestions, grade, unit) {
-  const questionList = ocrQuestions.map(q => `${q.no}番: ${q.question}（答える箇所: ${q.underline}）`).join('\n');
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': getClaudeKey(),
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: `以下の小学${grade}年生の漢字問題の正解を答えてください。
-
-${questionList}
-
-以下のJSON形式で出力してください：
-[
-  {
-    "no": 1,
-    "question": "北海道から空輸される。",
-    "underline": "空輸",
-    "type": "よみがなを書く",
-    "answerKanji": [],
-    "answerText": "くうゆ"
-  },
-  {
-    "no": 8,
-    "question": "説明をショウリャクする。",
-    "underline": "ショウリャク",
-    "type": "漢字を書く",
-    "answerKanji": ["省", "略"],
-    "answerText": ""
-  }
-]
-
-ルール：
-- よみがなを書く問題（漢字→ひらがな）: typeは"よみがなを書く"、answerKanjiは[]、answerTextにひらがなを入れる
-- 漢字を書く問題（カタカナ→漢字）: typeは"漢字を書く"、answerKanjiに漢字1文字ずつ配列で、送り仮名があればanswerTextに入れる
-- JSONのみ出力してください。`
-      }]
-    })
-  });
-  const data = await res.json();
-  const text = data.content?.[0]?.text || '';
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
-}
 
 // 確認画面
 function showConfirmQuestions(questions, grade, unit) {
@@ -1132,7 +1089,7 @@ function showConfirmQuestions(questions, grade, unit) {
       </div>
       <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
         <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">やり直す</button>
-        <button onclick="confirmSaveQuestions(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}" data-unit="${unit}" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">✓ これで保存する</button>
+        <button onclick="confirmSaveQuestions(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">✓ これで保存する</button>
       </div>
     </div>`;
 
@@ -1143,7 +1100,13 @@ function showConfirmQuestions(questions, grade, unit) {
 function confirmSaveQuestions(btn) {
   const questions = JSON.parse(btn.dataset.questions);
   const grade = parseInt(btn.dataset.grade);
-  const unit = parseInt(btn.dataset.unit);
+
+  btn.closest('[style*=fixed]').remove();
+
+  // 単元番号を聞く
+  const unitStr = prompt('単元番号を入力してください（例：16）');
+  if (!unitStr) return;
+  const unit = parseInt(unitStr);
   const today = new Date().toISOString().split('T')[0];
 
   const existing = loadPracticeData();
@@ -1161,11 +1124,9 @@ function confirmSaveQuestions(btn) {
     charMiss: {}
   }));
 
-  // 同じ単元の問題は上書き、新しいものは追加
   const updated = [...existing.filter(e => !(e.grade === grade && e.unit === unit)), ...newItems];
   savePracticeData(updated);
 
-  btn.closest('[style*=fixed]').remove();
   alert(`✅ ${newItems.length}問を保存しました！`);
   switchTab('practice', document.querySelectorAll('.tab')[1]);
   setTimeout(() => initPractice(), 100);
