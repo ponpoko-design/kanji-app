@@ -912,10 +912,10 @@ function menuShowData() {
     const pct = max > 0 ? (q.missCount / max) * 100 : 0;
     return `
       <tr style="border-bottom:1px solid #f0f4f8;">
-        <td style="padding:10px 8px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
-        <td style="padding:10px 8px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
-        <td style="padding:10px 8px;font-size:13px;color:#1a3060;font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;white-space:nowrap;">${answer}</td>
-        <td style="padding:10px 8px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
+        <td style="padding:10px 8px;font-size:14px;color:#1a3060;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
+        <td style="padding:10px 8px;font-size:14px;color:#1a3060;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
+        <td style="padding:10px 8px;font-size:15px;color:#1a3060;font-family:'I-OTF-G教科書Pro L','IwaGTxtPro-Lt',serif;white-space:nowrap;">${answer}</td>
+        <td style="padding:10px 8px;font-size:14px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
         <td style="padding:10px 8px;width:80px;">
           <div style="background:#eee;border-radius:999px;height:8px;overflow:hidden;">
             <div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div>
@@ -936,11 +936,11 @@ function menuShowData() {
         <table style="width:100%;border-collapse:collapse;">
           <thead>
             <tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
-              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
-              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
-              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
-              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
-              <th style="padding:10px 8px;font-size:11px;color:#999;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;width:80px;"></th>
+              <th style="padding:10px 8px;font-size:12px;color:#1a3060;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
+              <th style="padding:10px 8px;font-size:12px;color:#1a3060;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
+              <th style="padding:10px 8px;font-size:12px;color:#1a3060;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
+              <th style="padding:10px 8px;font-size:12px;color:#1a3060;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
+              <th style="padding:10px 8px;font-size:12px;color:#1a3060;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;width:80px;"></th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
