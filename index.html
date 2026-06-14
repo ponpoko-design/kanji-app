@@ -1123,8 +1123,8 @@ function showDeleteQuestions() {
         </button>
       </div>
       <div style="padding:8px 16px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;gap:8px;">
-        <button onclick="document.querySelectorAll('#delQList input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全選択</button>
-        <button onclick="document.querySelectorAll('#delQList input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全解除</button>
+        <button onclick="document.getElementById('delQList').querySelectorAll('input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全選択</button>
+        <button onclick="document.getElementById('delQList').querySelectorAll('input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全解除</button>
       </div>
       <div id="delQList" style="overflow-y:auto;flex:1;">${rows}</div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
@@ -1137,7 +1137,7 @@ function showDeleteQuestions() {
 }
 
 function execDeleteQuestions() {
-  const checked = [...document.querySelectorAll('#delQList input:checked')];
+  const checked = [...document.getElementById('delQList').querySelectorAll('input:checked')];
   if (!checked.length) { alert('問題を選択してください'); return; }
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') { alert('パスワードが違います'); return; }
@@ -1471,7 +1471,7 @@ function menuShowData() {
       });
     });
     const sorted = Object.entries(map).sort((a,b) => b[1]-a[1]);
-    if (!sorted.length) return '<tr><td colspan="3" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>';
+    if (!sorted.length) return `<tr><td colspan="3" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
     const max = Math.max(...sorted.map(e => e[1]), 1);
     return sorted.map(([k, cnt]) => {
       const pct = (cnt / max) * 100;
