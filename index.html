@@ -283,32 +283,31 @@ header {
   overflow: hidden;
 }
 
-/* 左2/3：正解エリア */
+/* 左2/3：正解エリア — main-areaと同じpadding */
 #leftPanel {
   flex: 0 0 66%;
   background: #f0f4f8;
   border-right: 1px solid #ccc;
   display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: clamp(4px,1vw,8px);
+  flex-direction: column;
+  padding: clamp(6px,1.5vw,10px) clamp(8px,2vw,14px) clamp(4px,1vw,8px);
   overflow: hidden;
 }
 
-/* 正解表示エリア — お手本タブのresult-areaと同じ */
+/* 正解表示エリア — result-areaと完全に同じ */
 #answerImagesWrap {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: clamp(5px,1.2vw,8px);
-  overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-/* お手本タブの.cardと同じ */
+/* .cardと完全に同じ */
 .kanji-img-box {
   flex: 1;
   min-height: 0;
@@ -320,6 +319,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: fadeSlide 0.25s ease both;
 }
 .kanji-img-box img {
   width: 100%;
