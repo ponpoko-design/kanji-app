@@ -326,7 +326,6 @@ header {
   height: 100%;
   object-fit: contain;
   display: block;
-  padding: 4px 10px;
 }
 .kanji-placeholder {
   display: flex; align-items: center; justify-content: center;
@@ -1230,9 +1229,9 @@ function showShutsudaiSelect() {
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
         <!-- ラジオ選択 -->
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #3B82F6;border-radius:12px;cursor:pointer;background:#EFF6FF;">
-          <input type="radio" name="shutsudai" value="miss" checked style="accent-color:#3B82F6;">
-          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;">間違いが多い順（上位7問）</span>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioMiss">
+          <input type="radio" name="shutsudai" value="miss" checked style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
+          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">間違いが多い順（上位10問）</span>
         </label>
         <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioRandom">
           <input type="radio" name="shutsudai" value="random" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
@@ -1257,7 +1256,7 @@ function showShutsudaiSelect() {
           <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">〜</span>
           <input type="date" id="dateTo" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">
         </div>
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioEbbinghaus">
           <input type="radio" name="shutsudai" value="ebbinghaus" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
           <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">エビングハウス<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span></span>
         </label>
@@ -1277,8 +1276,8 @@ function updateShutsudaiUI() {
   const dr = document.getElementById('dateRange');
   if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
   if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
-  // ラジオのボーダー更新
-  ['radioRandom','radioUnit','radioDate'].forEach(id => {
+  // 全ラベルのボーダー更新
+  ['radioMiss','radioRandom','radioUnit','radioDate','radioEbbinghaus'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const radio = el.querySelector('input');
