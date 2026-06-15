@@ -580,8 +580,10 @@ rt {
   background:#fff; border-radius:16px;
   width: calc(100vw - 24px);
   max-width:360px;
+  max-height: calc(100vh - 80px);
   box-shadow:0 8px 40px rgba(0,0,0,0.3);
-  overflow:hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   animation:menuIn 0.18s ease;
 }
 @keyframes menuIn {
