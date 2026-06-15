@@ -322,8 +322,9 @@ header {
   overflow: hidden;
 }
 .kanji-img-box img {
-  width: 100%;
-  height: auto;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
   display: block;
   cursor: pointer;
 }
@@ -1689,6 +1690,7 @@ function buildAnswerImages(q) {
   kanjiList.forEach(kanji => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
+    box.style.height = finalKanjiH + 'px';
     const img = document.createElement('img');
     img.src = getImageUrl(kanji);
     img.alt = kanji;
