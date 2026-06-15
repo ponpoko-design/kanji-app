@@ -20,6 +20,25 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const DATA_DOC = doc(db, 'kanji', 'practiceData');
+  const STATS_DOC = doc(db, 'kanji', 'stats');
+
+  // Stats保存
+  async function saveStatsToFirestore(stats) {
+    try {
+      await setDoc(STATS_DOC, { ...stats, updatedAt: new Date().toISOString() });
+    } catch(e) { console.log('Stats保存エラー:', e); }
+  }
+  // Stats読み込み
+  async function loadStatsFromFirestore() {
+    try {
+      const snap = await getDoc(STATS_DOC);
+      if (snap.exists()) {
+        localStorage.setItem('kanji_stats', JSON.stringify(snap.data()));
+      }
+    } catch(e) { console.log('Stats読み込みエラー:', e); }
+  }
+  window.firestoreStatsSave = saveStatsToFirestore;
+  window.firestoreStatsLoad = loadStatsFromFirestore;
 
   // Firestoreからデータ読み込み
   async function loadFromFirestore() {
@@ -62,6 +81,7 @@
   window.firestoreLoad = loadFromFirestore;
 
   // 初回読み込み
+  loadStatsFromFirestore();
   loadFromFirestore().then(() => {
     console.log('Firestore初期読み込み完了');
   });
@@ -803,6 +823,41 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 <!-- メニューオーバーレイ -->
 <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()">
   <div class="menu-panel" onclick="event.stopPropagation()">
+
+    <!-- 統計エリア -->
+    <div style="background:linear-gradient(160deg,#0d3d7a,#1a6fc4);padding:16px 16px 14px;">
+      <div style="font-size:16px;font-weight:700;color:#fff;font-family:'Zen Maru Gothic',serif;text-align:center;margin-bottom:12px;">漢字アプリ</div>
+      <!-- 連続日数 -->
+      <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#FF6B35"><path d="M12 2c0 0-1.5 3.5-1.5 6c0 1.6 1 2.8 1 2.8s-3-1.2-3-4.3c0 0-3.5 3.5-3.5 7.5a6 6 0 0 0 12 0c0-5-5-12-5-12z"/></svg>
+        <div>
+          <div id="menuStreak" style="font-size:20px;font-weight:700;color:#fff;line-height:1;font-family:'Zen Maru Gothic',serif;">－</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-family:'Zen Maru Gothic',serif;">今日もやろう</div>
+        </div>
+      </div>
+      <!-- 今週の★ -->
+      <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:8px;font-family:'Zen Maru Gothic',serif;">今週の★（月〜日）</div>
+        <div id="menuStars" style="display:flex;gap:4px;justify-content:space-between;"></div>
+      </div>
+    </div>
+
+    <!-- 問題数 -->
+    <div style="display:flex;border-bottom:1px solid #f0f4f8;">
+      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #f0f4f8;">
+        <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">今日</div>
+        <div id="menuTodayCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
+      </div>
+      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #f0f4f8;">
+        <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">今週</div>
+        <div id="menuWeekCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
+      </div>
+      <div style="flex:1;padding:10px;text-align:center;">
+        <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">合計</div>
+        <div id="menuTotalCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
+      </div>
+    </div>
+
     <div class="menu-item" onclick="menuLoadQuestions()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
       問題を読み込む
@@ -903,8 +958,116 @@ function getCurrentGrade() {
 }
 
 // ===== メニュー =====
-function openMenu() { document.getElementById('menuOverlay').classList.add('active'); }
+// ===== 統計（streak・stars・問題数）=====
+function getTodayJST() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9*60*60*1000);
+  return jst.toISOString().split('T')[0];
+}
+
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem('kanji_stats') || '{}'); } catch(e) { return {}; }
+}
+function saveStats(stats) {
+  localStorage.setItem('kanji_stats', JSON.stringify(stats));
+  if (window.firestoreStatsSave) window.firestoreStatsSave(stats);
+}
+
+function recordDailyActivity(questionsAnswered) {
+  const today = getTodayJST();
+  const stats = loadStats();
+
+  // 今日の問題数を加算
+  if (!stats.daily) stats.daily = {};
+  stats.daily[today] = (stats.daily[today] || 0) + questionsAnswered;
+
+  // 連続日数の計算
+  const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
+  if (stats.lastActiveDate === today) {
+    // 今日すでに記録済み → streak変わらず
+  } else if (stats.lastActiveDate === yesterday) {
+    stats.streak = (stats.streak || 0) + 1;
+  } else {
+    stats.streak = 1;
+  }
+  stats.lastActiveDate = today;
+  saveStats(stats);
+}
+
+function getWeekStars() {
+  const stats = loadStats();
+  const daily = stats.daily || {};
+  const today = new Date(getTodayJST());
+  // 今週の月曜日を起点に
+  const dayOfWeek = today.getDay(); // 0=日
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today.getTime() + mondayOffset * 86400000);
+  const days = ['月','火','水','木','金','土','日'];
+  return days.map((label, i) => {
+    const d = new Date(monday.getTime() + i * 86400000);
+    const key = d.toISOString().split('T')[0];
+    return { label, done: (daily[key] || 0) > 0 };
+  });
+}
+
+function getTodayCount() {
+  const stats = loadStats();
+  return (stats.daily || {})[getTodayJST()] || 0;
+}
+function getWeekCount() {
+  const stats = loadStats();
+  const daily = stats.daily || {};
+  const today = new Date(getTodayJST());
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today.getTime() + mondayOffset * 86400000);
+  let total = 0;
+  for (let i = 0; i < 7; i++) {
+    const key = new Date(monday.getTime() + i * 86400000).toISOString().split('T')[0];
+    total += daily[key] || 0;
+  }
+  return total;
+}
+function getTotalCount() {
+  const stats = loadStats();
+  return Object.values(stats.daily || {}).reduce((a,b) => a+b, 0);
+}
+
+function openMenu() {
+  updateMenuStats();
+  document.getElementById('menuOverlay').classList.add('active');
+}
 function closeMenu() { document.getElementById('menuOverlay').classList.remove('active'); }
+
+function updateMenuStats() {
+  const stats = loadStats();
+  const streak = stats.streak || 0;
+  const stars = getWeekStars();
+  const todayCount = getTodayCount();
+  const weekCount = getWeekCount();
+  const totalCount = getTotalCount();
+
+  // 連続日数
+  const streakEl = document.getElementById('menuStreak');
+  if (streakEl) streakEl.textContent = streak > 0 ? `${streak}日連続！` : 'さあはじめよう';
+
+  // 今週の★
+  const starsEl = document.getElementById('menuStars');
+  if (starsEl) {
+    starsEl.innerHTML = stars.map(s => `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+        ${s.done
+          ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="#F5A623"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>'
+          : '<svg width="28" height="28" viewBox="0 0 24 24" fill="rgba(255,255,255,0.2)"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>'
+        }
+        <span style="font-size:11px;color:${s.done ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'};font-family:'Zen Maru Gothic',serif;">${s.label}</span>
+      </div>`).join('');
+  }
+
+  if (document.getElementById('menuTodayCount')) document.getElementById('menuTodayCount').textContent = todayCount + '問';
+  if (document.getElementById('menuWeekCount')) document.getElementById('menuWeekCount').textContent = weekCount + '問';
+  if (document.getElementById('menuTotalCount')) document.getElementById('menuTotalCount').textContent = totalCount + '問';
+}
 function openSettings() { document.getElementById('settingsOverlay').classList.add('active'); }
 function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
 
@@ -1538,6 +1701,7 @@ function menuShowData() {
       <div style="display:flex;gap:0;padding:12px 20px 0;flex-shrink:0;border-bottom:2px solid #f0f4f8;">
         <button id="missTab1" onclick="switchMissTab(1)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid #3B82F6;margin-bottom:-2px;font-size:14px;font-weight:700;color:#3B82F6;font-family:'Zen Maru Gothic',serif;cursor:pointer;">問題別</button>
         <button id="missTab2" onclick="switchMissTab(2)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">漢字別</button>
+        <button id="missTab3" onclick="switchMissTab(3)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">単元別</button>
       </div>
       <div style="overflow-y:auto;flex:1;">
         <div id="missPane1">
@@ -1563,6 +1727,7 @@ function menuShowData() {
             <tbody>${renderKanjiBetsu()}</tbody>
           </table>
         </div>
+        <div id="missPane3" style="display:none;"></div>
       </div>
     </div>`;
 
@@ -1571,14 +1736,66 @@ function menuShowData() {
 }
 
 function switchMissTab(n) {
-  document.getElementById('missPane1').style.display = n===1 ? '' : 'none';
-  document.getElementById('missPane2').style.display = n===2 ? '' : 'none';
-  document.getElementById('missTab1').style.borderBottomColor = n===1 ? '#3B82F6' : 'transparent';
-  document.getElementById('missTab1').style.color = n===1 ? '#3B82F6' : '#999';
-  document.getElementById('missTab1').style.fontWeight = n===1 ? '700' : '400';
-  document.getElementById('missTab2').style.borderBottomColor = n===2 ? '#3B82F6' : 'transparent';
-  document.getElementById('missTab2').style.color = n===2 ? '#3B82F6' : '#999';
-  document.getElementById('missTab2').style.fontWeight = n===2 ? '700' : '400';
+  [1,2,3].forEach(i => {
+    document.getElementById('missPane'+i).style.display = n===i ? '' : 'none';
+    document.getElementById('missTab'+i).style.borderBottomColor = n===i ? '#3B82F6' : 'transparent';
+    document.getElementById('missTab'+i).style.color = n===i ? '#3B82F6' : '#999';
+    document.getElementById('missTab'+i).style.fontWeight = n===i ? '700' : '400';
+  });
+  if (n === 3) renderUnitBetsu();
+}
+
+function renderUnitBetsu() {
+  const data = loadPracticeData();
+  const ZMG = "'Zen Maru Gothic',serif";
+
+  // 単元ごとに集計
+  const unitMap = {};
+  data.forEach(q => {
+    const key = `${q.grade || '?'}年_${q.unit || '?'}`;
+    if (!unitMap[key]) unitMap[key] = { grade: q.grade, unit: q.unit, total: 0, correct: 0 };
+    unitMap[key].total += (q.totalCount || 0);
+    unitMap[key].correct += (q.correctCount || 0);
+    unitMap[key].questions = (unitMap[key].questions || 0) + 1;
+  });
+
+  const sorted = Object.values(unitMap)
+    .filter(u => u.questions > 0)
+    .sort((a,b) => (a.grade||0) - (b.grade||0) || (a.unit||0) - (b.unit||0));
+
+  const pane = document.getElementById('missPane3');
+  if (!sorted.length) {
+    pane.innerHTML = `<div style="padding:24px;text-align:center;color:#999;font-family:${ZMG};font-size:14px;">データがまだありません</div>`;
+    return;
+  }
+
+  pane.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;">学年</th>
+      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;">単元</th>
+      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:right;">問題数</th>
+      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;min-width:80px;">正答率</th>
+    </tr></thead>
+    <tbody>${sorted.map(u => {
+      const rate = u.total > 0 ? Math.round(u.correct / u.total * 100) : null;
+      const barW = rate !== null ? rate : 0;
+      const barColor = barW >= 80 ? '#22c55e' : barW >= 50 ? '#F5A623' : '#FF4D4D';
+      const rateText = rate !== null ? rate + '%' : '未出題';
+      return `<tr style="border-bottom:1px solid #f0f4f8;">
+        <td style="padding:10px 6px;font-size:13px;font-family:${ZMG};">${u.grade || '?'}年</td>
+        <td style="padding:10px 6px;font-size:13px;font-family:${ZMG};">単元${u.unit || '?'}</td>
+        <td style="padding:10px 6px;font-size:13px;font-family:${ZMG};text-align:right;color:#666;">${u.questions}問</td>
+        <td style="padding:10px 6px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;background:#eee;border-radius:4px;height:6px;overflow:hidden;">
+              <div style="background:${barColor};height:100%;width:${barW}%;border-radius:4px;transition:width 0.4s;"></div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:${barColor};min-width:36px;font-family:${ZMG};">${rateText}</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
 }
 
 
@@ -1993,6 +2210,9 @@ function recordResult(correct) {
   const item = data.find(d => d.id === q.id);
   if (item) {
     item.lastTestedAt = today;
+    // 累計出題数・正解数を記録
+    item.totalCount = (item.totalCount || 0) + 1;
+    if (correct) item.correctCount = (item.correctCount || 0) + 1;
     if (!correct) {
       item.missCount++;
       if (!item.charMiss) item.charMiss = {};
@@ -2000,6 +2220,8 @@ function recordResult(correct) {
     }
     savePracticeData(data);
   }
+  // 今日の活動を記録（1問ごと）
+  recordDailyActivity(1);
   // 即座に次の問題へ
   document.getElementById('answerImagesWrap').classList.remove('visible');
   document.getElementById('resultButtons').style.display = 'none';
