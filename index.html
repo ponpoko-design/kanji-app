@@ -1653,110 +1653,117 @@ function buildAnswerImages(q) {
   const kanjiList = q.answerKanji || [];
   const kanaChars = q.answerText ? [...q.answerText] : [];
 
-  // よみがなのみ（画像なし）
+  // よみがなのみ（画像なし）→ ボックスなし、テキストだけ天地中央に
   if (q.type === 'よみがなを書く' && kanjiList.length === 0 && kanaChars.length > 0) {
-    // 全文字を1つのwrapperに入れてから天地中央配置
     const inner = document.createElement('div');
-    inner.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:0;';
+    inner.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;';
     kanaChars.forEach(ch => {
-      const box = document.createElement('div');
-      box.className = 'kanji-img-box';
       const t = document.createElement('div');
       t.className = 'answer-kana-text';
       t.textContent = ch;
-      box.appendChild(t);
-      inner.appendChild(box);
+      inner.appendChild(t);
     });
     wrap.appendChild(inner);
-    // サイズはコンテナ幅基準で計算
     requestAnimationFrame(() => {
-      const wrapW = wrap.offsetWidth;
       const wrapH = wrap.offsetHeight;
+      const wrapW = wrap.offsetWidth;
       const n = kanaChars.length;
-      // 正方形のboxをn個縦に並べると仮定：boxSize = min(wrapW, wrapH/n)
-      const boxSize = Math.floor(Math.min(wrapW, wrapH / n));
-      inner.querySelectorAll('.kanji-img-box').forEach(box => {
-        box.style.width = boxSize + 'px';
-        box.style.height = boxSize + 'px';
-        const t = box.querySelector('.answer-kana-text');
-        if (t) t.style.fontSize = Math.floor(boxSize * 0.55) + 'px';
+      const perH = Math.floor(wrapH / n);
+      const fs = Math.floor(Math.min(perH, wrapW) * 0.55);
+      inner.querySelectorAll('.answer-kana-text').forEach(t => {
+        t.style.fontSize = fs + 'px';
+        t.style.height = perH + 'px';
+        t.style.display = 'flex';
+        t.style.alignItems = 'center';
+        t.style.justifyContent = 'center';
       });
     });
     return;
   }
 
-  // 漢字画像：全画像読み込み後に縦横比から最適サイズを計算
-  const items = [
-    ...kanjiList.map(k => ({ type: 'kanji', value: k })),
-    ...kanaChars.map(ch => ({ type: 'kana', value: ch }))
-  ];
-
-  // まず全boxをDOMに追加（非表示）
-  const boxes = [];
+  // 漢字画像: 全画像読み込み後に naturalHeight+8px をboxの高さに設定
   const imgPromises = [];
 
-  items.forEach(item => {
+  kanjiList.forEach(kanji => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
-    box.style.visibility = 'hidden'; // 読み込み完了まで非表示
-
-    if (item.type === 'kanji') {
-      const img = document.createElement('img');
-      img.src = getImageUrl(item.value);
-      img.alt = item.value;
-      const p = new Promise(resolve => {
-        img.onload = () => resolve({ box, ratio: img.naturalWidth / img.naturalHeight, type: 'kanji', kanji: item.value });
-        img.onerror = () => resolve({ box, ratio: 1, type: 'kanji-missing', kanji: item.value });
-      });
-      imgPromises.push(p);
-      img.onclick = () => openPopup(item.value, true);
-      box.appendChild(img);
-    } else {
-      const t = document.createElement('div');
-      t.className = 'answer-kana-text';
-      t.textContent = item.value;
-      box.appendChild(t);
-      imgPromises.push(Promise.resolve({ box, ratio: 1, type: 'kana' }));
-    }
-    boxes.push(box);
+    box.style.visibility = 'hidden';
+    const img = document.createElement('img');
+    img.src = getImageUrl(kanji);
+    img.alt = kanji;
+    const p = new Promise(resolve => {
+      img.onload = () => resolve({ box, img, naturalH: img.naturalHeight, naturalW: img.naturalWidth, type: 'kanji', kanji });
+      img.onerror = () => resolve({ box, img, naturalH: 100, naturalW: 100, type: 'kanji-missing', kanji });
+    });
+    imgPromises.push(p);
+    img.onclick = () => openPopup(kanji, true);
+    box.appendChild(img);
     wrap.appendChild(box);
   });
 
-  // 全画像読み込み完了後にレイアウト計算
+  // 送り仮名: ボックスなし・テキストのみ
+  const kanaEls = [];
+  kanaChars.forEach(ch => {
+    const t = document.createElement('div');
+    t.className = 'answer-kana-text';
+    t.textContent = ch;
+    t.style.visibility = 'hidden';
+    wrap.appendChild(t);
+    kanaEls.push(t);
+  });
+
   Promise.all(imgPromises).then(results => {
     const wrapW = wrap.offsetWidth;
     const wrapH = wrap.offsetHeight;
+    const pad = 8; // 上4px + 下4px
 
-    // 各アイテムの幅W固定で高さをratio(W/H)から計算
-    // 全アイテムの高さの合計がwrapHを超えないようにスケール
-    // W = wrapW として各heightを求め、合計がwrapHを超えたらスケールダウン
-    const W = wrapW;
-    const heights = results.map(r => W / r.ratio);
-    const totalH = heights.reduce((a, b) => a + b, 0);
+    // 各boxの自然サイズ: naturalH+8px を高さ、アスペクト比で幅を計算
+    // まずwrapWを基準幅として各boxの高さを算出
+    const rawHeights = results.map(r => {
+      const ratio = r.naturalW / r.naturalH;
+      return (wrapW / ratio) + pad;
+    });
 
+    // 送り仮名の高さ: 漢字1文字の平均高さの0.6倍
+    const avgKanjiH = rawHeights.length > 0 ? rawHeights.reduce((a,b)=>a+b,0)/rawHeights.length : 80;
+    const kanaH = Math.floor(avgKanjiH * 0.6);
+
+    const totalH = rawHeights.reduce((a,b)=>a+b,0) + kanaH * kanaChars.length;
+
+    // コンテナに収まるようスケール計算
     let scale = 1;
     if (totalH > wrapH) scale = wrapH / totalH;
 
+    const finalW = Math.floor(wrapW * scale);
+
     results.forEach((r, i) => {
-      const h = Math.floor(heights[i] * scale);
-      const w = Math.floor(W * scale);
-      r.box.style.width = w + 'px';
+      const ratio = r.naturalW / r.naturalH;
+      const h = Math.floor(((finalW / ratio) + pad));
+      // スケール後に再チェック
+      r.box.style.width = finalW + 'px';
       r.box.style.height = h + 'px';
       r.box.style.visibility = 'visible';
 
       if (r.type === 'kanji-missing') {
-        // 画像なし→テキスト表示
-        const img = r.box.querySelector('img');
-        if (img) img.style.display = 'none';
+        r.img.style.display = 'none';
         const ph = document.createElement('div');
         ph.className = 'no-image-box';
         ph.textContent = r.kanji;
         ph.onclick = () => openPopup(r.kanji, false);
         r.box.appendChild(ph);
-      } else if (r.type === 'kana') {
-        const t = r.box.querySelector('.answer-kana-text');
-        if (t) t.style.fontSize = Math.floor(h * 0.55) + 'px';
       }
+    });
+
+    // 送り仮名
+    const finalKanaH = Math.floor(kanaH * scale);
+    kanaEls.forEach(t => {
+      t.style.width = finalW + 'px';
+      t.style.height = finalKanaH + 'px';
+      t.style.fontSize = Math.floor(finalKanaH * 0.75) + 'px';
+      t.style.display = 'flex';
+      t.style.alignItems = 'center';
+      t.style.justifyContent = 'center';
+      t.style.visibility = 'visible';
     });
   });
 }
