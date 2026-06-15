@@ -573,12 +573,13 @@ rt {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.6); z-index:800;
   align-items:flex-start; justify-content:flex-end;
-  padding-top:60px; padding-right:16px;
+  padding-top:60px; padding-right:12px;
 }
 .menu-overlay.active { display:flex; }
 .menu-panel {
   background:#fff; border-radius:16px;
-  width:240px;
+  width: calc(100vw - 24px);
+  max-width:360px;
   box-shadow:0 8px 40px rgba(0,0,0,0.3);
   overflow:hidden;
   animation:menuIn 0.18s ease;
