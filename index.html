@@ -303,7 +303,7 @@ header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   padding: 10px;
   gap: 0;
   overflow: hidden;
@@ -1682,14 +1682,11 @@ function buildAnswerImages(q) {
   const kanaChars = q.answerText ? [...q.answerText] : [];
   const total = kanjiList.length + kanaChars.length;
   // 漢字はleftH全体を枚数で割る（gapなし）
-  const kanjiH = total > 0 ? Math.floor((leftH - padding) / total) : leftH - padding;
-  // 送り仮名は漢字の2/3の高さ
-  const kanaH = Math.floor(kanjiH * 0.67);
-  // 再計算: 漢字枚数×kanjiH + 送り仮名枚数×kanaH = leftH - padding になるよう調整
-  const totalH = kanjiList.length * kanjiH + kanaChars.length * kanaH;
-  const scale = totalH > 0 ? (leftH - padding) / totalH : 1;
-  const finalKanjiH = Math.floor(kanjiH * scale);
-  const finalKanaH = Math.floor(kanaH * scale);
+  // 漢字1枚の高さ: 総高さをアイテム数で割る（送り仮名は漢字の2/3として換算）
+  // kanjiH × (kanjiCount + kanaCount×0.67) = leftH - padding
+  const equiv = kanjiList.length + kanaChars.length * 0.67;
+  const finalKanjiH = equiv > 0 ? Math.floor((leftH - padding) / equiv) : leftH - padding;
+  const finalKanaH = Math.floor(finalKanjiH * 0.67);
 
   kanjiList.forEach(kanji => {
     const box = document.createElement('div');
