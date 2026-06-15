@@ -738,7 +738,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           </div>
           <!-- 右1/3：問題 -->
           <div id="rightPanel">
-            <div id="qVerticalWrap">
+            <div id="qVerticalWrap" oncontextmenu="openEditModal();return false;" ontouchstart="startEditLongPress()" ontouchend="cancelEditLongPress()" ontouchmove="cancelEditLongPress()" style="cursor:pointer;">
               <div id="qVerticalInner">
                 <span id="qText"></span>
               </div>
@@ -1776,6 +1776,105 @@ function loadQuestion(i) {
     // 正解欄: leftPanelの高さが確定してから再描画
     buildAnswerImages(session[i]);
   }, 80);
+}
+
+// ===== 問題編集 =====
+let _editLongPressTimer = null;
+
+function startEditLongPress() {
+  _editLongPressTimer = setTimeout(() => openEditModal(), 600);
+}
+function cancelEditLongPress() {
+  if (_editLongPressTimer) { clearTimeout(_editLongPressTimer); _editLongPressTimer = null; }
+}
+
+function openEditModal() {
+  const q = session[current];
+  if (!q) return;
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+
+  const ZMG = "'Zen Maru Gothic',serif";
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:${ZMG};">問題を編集</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
+        <div>
+          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">問題文</label>
+          <input id="editQuestion" type="text" value="${q.question.replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">下線部分（答えの箇所）</label>
+          <input id="editUnderline" type="text" value="${(q.underline||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">正解の漢字（複数はカンマ区切り　例：省,略）</label>
+          <input id="editKanji" type="text" value="${(q.answerKanji||[]).join(',')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">送り仮名（なければ空欄　例：かる）</label>
+          <input id="editKana" type="text" value="${(q.answerText||'').replace(/"/g,'&quot;')}" placeholder="例：かる" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">種類</label>
+          <select id="editType" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+            <option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option>
+            <option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f5f5f5;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+        <button onclick="saveEditModal(this)" style="flex:1;padding:12px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">保存</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function saveEditModal(btn) {
+  const q = session[current];
+  if (!q) return;
+
+  const question = document.getElementById('editQuestion').value.trim();
+  const underline = document.getElementById('editUnderline').value.trim();
+  const kanjiRaw = document.getElementById('editKanji').value.trim();
+  const kana = document.getElementById('editKana').value.trim();
+  const type = document.getElementById('editType').value;
+
+  if (!question) { showToast('問題文を入力してください'); return; }
+
+  const answerKanji = kanjiRaw ? kanjiRaw.split(',').map(k => k.trim()).filter(k => k) : [];
+
+  // localStorageを更新
+  const data = loadPracticeData();
+  const item = data.find(d => d.id === q.id);
+  if (item) {
+    item.question = question;
+    item.underline = underline;
+    item.answerKanji = answerKanji;
+    item.answerText = kana;
+    item.type = type;
+    savePracticeData(data);
+  }
+
+  // sessionも更新
+  session[current].question = question;
+  session[current].underline = underline;
+  session[current].answerKanji = answerKanji;
+  session[current].answerText = kana;
+  session[current].type = type;
+
+  btn.closest('[style*="fixed"]').remove();
+  loadQuestion(current);
+  showToast('保存しました');
 }
 
 function toggleAnswer() {
