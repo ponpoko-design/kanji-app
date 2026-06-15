@@ -1717,39 +1717,28 @@ function buildAnswerImages(q) {
     const wrapH = wrap.offsetHeight;
     const vpad = 8; // 上4px + 下4px（高さに追加）
 
-    // 各画像のnatural幅・高さからボックスサイズを決める
-    // 基本: boxH = naturalH + 8, boxW = naturalW + 0（左右カットしない）
-    // 全boxW の最大値をmaxRawW とし、wrapWに収まるようにscaleを計算
-    // また全boxHの合計がwrapHを超えないようにscaleを計算
-    // 両方を満たすscaleの小さい方を採用
+    // 幅はコンテナ幅いっぱい固定
+    // 高さ = (naturalH / naturalW) * wrapW + vpad（縦横比から計算）
+    // 全高さ合計がwrapHを超えたらスケールダウン
 
-    const rawBoxes = results.map(r => ({
-      w: r.naturalW,
-      h: r.naturalH + vpad
-    }));
+    const rawHeights = results.map(r => {
+      const ratio = r.naturalH / r.naturalW; // H/W
+      return ratio * wrapW + vpad;
+    });
 
-    // 送り仮名の仮高さ（漢字平均高さの0.6倍）
-    const avgKanjiH = rawBoxes.length > 0
-      ? rawBoxes.reduce((a, b) => a + b.h, 0) / rawBoxes.length
-      : 80;
-    const kanaRawH = Math.floor(avgKanjiH * 0.6);
-    const kanaRawW = Math.floor(kanaRawH * 0.8); // 送り仮名は正方形に近い
+    // 送り仮名の高さ: 漢字平均高さの0.6倍
+    const avgKanjiH = rawHeights.length > 0
+      ? rawHeights.reduce((a, b) => a + b, 0) / rawHeights.length : 80;
+    const kanaRawH = avgKanjiH * 0.6;
 
-    // 幅基準のscale: 全boxが wrapW に収まるように
-    const maxRawW = Math.max(...rawBoxes.map(r => r.w), kanaRawW);
-    const scaleW = wrapW / maxRawW;
+    const totalRawH = rawHeights.reduce((a, b) => a + b, 0) + kanaRawH * kanaChars.length;
 
-    // 高さ基準のscale: 全boxの合計高さが wrapH に収まるように
-    const totalRawH = rawBoxes.reduce((a, b) => a + b.h, 0) + kanaRawH * kanaChars.length;
-    const scaleH = totalRawH > 0 ? wrapH / totalRawH : 1;
+    // 高さが超える場合のみスケールダウン
+    const scale = totalRawH > wrapH ? wrapH / totalRawH : 1;
 
-    // 両方満たす小さい方を採用
-    const scale = Math.min(scaleW, scaleH, 1); // 1を超えて拡大はしない
-
-    results.forEach(r => {
-      const boxW = Math.floor(r.naturalW * scale);
-      const boxH = Math.floor((r.naturalH + vpad) * scale);
-      r.box.style.width = boxW + 'px';
+    results.forEach((r, i) => {
+      const boxH = Math.floor(rawHeights[i] * scale);
+      r.box.style.width = wrapW + 'px';
       r.box.style.height = boxH + 'px';
       r.box.style.visibility = 'visible';
 
@@ -1765,9 +1754,8 @@ function buildAnswerImages(q) {
 
     // 送り仮名
     const finalKanaH = Math.floor(kanaRawH * scale);
-    const finalKanaW = Math.floor(kanaRawW * scale);
     kanaEls.forEach(t => {
-      t.style.width = finalKanaW + 'px';
+      t.style.width = wrapW + 'px';
       t.style.height = finalKanaH + 'px';
       t.style.fontSize = Math.floor(finalKanaH * 0.75) + 'px';
       t.style.display = 'flex';
