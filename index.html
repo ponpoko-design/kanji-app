@@ -1751,31 +1751,50 @@ function buildAnswerImages(q) {
 
   addItems();
 
-  // rAFでDOMが確定してから高さを計算
-  requestAnimationFrame(() => {
-    // practiceTopの実際の高さを取得
+  // 全画像読み込み完了後にスケール計算
+  const imgs = [...wrap.querySelectorAll('img')];
+  const imgPromises = imgs.map(img =>
+    img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+  );
+
+  Promise.all(imgPromises).then(() => {
     const pt = document.getElementById('practiceTop');
     const availH = pt ? pt.offsetHeight : window.innerHeight * 0.7;
     const wrapW = wrap.offsetWidth;
-    const gap = 0;
-    const boxes = wrap.querySelectorAll('.kanji-img-box');
-    const n = boxes.length;
-    if (n === 0) return;
-
-    // パディングを引いた使える高さ
-    const lpStyle = getComputedStyle(document.getElementById('leftPanel'));
+    const lp = document.getElementById('leftPanel');
+    const lpStyle = getComputedStyle(lp);
     const padT = parseFloat(lpStyle.paddingTop) || 8;
     const padB = parseFloat(lpStyle.paddingBottom) || 6;
-    const usableH = availH - padT - padB - gap * (n - 1);
-    const boxH = Math.floor(usableH / n);
+    const usableH = availH - padT - padB;
 
-    boxes.forEach(box => {
-      // heightはimgの自然サイズに任せる（width:100% height:auto）
-      box.style.width = wrapW + 'px';
-      // imgはwidth:100% height:autoで縦横比維持
-      // kana-boxとanswer-kana-textのフォントサイズ
+    // 各boxの自然な高さを取得（width:100%で読み込み済みのimg高さ）
+    const boxes = [...wrap.querySelectorAll('.kanji-img-box')];
+    if (!boxes.length) return;
+
+    // imgの自然な高さ（naturalHeight/naturalWidth * wrapW）で計算
+    const naturalHeights = boxes.map(box => {
+      const img = box.querySelector('img');
+      if (img && img.naturalWidth > 0) {
+        return (img.naturalHeight / img.naturalWidth) * wrapW;
+      }
+      return wrapW; // ひらがなboxはwrapWを正方形と仮定
+    });
+
+    const totalNaturalH = naturalHeights.reduce((a, b) => a + b, 0);
+    const scale = totalNaturalH > usableH ? usableH / totalNaturalH : 1;
+    const scaledW = Math.floor(wrapW * scale);
+
+    boxes.forEach((box, i) => {
+      const img = box.querySelector('img');
       const t = box.querySelector('.kana-box, .answer-kana-text');
-      if (t) t.style.fontSize = Math.floor(Math.min(boxH, wrapW) * 0.55) + 'px';
+      const h = Math.floor(naturalHeights[i] * scale);
+      box.style.width = scaledW + 'px';
+      box.style.height = h + 'px';
+      if (img) {
+        img.style.width = scaledW + 'px';
+        img.style.height = h + 'px';
+      }
+      if (t) t.style.fontSize = Math.floor(Math.min(h, scaledW) * 0.55) + 'px';
     });
   });
 }
