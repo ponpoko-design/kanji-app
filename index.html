@@ -318,8 +318,9 @@ header {
 }
 .kanji-img-box img {
   width: 100%;
-  height: 100%;
+  height: auto;
   display: block;
+  object-fit: contain;
 }
 .kanji-placeholder {
   display: flex; align-items: center; justify-content: center;
@@ -1772,12 +1773,7 @@ function buildAnswerImages(q) {
     boxes.forEach(box => {
       box.style.height = boxH + 'px';
       box.style.width = wrapW + 'px';
-      // imgに直接サイズ設定
-      const img = box.querySelector('img');
-      if (img) {
-        img.style.width = wrapW + 'px';
-        img.style.height = boxH + 'px';
-      }
+      // imgはwidth:100% height:autoで縦横比維持
       // kana-boxとanswer-kana-textのフォントサイズ
       const t = box.querySelector('.kana-box, .answer-kana-text');
       if (t) t.style.fontSize = Math.floor(Math.min(boxH, wrapW) * 0.55) + 'px';
