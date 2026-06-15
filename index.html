@@ -1715,33 +1715,42 @@ function buildAnswerImages(q) {
   Promise.all(imgPromises).then(results => {
     const wrapW = wrap.offsetWidth;
     const wrapH = wrap.offsetHeight;
-    const pad = 8; // 上4px + 下4px
+    const vpad = 8; // 上4px + 下4px（高さに追加）
 
-    // 各boxの自然サイズ: naturalH+8px を高さ、アスペクト比で幅を計算
-    // まずwrapWを基準幅として各boxの高さを算出
-    const rawHeights = results.map(r => {
-      const ratio = r.naturalW / r.naturalH;
-      return (wrapW / ratio) + pad;
-    });
+    // 各画像のnatural幅・高さからボックスサイズを決める
+    // 基本: boxH = naturalH + 8, boxW = naturalW + 0（左右カットしない）
+    // 全boxW の最大値をmaxRawW とし、wrapWに収まるようにscaleを計算
+    // また全boxHの合計がwrapHを超えないようにscaleを計算
+    // 両方を満たすscaleの小さい方を採用
 
-    // 送り仮名の高さ: 漢字1文字の平均高さの0.6倍
-    const avgKanjiH = rawHeights.length > 0 ? rawHeights.reduce((a,b)=>a+b,0)/rawHeights.length : 80;
-    const kanaH = Math.floor(avgKanjiH * 0.6);
+    const rawBoxes = results.map(r => ({
+      w: r.naturalW,
+      h: r.naturalH + vpad
+    }));
 
-    const totalH = rawHeights.reduce((a,b)=>a+b,0) + kanaH * kanaChars.length;
+    // 送り仮名の仮高さ（漢字平均高さの0.6倍）
+    const avgKanjiH = rawBoxes.length > 0
+      ? rawBoxes.reduce((a, b) => a + b.h, 0) / rawBoxes.length
+      : 80;
+    const kanaRawH = Math.floor(avgKanjiH * 0.6);
+    const kanaRawW = Math.floor(kanaRawH * 0.8); // 送り仮名は正方形に近い
 
-    // コンテナに収まるようスケール計算
-    let scale = 1;
-    if (totalH > wrapH) scale = wrapH / totalH;
+    // 幅基準のscale: 全boxが wrapW に収まるように
+    const maxRawW = Math.max(...rawBoxes.map(r => r.w), kanaRawW);
+    const scaleW = wrapW / maxRawW;
 
-    const finalW = Math.floor(wrapW * scale);
+    // 高さ基準のscale: 全boxの合計高さが wrapH に収まるように
+    const totalRawH = rawBoxes.reduce((a, b) => a + b.h, 0) + kanaRawH * kanaChars.length;
+    const scaleH = totalRawH > 0 ? wrapH / totalRawH : 1;
 
-    results.forEach((r, i) => {
-      const ratio = r.naturalW / r.naturalH;
-      const h = Math.floor(((finalW / ratio) + pad));
-      // スケール後に再チェック
-      r.box.style.width = finalW + 'px';
-      r.box.style.height = h + 'px';
+    // 両方満たす小さい方を採用
+    const scale = Math.min(scaleW, scaleH, 1); // 1を超えて拡大はしない
+
+    results.forEach(r => {
+      const boxW = Math.floor(r.naturalW * scale);
+      const boxH = Math.floor((r.naturalH + vpad) * scale);
+      r.box.style.width = boxW + 'px';
+      r.box.style.height = boxH + 'px';
       r.box.style.visibility = 'visible';
 
       if (r.type === 'kanji-missing') {
@@ -1755,9 +1764,10 @@ function buildAnswerImages(q) {
     });
 
     // 送り仮名
-    const finalKanaH = Math.floor(kanaH * scale);
+    const finalKanaH = Math.floor(kanaRawH * scale);
+    const finalKanaW = Math.floor(kanaRawW * scale);
     kanaEls.forEach(t => {
-      t.style.width = finalW + 'px';
+      t.style.width = finalKanaW + 'px';
       t.style.height = finalKanaH + 'px';
       t.style.fontSize = Math.floor(finalKanaH * 0.75) + 'px';
       t.style.display = 'flex';
