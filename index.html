@@ -1407,16 +1407,16 @@ function applyShutsudai() {
 
   if (v === 'miss') {
     // 間違い多い順トップ10
-    pool = [...data].sort((a,b) => b.missCount - a.missCount).slice(0, 10);
+    pool = [...data].map((q,i) => ({...q, _dataIndex: i})).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   } else if (v === 'random') {
     // ランダム10問
-    const shuffled = [...data].sort(() => Math.random() - 0.5);
+    const shuffled = [...data].map((q,i) => ({...q, _dataIndex: i})).sort(() => Math.random() - 0.5);
     pool = shuffled.slice(0, Math.min(10, shuffled.length));
   } else if (v === 'unit') {
     const from = parseInt(document.getElementById('unitFrom').value);
     const to = parseInt(document.getElementById('unitTo').value);
     const [lo, hi] = [Math.min(from,to), Math.max(from,to)];
-    const rangeData = data.filter(q => q.unit >= lo && q.unit <= hi);
+    const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
     const hasMiss = rangeData.some(q => q.missCount > 0);
     if (!hasMiss) {
       // 初回: 範囲内全問出題
@@ -1432,13 +1432,13 @@ function applyShutsudai() {
   } else if (v === 'date') {
     const from = document.getElementById('dateFrom').value;
     const to = document.getElementById('dateTo').value;
-    pool = data.filter(q => {
+    pool = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => {
       if (!q.registeredAt) return false;
       return (!from || q.registeredAt >= from) && (!to || q.registeredAt <= to);
     }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   } else if (v === 'ebbinghaus') {
     const intervals = [1, 2, 7, 30, 60]; // 日数
-    pool = data.filter(q => {
+    pool = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => {
       if (!q.lastTestedAt) return true; // 未受験は含める
       const last = new Date(q.lastTestedAt); last.setHours(0,0,0,0);
       const diff = Math.floor((today - last) / (1000*60*60*24));
@@ -1598,8 +1598,9 @@ function confirmSaveQuestions(btn) {
   const today = new Date().toISOString().split('T')[0];
 
   const existing = loadPracticeData();
-  const newItems = questions.map(q => ({
+  const newItems = questions.map((q, i) => ({
     id: q.no,
+    _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
     grade: grade,
     unit: unit,
     registeredAt: today,
@@ -1843,7 +1844,7 @@ function initPractice() {
     document.getElementById('questionArea').style.display = 'none';
     return;
   }
-  session = [...data].sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  session = [...data].map((q,i) => ({...q, _dataIndex: i})).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
   current = 0; correctCount = 0;
   document.getElementById('noDataMsg').style.display = 'none';
   document.getElementById('questionArea').style.display = 'flex';
@@ -2215,7 +2216,15 @@ function recordResult(correct) {
   const today = new Date().toISOString().split('T')[0];
   const data = loadPracticeData();
   const q = session[current];
-  const item = data.find(d => d.id === q.id);
+  // _dataIndexがあればそれを使う、なければ_uidで検索、なければidで検索
+  let item;
+  if (q._dataIndex !== undefined) {
+    item = data[q._dataIndex];
+  } else if (q._uid) {
+    item = data.find(d => d._uid === q._uid);
+  } else {
+    item = data.find(d => d.id === q.id);
+  }
   if (item) {
     item.lastTestedAt = today;
     // 累計出題数・正解数を記録
