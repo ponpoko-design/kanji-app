@@ -1458,7 +1458,8 @@ function confirmSaveQuestions(btn) {
     charMiss: {}
   }));
 
-  const updated = [...existing.filter(e => !(e.grade === grade && e.unit === unit)), ...newItems];
+  // 既存の問題は一切削除せず、新しい問題を末尾に追加するだけ
+  const updated = [...existing, ...newItems];
   savePracticeData(updated);
 
   alert(`✅ ${newItems.length}問を保存しました！`);
