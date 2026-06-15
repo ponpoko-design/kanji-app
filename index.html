@@ -1714,8 +1714,9 @@ function buildAnswerImages(q) {
 
   Promise.all(imgPromises).then(results => {
     const wrapW = wrap.offsetWidth;
-    const wrapH = wrap.offsetHeight;
-    const vpad = 8; // 上4px + 下4px（高さに追加）
+    // 余裕16px引いて確実に収まるように
+    const wrapH = wrap.offsetHeight - 16;
+    const vpad = 12; // 上6px + 下6px
 
     // 幅はコンテナ幅いっぱい固定
     // 高さ = (naturalH / naturalW) * wrapW + vpad（縦横比から計算）
