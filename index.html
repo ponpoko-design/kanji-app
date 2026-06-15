@@ -1729,7 +1729,6 @@ function buildAnswerImages(q) {
       box.style.height = itemH + 'px';
       const t = document.createElement('div');
       t.className = 'kana-box';
-      t.style.fontSize = Math.floor(itemH * 0.72) + 'px';
       t.textContent = ch;
       box.appendChild(t);
       wrap.appendChild(box);
@@ -2023,7 +2022,11 @@ function fixLayout() {
   if (qa && qa.style.display !== 'none') {
     qa.style.height = contentH + 'px';
     const pt = document.getElementById('practiceTop');
-    if (pt) pt.style.height = (contentH - bottomBtnH) + 'px';
+    const ptH = contentH - bottomBtnH;
+    if (pt) pt.style.height = ptH + 'px';
+    // leftPanelにも明示的にheightを設定
+    const lp = document.getElementById('leftPanel');
+    if (lp) lp.style.height = ptH + 'px';
   }
 }
 fixLayout();
