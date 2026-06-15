@@ -283,32 +283,38 @@ header {
   overflow: hidden;
 }
 
-/* 左2/3：正解エリア — main-areaと同じpadding */
+/* 左2/3：正解エリア */
 #leftPanel {
   flex: 0 0 66%;
+  height: 100%;
   background: #f0f4f8;
   border-right: 1px solid #ccc;
   display: flex;
   flex-direction: column;
   padding: clamp(6px,1.5vw,10px) clamp(8px,2vw,14px) clamp(4px,1vw,8px);
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* 正解表示エリア */
+/* 正解表示エリア — result-areaと同じ */
 #answerImagesWrap {
+  flex: 1;
+  min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: clamp(5px,1.2vw,8px);
+  overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-/* 各カード — 高さはJSで設定 */
+/* .cardと同じ */
 .kanji-img-box {
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  flex-shrink: 0;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
@@ -1710,28 +1716,24 @@ function buildAnswerImages(q) {
   const total = kanjiList.length + kanaChars.length;
   if (total === 0) return;
 
-  // leftPanelの高さとwrapの幅から1枚の高さを計算
-  const leftPanel = document.getElementById('leftPanel');
-  const leftH = leftPanel.offsetHeight;
-  const wrapW = leftPanel.offsetWidth;
-  const gapPx = Math.min(Math.max(wrapW * 0.012, 5), 8);
-  const padding = parseFloat(getComputedStyle(leftPanel).paddingTop) * 2;
-  const itemH = Math.floor((leftH - padding - gapPx * (total - 1)) / total);
-  const gap = Math.floor(gapPx);
-
-  wrap.style.gap = gap + 'px';
-
   // よみがなのみ
   if (q.type === 'よみがなを書く' && kanjiList.length === 0 && kanaChars.length > 0) {
     kanaChars.forEach(ch => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
-      box.style.height = itemH + 'px';
       const t = document.createElement('div');
       t.className = 'kana-box';
       t.textContent = ch;
       box.appendChild(t);
       wrap.appendChild(box);
+    });
+    // kana-boxのfontSizeをcardサイズ確定後に調整
+    requestAnimationFrame(() => {
+      wrap.querySelectorAll('.kanji-img-box').forEach(box => {
+        const h = box.offsetHeight, w = box.offsetWidth;
+        const t = box.querySelector('.kana-box');
+        if (t) t.style.fontSize = Math.floor(Math.min(h,w) * 0.72) + 'px';
+      });
     });
     return;
   }
@@ -1740,7 +1742,6 @@ function buildAnswerImages(q) {
   kanjiList.forEach(kanji => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
-    box.style.height = itemH + 'px';
     const img = document.createElement('img');
     img.src = getImageUrl(kanji);
     img.alt = kanji;
@@ -1748,7 +1749,6 @@ function buildAnswerImages(q) {
       this.style.display = 'none';
       const ph = document.createElement('div');
       ph.className = 'no-image-box';
-      ph.style.fontSize = Math.floor(itemH * 0.7) + 'px';
       ph.textContent = kanji;
       ph.onclick = () => openPopup(kanji, false);
       box.appendChild(ph);
@@ -1762,14 +1762,24 @@ function buildAnswerImages(q) {
   kanaChars.forEach(ch => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
-    box.style.height = itemH + 'px';
     const t = document.createElement('div');
     t.className = 'answer-kana-text';
-    t.style.fontSize = Math.floor(itemH * 0.55) + 'px';
     t.textContent = ch;
     box.appendChild(t);
     wrap.appendChild(box);
   });
+
+  // 送り仮名フォントサイズ調整
+  if (kanaChars.length > 0) {
+    requestAnimationFrame(() => {
+      wrap.querySelectorAll('.kanji-img-box').forEach(box => {
+        const t = box.querySelector('.answer-kana-text');
+        if (!t) return;
+        const h = box.offsetHeight, w = box.offsetWidth;
+        t.style.fontSize = Math.floor(Math.min(h,w) * 0.55) + 'px';
+      });
+    });
+  }
 }
 
 function loadQuestion(i) {
