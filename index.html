@@ -295,23 +295,23 @@ header {
   overflow: hidden;
 }
 
-/* 正解表示エリア */
+/* 正解表示エリア — お手本タブのresult-areaと同じ */
 #answerImagesWrap {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  gap: clamp(5px,1.2vw,8px);
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
 
-/* 漢字1枚のボックス — サイズはJSで動的に設定 */
+/* お手本タブの.cardと同じ */
 .kanji-img-box {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
@@ -324,7 +324,9 @@ header {
 .kanji-img-box img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   display: block;
+  padding: 4px 10px;
 }
 .kanji-placeholder {
   display: flex; align-items: center; justify-content: center;
@@ -1653,113 +1655,69 @@ function buildAnswerImages(q) {
   const kanjiList = q.answerKanji || [];
   const kanaChars = q.answerText ? [...q.answerText] : [];
 
-  // よみがなのみ（画像なし）→ ボックスなし、テキストだけ天地中央に
+  // よみがなのみ → 1文字ずつcardに（お手本タブと同じ）
   if (q.type === 'よみがなを書く' && kanjiList.length === 0 && kanaChars.length > 0) {
-    const inner = document.createElement('div');
-    inner.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;';
     kanaChars.forEach(ch => {
+      const box = document.createElement('div');
+      box.className = 'kanji-img-box';
       const t = document.createElement('div');
-      t.className = 'answer-kana-text';
+      t.className = 'kana-box';
       t.textContent = ch;
-      inner.appendChild(t);
+      box.appendChild(t);
+      wrap.appendChild(box);
     });
-    wrap.appendChild(inner);
     requestAnimationFrame(() => {
-      const wrapH = wrap.offsetHeight;
-      const wrapW = wrap.offsetWidth;
-      const n = kanaChars.length;
-      const perH = Math.floor(wrapH / n);
-      const fs = Math.floor(Math.min(perH, wrapW) * 0.55);
-      inner.querySelectorAll('.answer-kana-text').forEach(t => {
-        t.style.fontSize = fs + 'px';
-        t.style.height = perH + 'px';
-        t.style.display = 'flex';
-        t.style.alignItems = 'center';
-        t.style.justifyContent = 'center';
+      wrap.querySelectorAll('.kanji-img-box').forEach(box => {
+        const h = box.offsetHeight, w = box.offsetWidth;
+        const t = box.querySelector('.kana-box');
+        if (t) t.style.fontSize = Math.floor(Math.min(h, w) * 0.72) + 'px';
       });
     });
     return;
   }
 
-  // 漢字画像: 全画像読み込み後に naturalHeight+8px をboxの高さに設定
-  const imgPromises = [];
-
+  // 漢字画像（お手本タブの.cardと完全に同じ構造）
   kanjiList.forEach(kanji => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
-    box.style.visibility = 'hidden';
     const img = document.createElement('img');
     img.src = getImageUrl(kanji);
     img.alt = kanji;
-    const p = new Promise(resolve => {
-      img.onload = () => resolve({ box, img, naturalH: img.naturalHeight, naturalW: img.naturalWidth, type: 'kanji', kanji });
-      img.onerror = () => resolve({ box, img, naturalH: 100, naturalW: 100, type: 'kanji-missing', kanji });
-    });
-    imgPromises.push(p);
+    img.onerror = function() {
+      this.style.display = 'none';
+      const ph = document.createElement('div');
+      ph.className = 'no-image-box';
+      ph.textContent = kanji;
+      ph.onclick = () => openPopup(kanji, false);
+      box.appendChild(ph);
+    };
     img.onclick = () => openPopup(kanji, true);
     box.appendChild(img);
     wrap.appendChild(box);
   });
 
-  // 送り仮名: ボックスなし・テキストのみ
-  const kanaEls = [];
+  // 送り仮名（cardに入れる）
   kanaChars.forEach(ch => {
+    const box = document.createElement('div');
+    box.className = 'kanji-img-box';
     const t = document.createElement('div');
     t.className = 'answer-kana-text';
     t.textContent = ch;
-    t.style.visibility = 'hidden';
-    wrap.appendChild(t);
-    kanaEls.push(t);
+    box.appendChild(t);
+    wrap.appendChild(box);
   });
 
-  Promise.all(imgPromises).then(results => {
-    const wrapW = wrap.offsetWidth;
-    const wrapH = wrap.offsetHeight;
-
-    // 総アイテム数（送り仮名は0.6換算）
-    const totalItems = results.length + kanaChars.length * 0.6;
-
-    // 1アイテムあたりの最大高さ（余白込み）= wrapH ÷ 総アイテム数 × 0.9
-    // 0.9 = 10%余白（天地に均等に分散）
-    const maxItemH = (wrapH / totalItems) * 0.90;
-
-    results.forEach(r => {
-      // 縦横比から高さを計算
-      const ratio = r.naturalH / r.naturalW;
-      const naturalBoxH = ratio * wrapW;
-      // maxItemHを超えないようにscaleを決める
-      const itemScale = naturalBoxH > maxItemH ? maxItemH / naturalBoxH : 1;
-      const boxH = Math.floor(naturalBoxH * itemScale);
-      const boxW = Math.floor(wrapW * itemScale);
-
-      r.box.style.width = boxW + 'px';
-      r.box.style.height = boxH + 'px';
-      r.box.style.visibility = 'visible';
-
-      if (r.type === 'kanji-missing') {
-        r.img.style.display = 'none';
-        const ph = document.createElement('div');
-        ph.className = 'no-image-box';
-        ph.textContent = r.kanji;
-        ph.onclick = () => openPopup(r.kanji, false);
-        r.box.appendChild(ph);
-      }
+  // 送り仮名フォントサイズ調整
+  if (kanaChars.length > 0) {
+    requestAnimationFrame(() => {
+      wrap.querySelectorAll('.kanji-img-box').forEach(box => {
+        const t = box.querySelector('.answer-kana-text');
+        if (!t) return;
+        const h = box.offsetHeight, w = box.offsetWidth;
+        t.style.fontSize = Math.floor(Math.min(h, w) * 0.55) + 'px';
+      });
     });
-
-    // 送り仮名
-    const kanaMaxH = maxItemH * 0.6;
-    kanaEls.forEach(t => {
-      const kanaH = Math.floor(kanaMaxH);
-      const kanaW = Math.floor(wrapW * 0.6);
-      t.style.width = kanaW + 'px';
-      t.style.height = kanaH + 'px';
-      t.style.fontSize = Math.floor(kanaH * 0.75) + 'px';
-      t.style.display = 'flex';
-      t.style.alignItems = 'center';
-      t.style.justifyContent = 'center';
-      t.style.visibility = 'visible';
-    });
-  });
+  }
 }
 
 function loadQuestion(i) {
