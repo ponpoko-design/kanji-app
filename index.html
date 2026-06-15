@@ -1256,12 +1256,12 @@ function showQuestionList() {
   }
 
   function buildList(gradeFilter, unitFilter, keyword) {
-    // 絞り込み
+    // 絞り込み（数値と文字列の比較ミスを防ぐためString()で統一）
     const filtered = data.map((q,i) => ({...q, _listIdx: i})).filter(q => {
-      if (gradeFilter && q.grade != gradeFilter) return false;
-      if (unitFilter && q.unit != unitFilter) return false;
+      if (gradeFilter && String(q.grade) !== String(gradeFilter)) return false;
+      if (unitFilter && String(q.unit) !== String(unitFilter)) return false;
       if (keyword) {
-        const kw = keyword.toLowerCase();
+        const kw = keyword;
         const inQ = (q.question||'').includes(kw);
         const inK = (q.answerKanji||[]).join('').includes(kw);
         const inT = (q.answerText||'').includes(kw);
@@ -1317,7 +1317,7 @@ function showQuestionList() {
       <div style="padding:10px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:8px;">
           <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
-          <select id="qFilterUnit" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts('')}</select>
+          <select id="qFilterUnit" onchange="refreshQList()" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts('')}</select>
         </div>
         <input id="qFilterKeyword" type="text" placeholder="問題文・漢字で検索" oninput="refreshQList()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
       </div>
