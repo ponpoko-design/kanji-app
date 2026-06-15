@@ -1858,7 +1858,10 @@ function showComplete() {
 
 function restartPractice() {
   document.getElementById('completeScreen').classList.remove('visible');
-  initPractice();
+  // sessionはそのまま維持して最初から
+  current = 0;
+  correctCount = 0;
+  loadQuestion(0);
 }
 
 // ===== 漢字表示機能 =====
