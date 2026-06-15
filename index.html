@@ -1149,6 +1149,36 @@ function showDeleteQuestions() {
   document.body.appendChild(overlay);
 }
 
+// ===== トースト通知 =====
+function showToast(msg) {
+  const existing = document.getElementById('toastMsg');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'toastMsg';
+  toast.textContent = msg;
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0d3d7a;
+    color: #fff;
+    font-family: 'Zen Maru Gothic', serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 999px;
+    z-index: 9999;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.4s;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+  setTimeout(() => { toast.remove(); }, 2200);
+}
+
 function execDeleteQuestions() {
   const checked = [...document.getElementById('delQList').querySelectorAll('input:checked')];
   if (!checked.length) { alert('問題を選択してください'); return; }
@@ -1158,8 +1188,9 @@ function execDeleteQuestions() {
   const data = loadPracticeData();
   const newData = data.filter((_, i) => !idxSet.has(i));
   savePracticeData(newData);
-  document.querySelector('[style*="fixed"]').remove();
-  alert(`✅ ${idxSet.size}問を削除しました`);
+  // ポップアップを全部閉じる
+  document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
+  showToast(`${idxSet.size}問を削除しました`);
   initPractice();
 }
 
