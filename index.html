@@ -1714,32 +1714,25 @@ function buildAnswerImages(q) {
 
   Promise.all(imgPromises).then(results => {
     const wrapW = wrap.offsetWidth;
-    // 余裕16px引いて確実に収まるように
-    const wrapH = wrap.offsetHeight - 16;
-    const vpad = 12; // 上6px + 下6px
+    const wrapH = wrap.offsetHeight;
 
-    // 幅はコンテナ幅いっぱい固定
-    // 高さ = (naturalH / naturalW) * wrapW + vpad（縦横比から計算）
-    // 全高さ合計がwrapHを超えたらスケールダウン
+    // 総アイテム数（送り仮名は0.6換算）
+    const totalItems = results.length + kanaChars.length * 0.6;
 
-    const rawHeights = results.map(r => {
-      const ratio = r.naturalH / r.naturalW; // H/W
-      return ratio * wrapW + vpad;
-    });
+    // 1アイテムあたりの最大高さ（余白込み）= wrapH ÷ 総アイテム数 × 0.9
+    // 0.9 = 10%余白（天地に均等に分散）
+    const maxItemH = (wrapH / totalItems) * 0.90;
 
-    // 送り仮名の高さ: 漢字平均高さの0.6倍
-    const avgKanjiH = rawHeights.length > 0
-      ? rawHeights.reduce((a, b) => a + b, 0) / rawHeights.length : 80;
-    const kanaRawH = avgKanjiH * 0.6;
+    results.forEach(r => {
+      // 縦横比から高さを計算
+      const ratio = r.naturalH / r.naturalW;
+      const naturalBoxH = ratio * wrapW;
+      // maxItemHを超えないようにscaleを決める
+      const itemScale = naturalBoxH > maxItemH ? maxItemH / naturalBoxH : 1;
+      const boxH = Math.floor(naturalBoxH * itemScale);
+      const boxW = Math.floor(wrapW * itemScale);
 
-    const totalRawH = rawHeights.reduce((a, b) => a + b, 0) + kanaRawH * kanaChars.length;
-
-    // 高さが超える場合のみスケールダウン
-    const scale = totalRawH > wrapH ? wrapH / totalRawH : 1;
-
-    results.forEach((r, i) => {
-      const boxH = Math.floor(rawHeights[i] * scale);
-      r.box.style.width = wrapW + 'px';
+      r.box.style.width = boxW + 'px';
       r.box.style.height = boxH + 'px';
       r.box.style.visibility = 'visible';
 
@@ -1754,11 +1747,13 @@ function buildAnswerImages(q) {
     });
 
     // 送り仮名
-    const finalKanaH = Math.floor(kanaRawH * scale);
+    const kanaMaxH = maxItemH * 0.6;
     kanaEls.forEach(t => {
-      t.style.width = wrapW + 'px';
-      t.style.height = finalKanaH + 'px';
-      t.style.fontSize = Math.floor(finalKanaH * 0.75) + 'px';
+      const kanaH = Math.floor(kanaMaxH);
+      const kanaW = Math.floor(wrapW * 0.6);
+      t.style.width = kanaW + 'px';
+      t.style.height = kanaH + 'px';
+      t.style.fontSize = Math.floor(kanaH * 0.75) + 'px';
       t.style.display = 'flex';
       t.style.alignItems = 'center';
       t.style.justifyContent = 'center';
