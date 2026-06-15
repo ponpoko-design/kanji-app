@@ -338,6 +338,12 @@ header {
   height: 100%;
 }
 
+/* ルビ */
+rt {
+  font-family: 'I-OTF-G教科書Pro L';
+  font-size: 0.5em;
+}
+
 /* 右1/3：問題文エリア */
 #rightPanel {
   flex: 0 0 40%;
@@ -1622,17 +1628,56 @@ function initPractice() {
   setTimeout(fixLayout, 10);
 }
 
-function buildQ(question, underline) {
+function buildQ(question, underline, ruby) {
   const cleaned = question.replace(/^[。、・\s]+/, '');
-  if (!underline) return document.createTextNode(cleaned);
+
+  // テキストにルビを適用してDOMを生成するヘルパー
+  function applyRuby(text) {
+    const frag = document.createDocumentFragment();
+    if (!ruby || Object.keys(ruby).length === 0) {
+      frag.appendChild(document.createTextNode(text));
+      return frag;
+    }
+    // ルビの漢字でテキストを分割
+    let remaining = text;
+    while (remaining.length > 0) {
+      let matched = false;
+      for (const [kanji, yomi] of Object.entries(ruby)) {
+        if (remaining.startsWith(kanji)) {
+          const rt = document.createElement('ruby');
+          rt.appendChild(document.createTextNode(kanji));
+          const rtEl = document.createElement('rt');
+          rtEl.textContent = yomi;
+          rt.appendChild(rtEl);
+          frag.appendChild(rt);
+          remaining = remaining.slice(kanji.length);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        // 1文字ずつTextNodeで追加
+        frag.appendChild(document.createTextNode(remaining[0]));
+        remaining = remaining.slice(1);
+      }
+    }
+    return frag;
+  }
+
+  if (!underline) {
+    const span = document.createElement('span');
+    span.appendChild(applyRuby(cleaned));
+    return span;
+  }
+
   const parts = cleaned.split(underline);
   const span = document.createElement('span');
   parts.forEach((p, i) => {
-    span.appendChild(document.createTextNode(p));
+    span.appendChild(applyRuby(p));
     if (i < parts.length - 1) {
       const u = document.createElement('span');
       u.className = 'underline-word';
-      u.textContent = underline;
+      u.appendChild(applyRuby(underline));
       span.appendChild(u);
     }
   });
@@ -1750,7 +1795,7 @@ function loadQuestion(i) {
   document.getElementById('qType').textContent = q.type;
   const qt = document.getElementById('qText');
   qt.innerHTML = '';
-  qt.appendChild(buildQ(q.question, q.underline));
+  qt.appendChild(buildQ(q.question, q.underline, q.ruby));
   buildAnswerImages(q);
   document.getElementById('missBarFill').style.width = (maxMiss > 0 ? (q.missCount/maxMiss)*100 : 0) + '%';
   document.getElementById('missBarCount').textContent = q.missCount + '回';
@@ -1796,8 +1841,25 @@ function openEditModal() {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
 
   const ZMG = "'Zen Maru Gothic',serif";
+  const inp = `width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};`;
+  const lbl = `font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;`;
+
+  // 既存ルビ（ruby: {"難読":"なんどく"} の形式）
+  const existingRuby = q.ruby || {};
+  const rubyEntries = Object.entries(existingRuby);
+  // 最初の1行は必ず表示（空でも）、2行目以降は既存データがあれば表示
+  const rubyRows = rubyEntries.length > 0 ? rubyEntries : [['', '']];
+
+  const rubyRowsHTML = rubyRows.map((entry, i) => `
+    <div class="ruby-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <input class="ruby-kanji" type="text" placeholder="漢字" value="${entry[0]}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
+      <span style="color:#999;flex-shrink:0;font-size:13px;">→</span>
+      <input class="ruby-yomi" type="text" placeholder="よみ" value="${entry[1]}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
+      <button onclick="this.closest('.ruby-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>
+    </div>`).join('');
+
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
         <div style="font-size:17px;font-weight:700;color:#000;font-family:${ZMG};">問題を編集</div>
         <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
@@ -1805,29 +1867,42 @@ function openEditModal() {
         </button>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
+
         <div>
-          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">問題文</label>
-          <input id="editQuestion" type="text" value="${q.question.replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+          <label style="${lbl}">問題文</label>
+          <input id="editQuestion" type="text" value="${q.question.replace(/"/g,'&quot;')}" style="${inp}">
         </div>
+
         <div>
-          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">下線部分（答えの箇所）</label>
-          <input id="editUnderline" type="text" value="${(q.underline||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+          <label style="${lbl}">下線部分（答えの箇所）</label>
+          <input id="editUnderline" type="text" value="${(q.underline||'').replace(/"/g,'&quot;')}" style="${inp}">
         </div>
-        <div>
-          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">正解の漢字（複数はカンマ区切り　例：省,略）</label>
-          <input id="editKanji" type="text" value="${(q.answerKanji||[]).join(',')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <label style="${lbl}">正解の漢字<span style="font-weight:400;font-size:11px;">（複数はカンマ区切り）</span></label>
+            <input id="editKanji" type="text" value="${(q.answerKanji||[]).join(',')}" style="${inp}">
+          </div>
+          <div style="flex:1;">
+            <label style="${lbl}">送り仮名</label>
+            <input id="editKana" type="text" value="${(q.answerText||'').replace(/"/g,'&quot;')}" placeholder="例：かる" style="${inp}">
+          </div>
         </div>
+
         <div>
-          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">送り仮名（なければ空欄　例：かる）</label>
-          <input id="editKana" type="text" value="${(q.answerText||'').replace(/"/g,'&quot;')}" placeholder="例：かる" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
-        </div>
-        <div>
-          <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">種類</label>
-          <select id="editType" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+          <label style="${lbl}">種類</label>
+          <select id="editType" style="${inp}">
             <option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option>
             <option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option>
           </select>
         </div>
+
+        <div style="border-top:1px solid #f0f4f8;padding-top:12px;">
+          <label style="${lbl}">ルビ <span style="font-weight:400;">（問題文中の漢字によみがなをつける）</span></label>
+          <div id="rubyRows">${rubyRowsHTML}</div>
+          <button onclick="addRubyRow()" style="width:100%;padding:8px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};cursor:pointer;color:#666;margin-top:2px;">＋ ルビを追加</button>
+        </div>
+
       </div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:8px;flex-shrink:0;">
         <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f5f5f5;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
@@ -1837,6 +1912,19 @@ function openEditModal() {
 
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+}
+
+function addRubyRow() {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const row = document.createElement('div');
+  row.className = 'ruby-row';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+  row.innerHTML = `
+    <input class="ruby-kanji" type="text" placeholder="漢字" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
+    <span style="color:#999;flex-shrink:0;font-size:13px;">→</span>
+    <input class="ruby-yomi" type="text" placeholder="よみ" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
+    <button onclick="this.closest('.ruby-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>`;
+  document.getElementById('rubyRows').appendChild(row);
 }
 
 function saveEditModal(btn) {
@@ -1853,6 +1941,14 @@ function saveEditModal(btn) {
 
   const answerKanji = kanjiRaw ? kanjiRaw.split(',').map(k => k.trim()).filter(k => k) : [];
 
+  // ルビを収集
+  const ruby = {};
+  document.querySelectorAll('#rubyRows .ruby-row').forEach(row => {
+    const k = row.querySelector('.ruby-kanji').value.trim();
+    const y = row.querySelector('.ruby-yomi').value.trim();
+    if (k && y) ruby[k] = y;
+  });
+
   // localStorageを更新
   const data = loadPracticeData();
   const item = data.find(d => d.id === q.id);
@@ -1862,6 +1958,7 @@ function saveEditModal(btn) {
     item.answerKanji = answerKanji;
     item.answerText = kana;
     item.type = type;
+    item.ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
     savePracticeData(data);
   }
 
@@ -1871,6 +1968,7 @@ function saveEditModal(btn) {
   session[current].answerKanji = answerKanji;
   session[current].answerText = kana;
   session[current].type = type;
+  session[current].ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
 
   btn.closest('[style*="fixed"]').remove();
   loadQuestion(current);
