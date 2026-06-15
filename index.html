@@ -1666,17 +1666,14 @@ function menuShowData() {
   function renderKanjiBetsu() {
     const map = {};
     const gradeMap = {};
+    const unitMap = {};
+    const dateMap = {};
     data.forEach(q => {
       (q.answerKanji || []).forEach(k => {
         const miss = (q.charMiss && q.charMiss[k]) ? q.charMiss[k] : 0;
         map[k] = (map[k] || 0) + miss;
         if (q.grade && !gradeMap[k]) gradeMap[k] = q.grade;
-      });
-    });
-    // 登録日マップも作成（同率時の優先順位用）
-    const dateMap = {};
-    data.forEach(q => {
-      (q.answerKanji || []).forEach(k => {
+        if (q.unit && !unitMap[k]) unitMap[k] = q.unit;
         if (!dateMap[k] || (q.registeredAt||'') > (dateMap[k]||'')) dateMap[k] = q.registeredAt||'';
       });
     });
@@ -1684,16 +1681,18 @@ function menuShowData() {
       .filter(([,cnt]) => cnt > 0)
       .sort((a,b) => b[1]-a[1] || (dateMap[b[0]]||'').localeCompare(dateMap[a[0]]||''))
       .slice(0, 10);
-    if (!sorted.length) return `<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
+    if (!sorted.length) return `<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
     const max = Math.max(...sorted.map(e => e[1]), 1);
     return sorted.map(([k, cnt]) => {
       const grade = gradeMap[k] ? `${gradeMap[k]}年` : '−';
+      const unit = unitMap[k] ? `${unitMap[k]}` : '−';
       const pct = (cnt / max) * 100;
       return `<tr style="border-bottom:1px solid #f0f4f8;">
         <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
+        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
         <td style="padding:8px 6px;font-size:20px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;width:40px;">${k}</td>
         <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${cnt}回</td>
-        <td style="padding:8px 6px;width:80px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
+        <td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
       </tr>`;
     }).join('');
   }
@@ -1710,7 +1709,6 @@ function menuShowData() {
       <div style="display:flex;gap:0;padding:12px 20px 0;flex-shrink:0;border-bottom:2px solid #f0f4f8;">
         <button id="missTab1" onclick="switchMissTab(1)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid #3B82F6;margin-bottom:-2px;font-size:14px;font-weight:700;color:#3B82F6;font-family:'Zen Maru Gothic',serif;cursor:pointer;">問題別</button>
         <button id="missTab2" onclick="switchMissTab(2)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">漢字別</button>
-        <button id="missTab3" onclick="switchMissTab(3)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">単元別</button>
       </div>
       <div style="overflow-y:auto;flex:1;">
         <div id="missPane1">
@@ -1729,14 +1727,15 @@ function menuShowData() {
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
+              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;font-weight:600;">漢字</th>
               <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
-              <th style="padding:8px 6px;font-size:11px;width:80px;"></th>
+              <th style="padding:8px 6px;font-size:11px;width:60px;"></th>
             </tr></thead>
             <tbody>${renderKanjiBetsu()}</tbody>
           </table>
         </div>
-        <div id="missPane3" style="display:none;"></div>
+
       </div>
     </div>`;
 
@@ -1745,13 +1744,12 @@ function menuShowData() {
 }
 
 function switchMissTab(n) {
-  [1,2,3].forEach(i => {
+  [1,2].forEach(i => {
     document.getElementById('missPane'+i).style.display = n===i ? '' : 'none';
     document.getElementById('missTab'+i).style.borderBottomColor = n===i ? '#3B82F6' : 'transparent';
     document.getElementById('missTab'+i).style.color = n===i ? '#3B82F6' : '#999';
     document.getElementById('missTab'+i).style.fontWeight = n===i ? '700' : '400';
   });
-  if (n === 3) renderUnitBetsu();
 }
 
 function renderUnitBetsu() {
