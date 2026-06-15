@@ -285,7 +285,7 @@ header {
 
 /* 左2/3：正解エリア */
 #leftPanel {
-  flex: 0 0 66%;
+  flex: 0 0 60%;
   height: 100%;
   background: #f0f4f8;
   border-right: 1px solid #ccc;
@@ -299,9 +299,11 @@ header {
 /* 正解表示エリア */
 #answerImagesWrap {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  justify-content: center;
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
@@ -339,7 +341,7 @@ header {
 
 /* 右1/3：問題文エリア */
 #rightPanel {
-  flex: 0 0 34%;
+  flex: 0 0 40%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -366,7 +368,7 @@ header {
 }
 /* 問題文テキスト */
 #qText {
-  font-size: 27px;
+  font-size: 28px;
   color: #1A1A1A;
   font-family: 'Klee One', serif;
 }
@@ -1756,7 +1758,7 @@ function buildAnswerImages(q) {
     const pt = document.getElementById('practiceTop');
     const availH = pt ? pt.offsetHeight : window.innerHeight * 0.7;
     const wrapW = wrap.offsetWidth;
-    const gap = 6;
+    const gap = 4;
     const boxes = wrap.querySelectorAll('.kanji-img-box');
     const n = boxes.length;
     if (n === 0) return;
@@ -1808,8 +1810,8 @@ function loadQuestion(i) {
     const inner = document.getElementById('qVerticalInner');
     const text = document.getElementById('qText');
     if (inner && text) {
-      text.style.fontSize = '27px';
-      let size = 27;
+      text.style.fontSize = '28px';
+      let size = 28;
       while (inner.scrollHeight > inner.clientHeight + 4 && size > 12) {
         size -= 1;
         text.style.fontSize = size + 'px';
