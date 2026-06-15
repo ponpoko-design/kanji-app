@@ -1275,22 +1275,36 @@ function applyShutsudai() {
   const today = new Date(); today.setHours(0,0,0,0);
 
   if (v === 'miss') {
-    pool = [...data].sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+    // 間違い多い順トップ10
+    pool = [...data].sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   } else if (v === 'random') {
+    // ランダム10問
     const shuffled = [...data].sort(() => Math.random() - 0.5);
-    pool = shuffled.slice(0, Math.min(7, shuffled.length));
+    pool = shuffled.slice(0, Math.min(10, shuffled.length));
   } else if (v === 'unit') {
     const from = parseInt(document.getElementById('unitFrom').value);
     const to = parseInt(document.getElementById('unitTo').value);
     const [lo, hi] = [Math.min(from,to), Math.max(from,to)];
-    pool = data.filter(q => q.unit >= lo && q.unit <= hi).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+    const rangeData = data.filter(q => q.unit >= lo && q.unit <= hi);
+    const hasMiss = rangeData.some(q => q.missCount > 0);
+    if (!hasMiss) {
+      // 初回: 範囲内全問出題
+      pool = rangeData;
+    } else {
+      // 2回目以降: missCount>0を優先、missCount=0を30%混ぜる、上限20問
+      const withMiss = rangeData.filter(q => q.missCount > 0).sort((a,b) => b.missCount - a.missCount);
+      const noMiss = rangeData.filter(q => q.missCount === 0).sort(() => Math.random() - 0.5);
+      const maxTotal = 20;
+      const noMissCount = Math.floor(maxTotal * 0.3);
+      pool = [...withMiss.slice(0, maxTotal - noMissCount), ...noMiss.slice(0, noMissCount)];
+    }
   } else if (v === 'date') {
     const from = document.getElementById('dateFrom').value;
     const to = document.getElementById('dateTo').value;
     pool = data.filter(q => {
       if (!q.registeredAt) return false;
       return (!from || q.registeredAt >= from) && (!to || q.registeredAt <= to);
-    }).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+    }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   } else if (v === 'ebbinghaus') {
     const intervals = [1, 2, 7, 30, 60]; // 日数
     pool = data.filter(q => {
@@ -1298,7 +1312,7 @@ function applyShutsudai() {
       const last = new Date(q.lastTestedAt); last.setHours(0,0,0,0);
       const diff = Math.floor((today - last) / (1000*60*60*24));
       return intervals.some(d => diff >= d);
-    }).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+    }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   }
 
   if (!pool.length) { alert('該当する問題がありません'); return; }
@@ -1486,7 +1500,10 @@ function menuShowData() {
   }
 
   function renderMondaiBetsu() {
-    const sorted = [...data].sort((a,b) => b.missCount - a.missCount);
+    const sorted = [...data]
+      .sort((a,b) => b.missCount - a.missCount || (b.registeredAt||'').localeCompare(a.registeredAt||''))
+      .filter(q => q.missCount > 0)
+      .slice(0, 10);
     const max = Math.max(...sorted.map(q => q.missCount), 1);
     return sorted.map(q => {
       const grade = q.grade ? `${q.grade}年` : '−';
@@ -1515,7 +1532,17 @@ function menuShowData() {
         if (q.grade && !gradeMap[k]) gradeMap[k] = q.grade;
       });
     });
-    const sorted = Object.entries(map).sort((a,b) => b[1]-a[1]);
+    // 登録日マップも作成（同率時の優先順位用）
+    const dateMap = {};
+    data.forEach(q => {
+      (q.answerKanji || []).forEach(k => {
+        if (!dateMap[k] || (q.registeredAt||'') > (dateMap[k]||'')) dateMap[k] = q.registeredAt||'';
+      });
+    });
+    const sorted = Object.entries(map)
+      .filter(([,cnt]) => cnt > 0)
+      .sort((a,b) => b[1]-a[1] || (dateMap[b[0]]||'').localeCompare(dateMap[a[0]]||''))
+      .slice(0, 10);
     if (!sorted.length) return `<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
     const max = Math.max(...sorted.map(e => e[1]), 1);
     return sorted.map(([k, cnt]) => {
