@@ -1765,22 +1765,21 @@ function toggleAnswer() {
 }
 
 function recordResult(correct) {
+  // correctCountは最初に1回だけカウント
+  if (correct) correctCount++;
+
   const today = new Date().toISOString().split('T')[0];
   const data = loadPracticeData();
   const q = session[current];
   const item = data.find(d => d.id === q.id);
   if (item) {
     item.lastTestedAt = today;
-    if (correct) {
-      correctCount++;
-    } else {
+    if (!correct) {
       item.missCount++;
       if (!item.charMiss) item.charMiss = {};
       q.answerKanji.forEach(k => { item.charMiss[k] = (item.charMiss[k] || 0) + 1; });
     }
     savePracticeData(data);
-  } else {
-    if (correct) correctCount++;
   }
   // 即座に次の問題へ
   document.getElementById('answerImagesWrap').classList.remove('visible');
