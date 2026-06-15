@@ -305,7 +305,7 @@ header {
   align-items: center;
   justify-content: flex-start;
   padding: 10px;
-  gap: 6px;
+  gap: 0;
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.3s;
@@ -338,11 +338,8 @@ header {
 /* よみがな問題（テキストのみ）*/
 .answer-kana-text {
   font-family: 'I-OTF-G教科書Pro L';
-  -webkit-font-smoothing: antialiased;
   writing-mode: vertical-rl;
-  text-orientation: mixed;
   color: #1a2a3a;
-  line-height: 1.4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1659,15 +1656,13 @@ function buildAnswerImages(q) {
   // leftPanelの高さからアイテム1つ分の高さを計算
   const leftH = document.getElementById('leftPanel').offsetHeight;
   const padding = 20;  // wrap padding 10px×2
-  const gap = 6;
 
-  // よみがなのみ（画像なし）→ 大きく縦書きテキスト
+  // よみがなのみ（画像なし）→ 縦書きテキスト・隙間なし
   if (q.type === 'よみがなを書く' && (!q.answerKanji || q.answerKanji.length === 0) && q.answerText) {
-    const avail = leftH - padding;
     const chars = [...q.answerText];
-    // 1文字あたりの最大サイズ（縦に並べた場合）
-    const perChar = Math.floor((avail - gap * (chars.length - 1)) / chars.length);
-    const fs = Math.min(perChar * 0.85, 53);  // 半分サイズ
+    const avail = leftH - padding;
+    const perChar = Math.floor(avail / chars.length);
+    const fs = Math.min(Math.floor(perChar * 0.55), 53); // 2/3サイズ上限
     chars.forEach(ch => {
       const box = document.createElement('div');
       box.className = 'kanji-img-box';
@@ -1682,29 +1677,35 @@ function buildAnswerImages(q) {
     return;
   }
 
-  // 漢字＋送り仮名：全アイテム数で高さを均等割り
+  // 漢字＋送り仮名：隙間なし、天地ぴったり
   const kanjiList = q.answerKanji || [];
   const kanaChars = q.answerText ? [...q.answerText] : [];
   const total = kanjiList.length + kanaChars.length;
-  const itemH = total > 0
-    ? Math.floor((leftH - padding - gap * (total - 1)) / total)
-    : leftH - padding;
+  // 漢字はleftH全体を枚数で割る（gapなし）
+  const kanjiH = total > 0 ? Math.floor((leftH - padding) / total) : leftH - padding;
+  // 送り仮名は漢字の2/3の高さ
+  const kanaH = Math.floor(kanjiH * 0.67);
+  // 再計算: 漢字枚数×kanjiH + 送り仮名枚数×kanaH = leftH - padding になるよう調整
+  const totalH = kanjiList.length * kanjiH + kanaChars.length * kanaH;
+  const scale = totalH > 0 ? (leftH - padding) / totalH : 1;
+  const finalKanjiH = Math.floor(kanjiH * scale);
+  const finalKanaH = Math.floor(kanaH * scale);
 
   kanjiList.forEach(kanji => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
-    box.style.height = itemH + 'px';
+    box.style.height = finalKanjiH + 'px';
     const img = document.createElement('img');
     img.src = getImageUrl(kanji);
     img.alt = kanji;
-    img.style.maxHeight = itemH + 'px';
+    img.style.maxHeight = finalKanjiH + 'px';
     img.style.cursor = 'pointer';
     img.onerror = function() {
       this.style.display = 'none';
       const ph = document.createElement('div');
       ph.className = 'kanji-placeholder';
-      ph.style.height = itemH + 'px';
-      ph.style.fontSize = Math.floor(itemH * 0.7) + 'px';
+      ph.style.height = finalKanjiH + 'px';
+      ph.style.fontSize = Math.floor(finalKanjiH * 0.7) + 'px';
       ph.textContent = kanji;
       ph.onclick = () => openPopup(kanji, false);
       box.appendChild(ph);
@@ -1717,10 +1718,10 @@ function buildAnswerImages(q) {
   kanaChars.forEach(ch => {
     const box = document.createElement('div');
     box.className = 'kanji-img-box';
-    box.style.height = itemH + 'px';
+    box.style.height = finalKanaH + 'px';
     const t = document.createElement('div');
     t.className = 'answer-kana-text';
-    t.style.fontSize = Math.min(Math.floor(itemH * 0.8), 160) + 'px';
+    t.style.fontSize = Math.floor(finalKanaH * 0.75) + 'px';
     t.textContent = ch;
     box.appendChild(t);
     wrap.appendChild(box);
