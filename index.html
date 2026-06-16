@@ -1942,19 +1942,21 @@ ${inputText}
   },
   {
     "no": 2,
-    "question": "余興を楽しむ",
-    "underline": "余興",
+    "question": "試合がエンキになった。",
+    "underline": "エンキ",
     "type": "よみがなを書く",
     "answerKanji": [],
-    "answerText": "よきょう"
+    "answerText": "えんき"
   }
 ]
 
-ルール：
-・<u>タグ内がカタカナ→漢字を書く問題：type:"漢字を書く"、answerKanjiに漢字、送り仮名はanswerTextに
-・<u>タグ内が漢字→よみがなを書く問題：type:"よみがなを書く"、answerKanji:[]、answerTextにひらがな
+【絶対に守るルール】
+・questionは入力テキストの文字をそのまま使う。カタカナを漢字に絶対変換しない。文章を書き換えない。
+・<u>タグを取り除いた文章をそのままquestionに入れる（文字は一切変えない）
+・<u>タグ内の文字をそのままunderlineに入れる（文字は一切変えない）
+・<u>タグ内がカタカナ→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
+・<u>タグ内が漢字→type:"よみがなを書く"、answerKanji:[]、answerTextに正解のひらがな
 ・noは1から順番に振る
-・questionから<u>タグを除いた文章をquestionに、<u>タグ内の文字をunderlineに入れる
 ・JSONのみ出力してください`
       }]
     })
