@@ -156,7 +156,7 @@ header {
   background: #f0f4f8;
   color: #1a3060;
 }
-.content { flex: 1; overflow: hidden; position: relative; }
+.content { flex: 1; overflow: hidden; position: relative; height: 100%; }
 .page { display: none; height: 100%; flex-direction: column; }
 .page.active { display: flex; }
 #page-stats {
@@ -164,9 +164,11 @@ header {
   background: #f0f4f8;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 }
 #page-stats.active {
   display: flex;
+  height: 100%;
 }
 .main-area {
   flex: 1;
