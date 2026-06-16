@@ -392,23 +392,25 @@ rt {
 #practiceMainBtns {
   display: flex;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
   height: 48px;
 }
 #btnQuit {
-  width: 100%;
-  padding: 6px;
-  background: transparent;
+  flex: 0 0 23%;
+  padding: 0 4px;
+  background: #e8edf2;
   border: none;
-  color: #aaa;
-  font-size: 12px;
+  border-radius: 999px;
+  color: #888;
+  font-size: 11px;
   font-family: 'Zen Maru Gothic', serif;
   cursor: pointer;
   text-align: center;
+  line-height: 1.3;
 }
-#btnQuit:active { color: #666; }
+#btnQuit:active { background: #d0d8e0; }
 #answerBtn {
-  flex: 1;
+  flex: 3;
   background: #f0c040; color: #1a3060;
   font-size: 16px; font-weight: 700;
   border: none; border-radius: 999px; cursor: pointer;
@@ -1206,8 +1208,8 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
               次の問題
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
+            <button id="btnQuit" onclick="quitPractice()">ここで<br>やめる</button>
           </div>
-          <button id="btnQuit" onclick="quitPractice()">ここでやめる</button>
         </div>
       </div>
 
@@ -2672,7 +2674,7 @@ function showShutsudaiSelect() {
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
         ${radioItem('radioMiss','miss',true,'間違いが多い順')}
         ${radioItem('radioRandom','random',false,'ランダム')}
-        ${radioItem('radioUnit','unit',false,'単元範囲指定')}
+        ${radioItem('radioUnit','unit',false,'単元で、範囲を指定する')}
         <div id="unitRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:13px;font-family:${ZMG};">単元</span>
           <select id="unitFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
@@ -2685,7 +2687,7 @@ function showShutsudaiSelect() {
           <span style="font-size:13px;font-family:${ZMG};">〜</span>
           <input type="date" id="dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
         </div>
-        ${radioItem('radioEbbinghaus','ebbinghaus',false,'エビングハウス<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span>')}
+        ${radioItem('radioEbbinghaus','ebbinghaus',false,'記憶に最適なタイミングで<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span>')}
       </div>
       <div style="padding:0 16px 16px;">
         <button onclick="goToShutsudaiStep2(this)" style="width:100%;background:#3B82F6;color:#fff;border:none;border-radius:999px;padding:14px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
@@ -2756,7 +2758,7 @@ function goToShutsudaiStep2(btn) {
       miss: '間違いが多い順',
       random: 'ランダム',
       date: '登録日範囲指定',
-      ebbinghaus: 'エビングハウス'
+      ebbinghaus: '記憶に最適なタイミングで'
     }[v] || v;
     const dateFrom = document.getElementById('dateFrom')?.value || '';
     const dateTo = document.getElementById('dateTo')?.value || '';
@@ -3075,9 +3077,9 @@ function initPractice() {
 // 道場スタート画面を表示
 function showDojoStart() {
   const data = loadPracticeData();
-  
   document.getElementById('questionArea').style.display = 'none';
   document.getElementById('completeScreen').classList.remove('visible');
+  document.getElementById('dojoSelectArea').style.display = 'none'; // 選択画面を隠す
   document.getElementById('dojoStart').classList.add('visible');
   // データなしのときはボタンを変える
   const btn = document.getElementById('dojoStartBtn');
@@ -3124,7 +3126,7 @@ function openDojoSelectInPage() {
       </div>
       ${radioItem('miss','miss',true,'間違いが多い順')}
       ${radioItem('random','random',false,'ランダム')}
-      ${radioItem('unit','unit',false,'単元範囲指定')}
+      ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
       <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:13px;font-family:${ZMG};">単元</span>
         <select id="dsp_unitFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
@@ -3137,7 +3139,7 @@ function openDojoSelectInPage() {
         <span style="font-size:13px;font-family:${ZMG};">〜</span>
         <input type="date" id="dsp_dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
       </div>
-      ${radioItem('ebbinghaus','ebbinghaus',false,'エビングハウス')}
+      ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}
       <button onclick="dojoPageNext()" style="width:100%;margin-top:8px;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
     </div>`;
 
@@ -3240,7 +3242,7 @@ function renderDojoStartCard() {
     <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題する問題は、どうする？</div>
     ${radioItem('miss','miss',true,'間違いが多い順')}
     ${radioItem('random','random',false,'ランダム')}
-    ${radioItem('unit','unit',false,'単元範囲指定')}
+    ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
     <div id="ds_unitRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:13px;font-family:${ZMG};">単元</span>
       <select id="ds_unitFrom" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
@@ -3253,7 +3255,7 @@ function renderDojoStartCard() {
       <span style="font-size:13px;font-family:${ZMG};">〜</span>
       <input type="date" id="ds_dateTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">
     </div>
-    ${radioItem('ebbinghaus','ebbinghaus',false,'エビングハウス')}
+    ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}
     <button onclick="dojoNext()" style="width:100%;margin-top:4px;padding:13px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
   `;
 }
@@ -3320,7 +3322,7 @@ function dojoShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
   const modeLabel = {
     miss:'間違いが多い順', random:'ランダム',
     unitMiss:'よく間違うものから', unitRandom:'ランダム',
-    date:'登録日範囲指定', ebbinghaus:'エビングハウス'
+    date:'登録日範囲指定', ebbinghaus:'記憶に最適なタイミングで'
   }[mode] || mode;
   card.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
@@ -3723,21 +3725,20 @@ function nextQuestion() {
 
 // 途中でやめる
 function quitPractice() {
-  showComplete();
+  // 途中でやめた場合：実際に回答した問題数（current）でカウント
+  showComplete(current);
 }
 
-function showComplete() {
+function showComplete(answeredCount) {
   document.getElementById('completeScreen').classList.add('visible');
-  const total = session.length;
+  // 途中でやめた場合はansweredCountを使う、最後まで終わった場合はsession.length
+  const total = (answeredCount !== undefined && answeredCount < session.length) ? answeredCount : session.length;
   const correct = correctCount;
   const pct = total > 0 ? correct / total : 0;
-  // ドーナツ：円周 = 2π×72 ≈ 452
   const circumference = 452;
   const offset = circumference * (1 - pct);
   document.getElementById('donutNum').textContent = `${correct}/${total}`;
-  // 結果メッセージ「X問のうち、X問正解だったよ！」
   document.getElementById('completeSub').textContent = `${total}問のうち、${correct}問正解だったよ！`;
-  // アニメーション（少し遅延してから）
   setTimeout(() => {
     const bar = document.getElementById('donutBar');
     if (bar) bar.style.strokeDashoffset = offset;
