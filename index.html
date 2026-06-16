@@ -1635,37 +1635,72 @@ function updateRakurakuStepIndicator(currentStep) {
 
 // ===== STEP1: 写真アップ =====
 function renderRakurakuStep1() {
+  // 写真リストを初期化
+  if (!rakuraku.photos) rakuraku.photos = [];
   const body = document.getElementById('rakurakuBody');
   body.innerHTML = `
     <p style="font-family:'Zen Maru Gothic',serif;font-size:13px;color:#666;margin-bottom:12px;line-height:1.7;">
-      テストの写真を選んでください。<br>複数枚まとめて選べます。
+      テストの写真を追加してください。<br>カメラで1枚ずつ撮影してもOKです。
     </p>
-    <div class="photo-upload-area" onclick="document.getElementById('photoFileInput').click()">
-      <div class="upload-icon">📷</div>
-      <p>タップして写真を選ぶ<br><span style="font-size:12px;color:#aaa;">複数枚OK（JPG・PNG・HEIC）</span></p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="photo-upload-area" style="flex:1;padding:14px 8px;" onclick="document.getElementById('photoFileInput').click()">
+        <div class="upload-icon" style="font-size:24px;">🖼️</div>
+        <p style="font-size:12px;">ライブラリから選ぶ</p>
+      </div>
+      <div class="photo-upload-area" style="flex:1;padding:14px 8px;" onclick="document.getElementById('photoCameraInput').click()">
+        <div class="upload-icon" style="font-size:24px;">📷</div>
+        <p style="font-size:12px;">カメラで撮影</p>
+      </div>
     </div>
     <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none" onchange="onPhotosSelected(event)">
+    <input type="file" id="photoCameraInput" accept="image/*" capture="camera" style="display:none" onchange="onPhotosSelected(event)">
     <div class="photo-preview-grid" id="photoPreviewGrid"></div>
     <button class="rakuraku-btn-primary" id="step1NextBtn" onclick="goToStep2()" disabled>
       この写真で×番号を確認する →
     </button>
   `;
+  // すでに写真があれば表示を復元
+  if (rakuraku.photos.length > 0) renderPhotoGrid();
 }
 
 function onPhotosSelected(e) {
   const files = Array.from(e.target.files);
   if (!files.length) return;
-  rakuraku.photos = files;
+  // 上書きではなく追加
+  if (!rakuraku.photos) rakuraku.photos = [];
+  rakuraku.photos = [...rakuraku.photos, ...files];
+  // inputをリセット（同じファイルを再選択できるよう）
+  e.target.value = '';
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
   const grid = document.getElementById('photoPreviewGrid');
+  if (!grid) return;
   grid.innerHTML = '';
-  files.forEach(f => {
+  (rakuraku.photos || []).forEach((f, i) => {
     const url = URL.createObjectURL(f);
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-block;';
     const img = document.createElement('img');
     img.className = 'photo-thumb';
     img.src = url;
-    grid.appendChild(img);
+    // ×ボタンで削除
+    const del = document.createElement('button');
+    del.textContent = '✕';
+    del.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
+    del.onclick = () => {
+      rakuraku.photos.splice(i, 1);
+      renderPhotoGrid();
+      const btn = document.getElementById('step1NextBtn');
+      if (btn) btn.disabled = rakuraku.photos.length === 0;
+    };
+    wrap.appendChild(img);
+    wrap.appendChild(del);
+    grid.appendChild(wrap);
   });
-  document.getElementById('step1NextBtn').disabled = false;
+  const btn = document.getElementById('step1NextBtn');
+  if (btn) btn.disabled = rakuraku.photos.length === 0;
 }
 
 async function goToStep2() {
