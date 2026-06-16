@@ -494,17 +494,78 @@ rt {
 .no-data-icon { font-size:56px; }
 .no-data-title { font-size:18px; font-weight:700; color:#1a3060; font-family:'Zen Maru Gothic',serif; }
 .no-data-desc { font-size:13px; color:#888; line-height:1.9; font-family:'Zen Maru Gothic',serif; }
+/* ===== 道場スタート画面 ===== */
+.dojo-start {
+  display:none; position:absolute; inset:0;
+  background: linear-gradient(160deg, #0d3d7a 0%, #1a6fc4 60%, #2ec4e8 100%);
+  flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:0; text-align:center; padding:32px 24px;
+  z-index:10;
+}
+.dojo-start.visible { display:flex; }
+.dojo-start-icon { font-size:52px; margin-bottom:8px; }
+.dojo-start-title {
+  font-size:28px; font-weight:700; color:#fff;
+  font-family:'Zen Maru Gothic',serif;
+  letter-spacing:2px; margin-bottom:6px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.dojo-start-sub {
+  font-size:13px; color:rgba(255,255,255,0.7);
+  font-family:'Zen Maru Gothic',serif; margin-bottom:28px;
+}
+.dojo-start-card {
+  background:#fff; border-radius:20px;
+  width:100%; max-width:380px;
+  padding:20px 20px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  overflow-y:auto;
+  max-height: calc(100vh - 220px);
+}
+
+/* ===== 完了画面（ドーナツグラフ） ===== */
 .complete-screen {
   display:none; position:absolute; inset:0;
-  background:#f0f4f8;
+  background: linear-gradient(160deg, #0d3d7a 0%, #1a6fc4 60%, #2ec4e8 100%);
   align-items:center; justify-content:center;
   flex-direction:column; gap:16px;
   text-align:center; padding:40px;
 }
 .complete-screen.visible { display:flex; }
-.complete-emoji { font-size:64px; }
-.complete-title { font-size:26px; font-weight:700; color:#1A1A1A; font-family:'Zen Maru Gothic',serif; }
-.complete-sub { font-size:15px; color:#777; font-family:'Zen Maru Gothic',serif; }
+.complete-title { font-size:28px; font-weight:700; color:#fff; font-family:'Zen Maru Gothic',serif; text-shadow:0 2px 8px rgba(0,0,0,0.2); }
+.complete-sub { font-size:15px; color:rgba(255,255,255,0.8); font-family:'Zen Maru Gothic',serif; }
+/* ドーナツSVG */
+.donut-wrap {
+  position:relative; width:180px; height:180px;
+  margin: 0 auto;
+}
+.donut-wrap svg { transform:rotate(-90deg); }
+.donut-center {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+.donut-num {
+  font-size:36px; font-weight:700; color:#fff;
+  font-family:'Zen Maru Gothic',serif; line-height:1;
+}
+.donut-label {
+  font-size:12px; color:rgba(255,255,255,0.7);
+  font-family:'Zen Maru Gothic',serif; margin-top:2px;
+}
+/* もう一度ボタン */
+.btn-restart {
+  background:rgba(255,255,255,0.2);
+  border:2px solid rgba(255,255,255,0.6);
+  border-radius:999px;
+  padding:13px 36px;
+  font-size:16px; font-weight:700;
+  color:#fff; cursor:pointer;
+  font-family:'Zen Maru Gothic',serif;
+  margin-top:4px;
+}
+.btn-restart:active { background:rgba(255,255,255,0.35); }
 .menu-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.6); z-index:800;
@@ -1081,9 +1142,37 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
         </div>
       </div>
 
+      <!-- 道場スタート画面 -->
+      <div class="dojo-start" id="dojoStart">
+        <div class="dojo-start-icon">⛩️</div>
+        <div class="dojo-start-title">目指せ漢字の達人！</div>
+        <div class="dojo-start-sub">今日も練習をはじめよう</div>
+        <div class="dojo-start-card" id="dojoStartCard">
+          <!-- 出題選択UIをJSで描画 -->
+        </div>
+      </div>
+
+      <!-- 完了画面（ドーナツグラフ） -->
       <div class="complete-screen" id="completeScreen">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-        <div class="complete-title">おわったよ！</div>
+        <div class="complete-title">よく頑張りました！</div>
+        <!-- ドーナツグラフ -->
+        <div class="donut-wrap">
+          <svg width="180" height="180" viewBox="0 0 180 180">
+            <!-- 背景トラック -->
+            <circle cx="90" cy="90" r="72"
+              fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="18"/>
+            <!-- 正解バー -->
+            <circle id="donutBar" cx="90" cy="90" r="72"
+              fill="none" stroke="#f0c040" stroke-width="18"
+              stroke-linecap="round"
+              stroke-dasharray="452" stroke-dashoffset="452"
+              style="transition: stroke-dashoffset 1s ease;"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-num" id="donutNum">0/0</div>
+            <div class="donut-label">正解</div>
+          </div>
+        </div>
         <div class="complete-sub" id="completeSub"></div>
         <button class="btn-restart" onclick="restartPractice()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>もう一度やる
@@ -2466,55 +2555,50 @@ function execDeleteFromList(btn) {
 }
 
 // ===== 出題選択 =====
+// ===== 出題選択：STEP1（モード選択）=====
 function showShutsudaiSelect() {
   const data = loadPracticeData();
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const ZMG = "'Zen Maru Gothic',serif";
   const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
   const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+
+  function radioItem(id, value, checked, label) {
+    return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="${id}">
+      <input type="radio" name="shutsudai" value="${value}" ${checked?'checked':''} style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
+      <span style="font-family:${ZMG};font-size:14px;">${label}</span>
+    </label>`;
+  }
+
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;">
-        <div style="font-size:17px;font-weight:700;font-family:'Zen Maru Gothic',serif;">出題選択</div>
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;position:sticky;top:0;background:#fff;z-index:1;">
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">出題選択</div>
         <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioMiss">
-          <input type="radio" name="shutsudai" value="miss" checked style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
-          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">間違いが多い順（上位10問）</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioRandom">
-          <input type="radio" name="shutsudai" value="random" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
-          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">ランダム</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioUnit">
-          <input type="radio" name="shutsudai" value="unit" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
-          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">単元範囲指定</span>
-        </label>
-        <div id="unitRange" style="display:none;padding:8px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">単元</span>
-          <select id="unitFrom" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">${unitOpts}</select>
-          <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">〜</span>
-          <select id="unitTo" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">${unitOpts}</select>
+        ${radioItem('radioMiss','miss',true,'間違いが多い順')}
+        ${radioItem('radioRandom','random',false,'ランダム')}
+        ${radioItem('radioUnit','unit',false,'単元範囲指定')}
+        <div id="unitRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-family:${ZMG};">単元</span>
+          <select id="unitFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+          <span style="font-size:13px;font-family:${ZMG};">〜</span>
+          <select id="unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
         </div>
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioDate">
-          <input type="radio" name="shutsudai" value="date" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
-          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">登録日範囲指定</span>
-        </label>
-        <div id="dateRange" style="display:none;padding:8px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <input type="date" id="dateFrom" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">
-          <span style="font-size:13px;font-family:'Zen Maru Gothic',serif;">〜</span>
-          <input type="date" id="dateTo" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc;font-family:'Zen Maru Gothic',serif;">
+        ${radioItem('radioDate','date',false,'登録日範囲指定')}
+        <div id="dateRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input type="date" id="dateFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
+          <span style="font-size:13px;font-family:${ZMG};">〜</span>
+          <input type="date" id="dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
         </div>
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioEbbinghaus">
-          <input type="radio" name="shutsudai" value="ebbinghaus" style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
-          <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">エビングハウス<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span></span>
-        </label>
+        ${radioItem('radioEbbinghaus','ebbinghaus',false,'エビングハウス<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span>')}
       </div>
       <div style="padding:0 16px 16px;">
-        <button onclick="applyShutsudai()" style="width:100%;background:#3B82F6;color:#fff;border:none;border-radius:999px;padding:13px;font-size:16px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">この設定で出題</button>
+        <button onclick="goToShutsudaiStep2(this)" style="width:100%;background:#3B82F6;color:#fff;border:none;border-radius:999px;padding:14px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
       </div>
     </div>`;
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
@@ -2537,49 +2621,161 @@ function updateShutsudaiUI() {
   });
 }
 
-function applyShutsudai() {
+// ===== 出題選択：STEP2（単元範囲は出題方法選択、それ以外は問題数選択）=====
+function goToShutsudaiStep2(btn) {
   const v = document.querySelector('input[name="shutsudai"]:checked').value;
+  const overlay = btn.closest('[style*=fixed]');
+  const ZMG = "'Zen Maru Gothic',serif";
+
+  if (v === 'unit') {
+    // 単元範囲：出題方法を選ぶ
+    const unitFrom = document.getElementById('unitFrom')?.value;
+    const unitTo = document.getElementById('unitTo')?.value;
+    if (!unitFrom || !unitTo) { alert('単元を選んでください'); return; }
+
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid #f0f4f8;">
+          <button onclick="showShutsudaiSelect()" style="background:none;border:none;cursor:pointer;padding:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div style="font-size:17px;font-weight:700;font-family:${ZMG};">出題方法を選ぶ</div>
+        </div>
+        <div style="padding:8px 16px 4px;font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</div>
+        <div style="padding:8px 16px;display:flex;flex-direction:column;gap:10px;">
+          <button onclick="applyShutsudaiUnit('all','${unitFrom}','${unitTo}',0,this)"
+            style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
+            範囲の問題を全部
+          </button>
+          <button onclick="showCountSelect('unitMiss','${unitFrom}','${unitTo}',this)"
+            style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
+            よく間違うものから
+          </button>
+          <button onclick="showCountSelect('unitRandom','${unitFrom}','${unitTo}',this)"
+            style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
+            ランダム
+          </button>
+        </div>
+        <div style="padding:8px 16px 16px;">
+          <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+        </div>
+      </div>`;
+  } else {
+    // それ以外：問題数を選ぶ
+    const modeLabel = {
+      miss: '間違いが多い順',
+      random: 'ランダム',
+      date: '登録日範囲指定',
+      ebbinghaus: 'エビングハウス'
+    }[v] || v;
+    const dateFrom = document.getElementById('dateFrom')?.value || '';
+    const dateTo = document.getElementById('dateTo')?.value || '';
+
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid #f0f4f8;">
+          <button onclick="showShutsudaiSelect()" style="background:none;border:none;cursor:pointer;padding:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div style="font-size:17px;font-weight:700;font-family:${ZMG};">問題数を選ぶ</div>
+        </div>
+        <div style="padding:8px 16px 4px;font-size:12px;color:#999;font-family:${ZMG};">${modeLabel}</div>
+        <div style="padding:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          ${[5,10,15,20].map(n => `
+          <button onclick="applyShutsudai('${v}',${n},'','','${dateFrom}','${dateTo}',this)"
+            style="padding:16px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:20px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;">
+            ${n}問
+          </button>`).join('')}
+        </div>
+        <div style="padding:8px 16px 16px;">
+          <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+        </div>
+      </div>`;
+  }
+}
+
+// 問題数選択（単元範囲の「よく間違う」「ランダム」用）
+function showCountSelect(mode, unitFrom, unitTo, btn) {
+  const overlay = btn.closest('[style*=fixed]');
+  const ZMG = "'Zen Maru Gothic',serif";
+  const modeLabel = mode === 'unitMiss' ? 'よく間違うものから' : 'ランダム';
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid #f0f4f8;">
+        <button onclick="goToShutsudaiStep2(this)" style="background:none;border:none;cursor:pointer;padding:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">問題数を選ぶ</div>
+      </div>
+      <div style="padding:8px 16px 4px;font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}　${modeLabel}</div>
+      <div style="padding:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${[5,10,15,20].map(n => `
+        <button onclick="applyShutsudaiUnit('${mode}','${unitFrom}','${unitTo}',${n},this)"
+          style="padding:16px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:20px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;">
+          ${n}問
+        </button>`).join('')}
+      </div>
+      <div style="padding:8px 16px 16px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+      </div>
+    </div>`;
+}
+
+// ===== 出題実行：単元範囲 =====
+function applyShutsudaiUnit(method, unitFrom, unitTo, count, btn) {
   const data = loadPracticeData();
+  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
+  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
+  if (!rangeData.length) { alert('該当する問題がありません'); return; }
+
   let pool = [];
+  if (method === 'all') {
+    pool = rangeData;
+  } else if (method === 'unitMiss') {
+    pool = [...rangeData].sort((a,b) => b.missCount - a.missCount).slice(0, count);
+  } else if (method === 'unitRandom') {
+    pool = [...rangeData].sort(() => Math.random() - 0.5).slice(0, count);
+  }
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  startSession(pool, btn);
+}
+
+// ===== 出題実行：それ以外 =====
+function applyShutsudai(mode, count, _u1, _u2, dateFrom, dateTo, btn) {
+  const data = loadPracticeData();
   const today = new Date(); today.setHours(0,0,0,0);
-  if (v === 'miss') {
-    pool = [...data].map((q,i) => ({...q, _dataIndex: i})).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
-  } else if (v === 'random') {
-    const shuffled = [...data].map((q,i) => ({...q, _dataIndex: i})).sort(() => Math.random() - 0.5);
-    pool = shuffled.slice(0, Math.min(10, shuffled.length));
-  } else if (v === 'unit') {
-    const from = parseInt(document.getElementById('unitFrom').value);
-    const to = parseInt(document.getElementById('unitTo').value);
-    const [lo, hi] = [Math.min(from,to), Math.max(from,to)];
-    const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
-    const hasMiss = rangeData.some(q => q.missCount > 0);
-    if (!hasMiss) {
-      pool = rangeData;
-    } else {
-      const withMiss = rangeData.filter(q => q.missCount > 0).sort((a,b) => b.missCount - a.missCount);
-      const noMiss = rangeData.filter(q => q.missCount === 0).sort(() => Math.random() - 0.5);
-      const maxTotal = 20;
-      const noMissCount = Math.floor(maxTotal * 0.3);
-      pool = [...withMiss.slice(0, maxTotal - noMissCount), ...noMiss.slice(0, noMissCount)];
-    }
-  } else if (v === 'date') {
-    const from = document.getElementById('dateFrom').value;
-    const to = document.getElementById('dateTo').value;
+  let pool = [];
+
+  if (mode === 'miss') {
+    pool = [...data].map((q,i) => ({...q, _dataIndex: i}))
+      .sort((a,b) => b.missCount - a.missCount).slice(0, count);
+  } else if (mode === 'random') {
+    pool = [...data].map((q,i) => ({...q, _dataIndex: i}))
+      .sort(() => Math.random() - 0.5).slice(0, count);
+  } else if (mode === 'date') {
     pool = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => {
       if (!q.registeredAt) return false;
-      return (!from || q.registeredAt >= from) && (!to || q.registeredAt <= to);
-    }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
-  } else if (v === 'ebbinghaus') {
+      return (!dateFrom || q.registeredAt >= dateFrom) && (!dateTo || q.registeredAt <= dateTo);
+    }).sort((a,b) => b.missCount - a.missCount).slice(0, count);
+  } else if (mode === 'ebbinghaus') {
     const intervals = [1, 2, 7, 30, 60];
     pool = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => {
       if (!q.lastTestedAt) return true;
       const last = new Date(q.lastTestedAt); last.setHours(0,0,0,0);
       const diff = Math.floor((today - last) / (1000*60*60*24));
       return intervals.some(d => diff >= d);
-    }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
+    }).sort((a,b) => b.missCount - a.missCount).slice(0, count);
   }
   if (!pool.length) { alert('該当する問題がありません'); return; }
-  document.querySelector('[style*="fixed"]').remove();
+  startSession(pool, btn);
+}
+
+// ===== セッション開始（共通）=====
+function startSession(pool, btn) {
+  const overlay = btn ? btn.closest('[style*=fixed]') : document.querySelector('[style*="fixed"]');
+  if (overlay) overlay.remove();
   session = pool;
   current = 0;
   correctCount = 0;
@@ -2780,10 +2976,191 @@ function initPractice() {
   if (!data.length) {
     document.getElementById('noDataMsg').style.display = 'flex';
     document.getElementById('questionArea').style.display = 'none';
+    document.getElementById('dojoStart').classList.remove('visible');
+    document.getElementById('completeScreen').classList.remove('visible');
     return;
   }
-  session = [...data].map((q,i) => ({...q, _dataIndex: i})).sort((a,b) => b.missCount - a.missCount).slice(0, 7);
+  // データがあればスタート画面を表示
+  showDojoStart();
+}
+
+// 道場スタート画面を表示
+function showDojoStart() {
+  document.getElementById('noDataMsg').style.display = 'none';
+  document.getElementById('questionArea').style.display = 'none';
+  document.getElementById('completeScreen').classList.remove('visible');
+  document.getElementById('dojoStart').classList.add('visible');
+  renderDojoStartCard();
+  setTimeout(fixLayout, 10);
+}
+
+// スタートカード内の出題選択UIを描画
+function renderDojoStartCard() {
+  const data = loadPracticeData();
+  const card = document.getElementById('dojoStartCard');
+  const ZMG = "'Zen Maru Gothic',serif";
+  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+
+  function radioItem(id, value, checked, label) {
+    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid #e0e4ea;border-radius:10px;cursor:pointer;margin-bottom:8px;" id="ds_${id}">
+      <input type="radio" name="dojoMode" value="${value}" ${checked?'checked':''} style="accent-color:#3B82F6;" onchange="updateDojoModeUI()">
+      <span style="font-family:${ZMG};font-size:14px;">${label}</span>
+    </label>`;
+  }
+
+  card.innerHTML = `
+    <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題モードを選ぶ</div>
+    ${radioItem('miss','miss',true,'間違いが多い順')}
+    ${radioItem('random','random',false,'ランダム')}
+    ${radioItem('unit','unit',false,'単元範囲指定')}
+    <div id="ds_unitRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:13px;font-family:${ZMG};">単元</span>
+      <select id="ds_unitFrom" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
+      <span style="font-size:13px;font-family:${ZMG};">〜</span>
+      <select id="ds_unitTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
+    </div>
+    ${radioItem('date','date',false,'登録日範囲指定')}
+    <div id="ds_dateRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <input type="date" id="ds_dateFrom" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">
+      <span style="font-size:13px;font-family:${ZMG};">〜</span>
+      <input type="date" id="ds_dateTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">
+    </div>
+    ${radioItem('ebbinghaus','ebbinghaus',false,'エビングハウス')}
+    <button onclick="dojoNext()" style="width:100%;margin-top:4px;padding:13px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
+  `;
+}
+
+function updateDojoModeUI() {
+  const v = document.querySelector('input[name="dojoMode"]:checked')?.value;
+  const ur = document.getElementById('ds_unitRange');
+  const dr = document.getElementById('ds_dateRange');
+  if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
+  if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
+  ['miss','random','unit','date','ebbinghaus'].forEach(id => {
+    const el = document.getElementById('ds_' + id);
+    if (!el) return;
+    const radio = el.querySelector('input');
+    if (!radio) return;
+    el.style.borderColor = radio.checked ? '#3B82F6' : '#e0e4ea';
+    el.style.background = radio.checked ? '#EFF6FF' : '';
+  });
+}
+
+// スタート画面の「次へ」
+function dojoNext() {
+  const v = document.querySelector('input[name="dojoMode"]:checked')?.value;
+  if (!v) return;
+  const ZMG = "'Zen Maru Gothic',serif";
+  const card = document.getElementById('dojoStartCard');
+
+  if (v === 'unit') {
+    // 単元範囲：出題方法を選ぶ
+    const unitFrom = document.getElementById('ds_unitFrom')?.value;
+    const unitTo = document.getElementById('ds_unitTo')?.value;
+    if (!unitFrom || !unitTo) { return; }
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <button onclick="renderDojoStartCard()" style="background:none;border:none;cursor:pointer;padding:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};">出題方法を選ぶ（単元${unitFrom}〜${unitTo}）</div>
+      </div>
+      <button onclick="dojoStartUnit('all','${unitFrom}','${unitTo}',0)"
+        style="width:100%;padding:13px;background:#fff;border:1.5px solid #1a6fc4;border-radius:10px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:8px;">
+        範囲の問題を全部
+      </button>
+      <button onclick="dojoShowCount('unitMiss','${unitFrom}','${unitTo}')"
+        style="width:100%;padding:13px;background:#fff;border:1.5px solid #1a6fc4;border-radius:10px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:8px;">
+        よく間違うものから
+      </button>
+      <button onclick="dojoShowCount('unitRandom','${unitFrom}','${unitTo}')"
+        style="width:100%;padding:13px;background:#fff;border:1.5px solid #1a6fc4;border-radius:10px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:8px;">
+        ランダム
+      </button>`;
+  } else {
+    // それ以外：問題数を選ぶ
+    const dateFrom = document.getElementById('ds_dateFrom')?.value || '';
+    const dateTo = document.getElementById('ds_dateTo')?.value || '';
+    dojoShowCount(v, '', '', dateFrom, dateTo);
+  }
+}
+
+// 問題数選択
+function dojoShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const card = document.getElementById('dojoStartCard');
+  const modeLabel = {
+    miss:'間違いが多い順', random:'ランダム',
+    unitMiss:'よく間違うものから', unitRandom:'ランダム',
+    date:'登録日範囲指定', ebbinghaus:'エビングハウス'
+  }[mode] || mode;
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <button onclick="dojoNext()" style="background:none;border:none;cursor:pointer;padding:0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};">問題数を選ぶ（${modeLabel}）</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      ${[5,10,15,20].map(n => `
+      <button onclick="dojoStartSession('${mode}',${n},'${unitFrom||''}','${unitTo||''}','${dateFrom||''}','${dateTo||''}')"
+        style="padding:16px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:10px;font-size:22px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;">
+        ${n}問
+      </button>`).join('')}
+    </div>`;
+}
+
+// セッション開始（スタート画面から）
+function dojoStartUnit(method, unitFrom, unitTo, count) {
+  const data = loadPracticeData();
+  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
+  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
+  if (!rangeData.length) { alert('該当する問題がありません'); return; }
+  let pool = method === 'all' ? rangeData
+    : method === 'unitMiss' ? [...rangeData].sort((a,b)=>b.missCount-a.missCount).slice(0,count)
+    : [...rangeData].sort(()=>Math.random()-0.5).slice(0,count);
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  dojoStartPool(pool);
+}
+
+function dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo) {
+  const data = loadPracticeData();
+  const today = new Date(); today.setHours(0,0,0,0);
+  let pool = [];
+  if (mode === 'miss') {
+    pool = [...data].map((q,i)=>({...q,_dataIndex:i})).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
+  } else if (mode === 'random') {
+    pool = [...data].map((q,i)=>({...q,_dataIndex:i})).sort(()=>Math.random()-0.5).slice(0,count);
+  } else if (mode === 'unitMiss') {
+    const lo=Math.min(parseInt(unitFrom),parseInt(unitTo)), hi=Math.max(parseInt(unitFrom),parseInt(unitTo));
+    pool = data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>q.unit>=lo&&q.unit<=hi).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
+  } else if (mode === 'unitRandom') {
+    const lo=Math.min(parseInt(unitFrom),parseInt(unitTo)), hi=Math.max(parseInt(unitFrom),parseInt(unitTo));
+    pool = data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>q.unit>=lo&&q.unit<=hi).sort(()=>Math.random()-0.5).slice(0,count);
+  } else if (mode === 'date') {
+    pool = data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>{
+      if(!q.registeredAt) return false;
+      return (!dateFrom||q.registeredAt>=dateFrom)&&(!dateTo||q.registeredAt<=dateTo);
+    }).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
+  } else if (mode === 'ebbinghaus') {
+    const intervals=[1,2,7,30,60];
+    pool = data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>{
+      if(!q.lastTestedAt) return true;
+      const last=new Date(q.lastTestedAt); last.setHours(0,0,0,0);
+      return intervals.some(d=>Math.floor((today-last)/(1000*60*60*24))>=d);
+    }).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
+  }
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  dojoStartPool(pool);
+}
+
+function dojoStartPool(pool) {
+  document.getElementById('dojoStart').classList.remove('visible');
+  session = pool;
   current = 0; correctCount = 0;
+  window._sessionLocked = true;
   document.getElementById('noDataMsg').style.display = 'none';
   document.getElementById('questionArea').style.display = 'flex';
   document.getElementById('questionArea').style.flexDirection = 'column';
@@ -3112,13 +3489,33 @@ function nextQuestion() {
 
 function showComplete() {
   document.getElementById('completeScreen').classList.add('visible');
-  document.getElementById('completeSub').textContent = `${session.length}問中 ${correctCount}問 正解`;
+  const total = session.length;
+  const correct = correctCount;
+  const pct = total > 0 ? correct / total : 0;
+  // ドーナツ：円周 = 2π×72 ≈ 452
+  const circumference = 452;
+  const offset = circumference * (1 - pct);
+  document.getElementById('donutNum').textContent = `${correct}/${total}`;
+  // メッセージ
+  const msgs = pct >= 1 ? '🎉 全問正解！すごい！'
+    : pct >= 0.8 ? '👏 よくできました！'
+    : pct >= 0.5 ? '😊 もう少しで完璧！'
+    : '💪 次はもっとできるよ！';
+  document.getElementById('completeSub').textContent = msgs;
+  // アニメーション（少し遅延してから）
+  setTimeout(() => {
+    const bar = document.getElementById('donutBar');
+    if (bar) bar.style.strokeDashoffset = offset;
+  }, 300);
 }
 
 function restartPractice() {
   document.getElementById('completeScreen').classList.remove('visible');
-  current = 0; correctCount = 0;
-  loadQuestion(0);
+  // ドーナツをリセット
+  const bar = document.getElementById('donutBar');
+  if (bar) { bar.style.transition='none'; bar.style.strokeDashoffset='452'; setTimeout(()=>{ bar.style.transition='stroke-dashoffset 1s ease'; }, 50); }
+  // スタート画面に戻る
+  showDojoStart();
 }
 
 // ===== 漢字表示機能 =====
@@ -3301,6 +3698,7 @@ document.querySelectorAll('.tab')[1].addEventListener('click', () => {
     fixLayout();
   }, 50);
 });
+
 </script>
 </body>
 </html>
