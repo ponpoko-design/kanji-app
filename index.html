@@ -551,6 +551,7 @@ rt {
   flex-direction:column;
   align-items:center; justify-content:center;
   gap:0; text-align:center; padding:32px 24px;
+  position:relative; z-index:1;
 }
 .dojo-start.visible { display:flex; }
 .dojo-start-icon { font-size:52px; margin-bottom:8px; }
@@ -1222,7 +1223,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       </div>
 
       <!-- ページ内出題選択エリア -->
-      <div id="dojoSelectArea" style="display:none;position:absolute;inset:0;background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:5;"></div>
+      <div id="dojoSelectArea" style="display:none;position:absolute;inset:0;background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:20;"></div>
 
       <!-- 完了画面（ドーナツグラフ） -->
       <div class="complete-screen" id="completeScreen">
@@ -2488,8 +2489,9 @@ function execResetAll(btn) {
       parentOv.remove();
       showToast('全ての結果をリセットしました');
       updateMenuStats();
-      if (typeof renderStatsPage === 'function') renderStatsPage();
       initPractice();
+      // Firestore同期後に記録ページを更新
+      setTimeout(() => { if (typeof renderStatsPage === 'function') renderStatsPage(); }, 800);
     }
   );
 }
@@ -3867,7 +3869,7 @@ function renderStatsPage() {
           <div style="font-size:10px;color:#999;font-family:${ZMG};margin-top:2px;line-height:1.3;">取り組んだ<br>日数</div>
         </div>
         <div style="flex:1;text-align:center;border-right:1px solid #f0f4f8;">
-          <div style="font-size:22px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${overallRate}%</div>
+          <div style="font-size:22px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${totalAnswered > 0 ? overallRate + "%" : "－"}</div>
           <div style="font-size:10px;color:#999;font-family:${ZMG};margin-top:2px;line-height:1.3;">正答率</div>
         </div>
         <div style="flex:1;text-align:center;">
