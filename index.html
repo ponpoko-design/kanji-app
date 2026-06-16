@@ -62,9 +62,11 @@
   window._setLocalSaving = (v) => { _localSaving = v; };
   onSnapshot(DATA_DOC, (snap) => {
     if (snap.exists()) {
+      // _localSaving中（自分の保存直後）はFirestoreからの上書きを完全無視
+      if (_localSaving) return;
       const data = snap.data().questions || [];
       localStorage.setItem('kanji_practice_data', JSON.stringify(data));
-      if (!_localSaving && !document.getElementById('page-practice').classList.contains('active')) {
+      if (!document.getElementById('page-practice').classList.contains('active')) {
         if (typeof initPractice === 'function') initPractice();
       }
     }
@@ -1430,6 +1432,9 @@ function loadStats() {
   try { return JSON.parse(localStorage.getItem('kanji_stats') || '{}'); } catch(e) { return {}; }
 }
 function saveStats(stats) {
+  // Firestoreからの上書きを防ぐためフラグを立てる
+  if (window._setLocalSaving) window._setLocalSaving(true);
+  setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 2000);
   localStorage.setItem('kanji_stats', JSON.stringify(stats));
   if (window.firestoreStatsSave) window.firestoreStatsSave(stats);
 }
@@ -3032,7 +3037,7 @@ function loadPracticeData() {
 }
 function savePracticeData(data) {
   if (window._setLocalSaving) window._setLocalSaving(true);
-  setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 2000);
+  setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 5000);
   localStorage.setItem('kanji_practice_data', JSON.stringify(data));
   if (window.firestoreSave) window.firestoreSave(data);
 }
