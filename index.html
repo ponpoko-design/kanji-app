@@ -3020,14 +3020,12 @@ let session = [], current = 0, correctCount = 0, answerShown = false;
 function initPractice() {
   const today = getTodayJST();
   const lastShown = localStorage.getItem('kanji_dojo_shown');
-  showDojoStart(); // まずスタート画面を表示
-  if (lastShown === today) {
-    // 今日すでに見た → 少し待ってから直接出題選択へ
-    setTimeout(() => openDojoSelect(), 300);
-  } else {
-    // 今日初めて → 画面を見せて記録
+  if (lastShown !== today) {
+    // 今日初めて → スタート画面を表示して記録
     localStorage.setItem('kanji_dojo_shown', today);
   }
+  // 常にスタート画面を表示するだけ（自動で出題選択は開かない）
+  showDojoStart();
 }
 
 // 道場スタート画面を表示
