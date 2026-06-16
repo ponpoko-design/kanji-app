@@ -392,25 +392,27 @@ rt {
   align-items: stretch;
 }
 #practiceMainBtns {
-  flex: 3; /* 左60% = 正解エリアと同幅 */
+  flex: 3; /* 右60% = 正解エリアと同幅 */
   display: flex;
   align-items: stretch;
   gap: 8px;
+  order: 2;
 }
 #btnQuit {
-  flex: 2; /* 右40% = 問題エリアと同幅 */
-  padding: 0 4px;
-  background: #e8edf2;
+  flex: 0 0 80px; /* 固定幅・小さめ */
+  padding: 0 8px;
+  background: #555;
   border: none;
-  border-radius: 12px;
-  color: #888;
+  border-radius: 999px;
+  color: #fff;
   font-size: 12px;
   font-family: 'Zen Maru Gothic', serif;
   cursor: pointer;
   text-align: center;
   line-height: 1.4;
+  order: 1;
 }
-#btnQuit:active { background: #d0d8e0; }
+#btnQuit:active { background: #333; }
 #answerBtn {
   flex: 1;
   background: #f0c040; color: #1a3060;
@@ -3762,7 +3764,7 @@ function showComplete(answeredCount) {
         '伸びしろMAX！これからが楽しみ！🚀',
         'まだまだこれから！トライしただけエラい！💪',
         '間違えたところが次の正解になる！✨',
-        '難しかったね！でも続けたら必ず上手くなる！🔥',
+        '難しかったね！でも続けたら必ずできるようになる！🔥',
         '今日やった分だけ賢くなってるよ！📖',
         'ゼロなんてない！全部経験値！⭐'
       ];
@@ -3943,14 +3945,14 @@ function renderStatsPage() {
   let pickerHTML = '';
   if (period === 'month') {
     pickerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${yearOpts}</select>
-        <select onchange="window._statsMonth=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${monthOpts}</select>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:8px 16px;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};background:#e8edf2;color:#1a3060;appearance:auto;">${yearOpts}</select>
+        <select onchange="window._statsMonth=parseInt(this.value);renderStatsPage()" style="padding:8px 16px;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};background:#e8edf2;color:#1a3060;appearance:auto;">${monthOpts}</select>
       </div>`;
   } else if (period === 'year') {
     pickerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${yearOpts}</select>
+        <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:8px 16px;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};background:#e8edf2;color:#1a3060;appearance:auto;">${yearOpts}</select>
       </div>`;
   } else if (period === 'week') {
     // 過去12週分のオプションを生成
@@ -3967,19 +3969,19 @@ function renderStatsPage() {
     }
     pickerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <select onchange="window._statsWeekStart=this.value;renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${weekOptions.join('')}</select>
+        <select onchange="window._statsWeekStart=this.value;renderStatsPage()" style="padding:8px 16px;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};background:#e8edf2;color:#1a3060;appearance:auto;">${weekOptions.join('')}</select>
       </div>`;
   } else if (period === 'all') {
     pickerHTML = `<div style="margin-bottom:14px;font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${periodLabel}</div>`;
   }
 
   el.innerHTML = `
-    <!-- 期間タブ -->
-    <div style="display:flex;background:#e8edf2;border-radius:12px;padding:3px;gap:2px;margin-bottom:4px;">
+    <!-- 期間タブ（ピル型） -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
       ${['week','month','year','all'].map((p,i) => {
         const labels = ['週','月','年','すべて'];
         const active = period === p;
-        return `<button onclick="window._statsPeriod='${p}';renderStatsPage()" style="flex:1;padding:8px 0;border:none;border-radius:9px;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;background:${active?'#fff':'transparent'};color:${active?'#1a3060':'#999'};box-shadow:${active?'0 1px 4px rgba(0,0,0,0.1)':'none'};transition:all 0.2s;">${labels[i]}</button>`;
+        return `<button onclick="window._statsPeriod='${p}';renderStatsPage()" style="padding:7px 18px;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;background:${active?'#1a6fc4':'#e8edf2'};color:${active?'#fff':'#999'};transition:all 0.2s;">${labels[i]}</button>`;
       }).join('')}
     </div>
 
@@ -4063,7 +4065,10 @@ function renderStatsPage() {
     <!-- よく間違う漢字 -->
     ${topKanji.length ? `
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
-      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;">よく間違う漢字</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12px;color:#999;font-family:${ZMG};">よく間違う漢字 TOP5</div>
+        <button onclick="menuShowData();" style="background:none;border:none;cursor:pointer;font-size:14px;font-weight:700;color:#1a6fc4;font-family:${ZMG};text-decoration:underline;padding:0;">詳しく見る</button>
+      </div>
       ${topKanji.map(([k,cnt]) => {
         const pct = Math.round((cnt/maxMiss)*100);
         const color = pct>70?'#FF4D4D':pct>40?'#f0c040':'#1a6fc4';
