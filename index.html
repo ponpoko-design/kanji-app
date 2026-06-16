@@ -1134,7 +1134,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>漢字道場
       </div>
       <div class="tab" onclick="switchTab('stats',this)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>航大の記録
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>道場の記録
       </div>
     </div>
   </header>
@@ -1156,7 +1156,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       </div>
     </div>
 
-    <!-- 航大の記録ページ -->
+    <!-- 道場の記録ページ -->
     <div class="page" id="page-stats">
       <div id="statsContent" style="padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;">
         <!-- JSで描画 -->
@@ -3092,37 +3092,40 @@ function openDojoSelectInPage() {
 
   const area = document.getElementById('dojoSelectArea');
   area.innerHTML = `
-    <div style="padding:16px;max-width:480px;margin:0 auto;">
-      <!-- 戻るボタン -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="closeDojoSelectInPage()" style="background:none;border:none;cursor:pointer;padding:4px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題する問題は、どうする？</div>
-      </div>
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+      <div style="font-size:19px;font-weight:700;font-family:${ZMG};color:#1a3060;margin-bottom:16px;">出題する問題は、どうする？</div>
       ${radioItem('miss','miss',true,'間違いが多い順')}
       ${radioItem('random','random',false,'ランダム')}
       ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
-      <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:13px;font-family:${ZMG};">単元</span>
         <select id="dsp_unitFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
         <span style="font-size:13px;font-family:${ZMG};">〜</span>
         <select id="dsp_unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
       </div>
       ${radioItem('date','date',false,'登録日範囲指定')}
-      <div id="dsp_dateRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div id="dsp_dateRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
         <input type="date" id="dsp_dateFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
         <span style="font-size:13px;font-family:${ZMG};">〜</span>
         <input type="date" id="dsp_dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
       </div>
       ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}
-      <button onclick="dojoPageNext()" style="width:100%;margin-top:8px;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
+      <!-- 下部ボタン：戻る（左）＋次へ（右） -->
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="closeDojoSelectInPage()" style="flex:1;padding:15px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
+        <button onclick="dojoPageNext()" style="flex:2;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
+      </div>
     </div>`;
 
   // スタート画面を隠して選択エリアを表示
   document.getElementById('dojoStart').classList.remove('visible');
   area.style.display = 'block';
-  fixLayout();
+  area.style.overflowY = 'auto';
+  area.style.webkitOverflowScrolling = 'touch';
+  // 高さをJSで設定
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const headerH = document.querySelector('header').offsetHeight;
+  area.style.height = (vh - headerH) + 'px';
   area.scrollTop = 0;
 }
 
@@ -3817,7 +3820,7 @@ function changeMode() {
   fixLayout();
 }
 
-// ===== 航大の記録ページ描画 =====
+// ===== 道場の記録ページ描画 =====
 function renderStatsPage() {
   const el = document.getElementById('statsContent');
   if (!el) return;
@@ -3846,10 +3849,15 @@ function renderStatsPage() {
   let periodLabel = '';
 
   if (period === 'week') {
-    // 今週（月〜日）
-    const dayOfWeek = jstNow.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(jstNow.getTime() + mondayOffset * 86400000);
+    // 選択された週（デフォルトは今週）
+    let monday;
+    if (window._statsWeekStart) {
+      monday = new Date(window._statsWeekStart + 'T00:00:00+09:00');
+    } else {
+      const dayOfWeek = jstNow.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      monday = new Date(jstNow.getTime() + mondayOffset * 86400000);
+    }
     const days = ['月','火','水','木','金','土','日'];
     barData = days.map((label, i) => {
       const d = new Date(monday.getTime() + i * 86400000);
@@ -3944,7 +3952,24 @@ function renderStatsPage() {
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
         <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${yearOpts}</select>
       </div>`;
-  } else if (period === 'week' || period === 'all') {
+  } else if (period === 'week') {
+    // 過去12週分のオプションを生成
+    const weekOptions = [];
+    for (let w = 0; w < 12; w++) {
+      const mondayOffset = (jstNow.getDay() === 0 ? -6 : 1 - jstNow.getDay()) - w * 7;
+      const mon = new Date(jstNow.getTime() + mondayOffset * 86400000);
+      const sun = new Date(mon.getTime() + 6 * 86400000);
+      const monStr = `${mon.getMonth()+1}/${mon.getDate()}`;
+      const sunStr = `${sun.getMonth()+1}/${sun.getDate()}`;
+      const label = w === 0 ? '今週' : w === 1 ? '先週' : `${monStr}〜${sunStr}`;
+      const val = mon.toISOString().split('T')[0]; // 月曜日のYYYY-MM-DD
+      weekOptions.push(`<option value="${val}" ${(window._statsWeekStart||'') === val || (w===0 && !window._statsWeekStart) ? 'selected' : ''}>${label}</option>`);
+    }
+    pickerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <select onchange="window._statsWeekStart=this.value;renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${weekOptions.join('')}</select>
+      </div>`;
+  } else if (period === 'all') {
     pickerHTML = `<div style="margin-bottom:14px;font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${periodLabel}</div>`;
   }
 
