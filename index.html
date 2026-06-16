@@ -160,15 +160,13 @@ header {
 .page { display: none; height: 100%; flex-direction: column; }
 .page.active { display: flex; }
 #page-stats {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   display: none;
   background: #f0f4f8;
+  flex-direction: column;
+  overflow: hidden;
 }
 #page-stats.active {
-  display: block;
+  display: flex;
 }
 .main-area {
   flex: 1;
@@ -1160,9 +1158,10 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 
     <!-- 道場の記録ページ -->
     <div class="page" id="page-stats">
-      <div id="statsContent" style="padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;">
-        <!-- JSで描画 -->
-      </div>
+      <!-- 固定ヘッダー（タブ＋選択ボックス） -->
+      <div id="statsHeader" style="flex-shrink:0;background:#f0f4f8;padding:12px 16px 8px;border-bottom:1px solid #e0e4ea;"></div>
+      <!-- スクロールエリア -->
+      <div id="statsContent" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;"></div>
     </div>
 
     <!-- れんしゅうページ -->
@@ -1402,11 +1401,7 @@ function switchTab(name, el) {
   el.classList.add('active');
   const page = document.getElementById('page-' + name);
   if (page) page.classList.add('active');
-  // statsページはcontentのoverflowをvisibleにしてページ自体でスクロール
-  const contentEl = document.querySelector('.content');
-  if (contentEl) {
-    contentEl.style.overflow = name === 'stats' ? 'visible' : 'hidden';
-  }
+  // stats scroll handled by statsContent flex child
   if (name === 'display') fixLayout();
   if (name === 'stats') setTimeout(() => renderStatsPage(), 50);
 }
@@ -3825,6 +3820,7 @@ function changeMode() {
 // ===== 道場の記録ページ描画 =====
 function renderStatsPage() {
   const el = document.getElementById('statsContent');
+  const headerEl = document.getElementById('statsHeader');
   if (!el) return;
 
   // 現在の選択状態を取得（なければデフォルト）
@@ -3975,22 +3971,26 @@ function renderStatsPage() {
     pickerHTML = `<div style="margin-bottom:14px;font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${periodLabel}</div>`;
   }
 
+  // 固定ヘッダー：タブ＋選択ボックス
+  if (headerEl) {
+    headerEl.innerHTML = `
+      <!-- 期間タブ（均等幅4分割） -->
+      <div style="display:flex;gap:0;margin-bottom:${pickerHTML ? '10px' : '0'};border-radius:999px;overflow:hidden;background:#e8edf2;padding:3px;gap:3px;">
+        ${['week','month','year','all'].map((p,i) => {
+          const labels = ['週','月','年','すべて'];
+          const active = period === p;
+          return `<button onclick="window._statsPeriod='${p}';renderStatsPage()" style="flex:1;padding:8px 0;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;background:${active?'#1a6fc4':'transparent'};color:${active?'#fff':'#999'};transition:all 0.2s;">${labels[i]}</button>`;
+        }).join('')}
+      </div>
+      ${pickerHTML}
+    `;
+  }
+
   el.innerHTML = `
-    <!-- 期間タブ（ピル型） -->
-    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
-      ${['week','month','year','all'].map((p,i) => {
-        const labels = ['週','月','年','すべて'];
-        const active = period === p;
-        return `<button onclick="window._statsPeriod='${p}';renderStatsPage()" style="padding:7px 18px;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;background:${active?'#1a6fc4':'#e8edf2'};color:${active?'#fff':'#999'};transition:all 0.2s;">${labels[i]}</button>`;
-      }).join('')}
-    </div>
-
-    ${pickerHTML}
-
     <!-- ビッグナンバー -->
     <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:16px;">
-        <div style="font-size:64px;font-weight:700;color:#1a2a3a;line-height:1;letter-spacing:-2px;">${totalQ}</div>
+        <div style="font-size:64px;font-weight:700;color:#1a2a3a;line-height:1;letter-spacing:-2px;font-family:'Zen Maru Gothic',serif;">${totalQ}</div>
         <div style="font-size:20px;font-weight:700;color:#999;font-family:${ZMG};">問</div>
       </div>
       <div style="display:flex;border-top:1px solid #f0f4f8;padding-top:14px;">
@@ -4042,12 +4042,16 @@ function renderStatsPage() {
     <div style="background:#fff;border-radius:16px;padding:16px 16px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
       <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">${period==='week'?'今週の問題数':period==='month'?`${curYear}年${curMonth+1}月`:period==='year'?`${curYear}年（月別）`:'年別'}</div>
       <div style="position:relative;">
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:80px;gap:2px;margin-bottom:6px;">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:96px;gap:2px;margin-bottom:6px;">
           ${barData.map(b => {
-            const h = b.val > 0 ? Math.max((b.val/barMax)*100, 6) : 2;
+            const h = b.val > 0 ? Math.max((b.val/barMax)*80, 5) : 2;
             const bg = b.isToday ? '#1a6fc4' : (b.val>0 ? 'rgba(26,111,196,0.5)' : '#e8eef4');
+            const labelColor = b.isToday ? '#1a6fc4' : '#999';
+            // 週・月タブのみ棒の上に問題数表示
+            const showLabel = (period === 'week' || period === 'month') && b.val > 0;
             return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
-              <div style="width:100%;height:${h}%;background:${bg};border-radius:3px 3px 0 0;min-height:2px;"></div>
+              ${showLabel ? `<div style="font-size:9px;font-weight:700;color:${labelColor};font-family:'Zen Maru Gothic',serif;margin-bottom:2px;white-space:nowrap;">${b.val}</div>` : '<div style="margin-bottom:2px;height:14px;"></div>'}
+              <div style="width:100%;height:${h}px;background:${bg};border-radius:3px 3px 0 0;min-height:2px;"></div>
             </div>`;
           }).join('')}
         </div>
