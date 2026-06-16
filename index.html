@@ -1423,10 +1423,12 @@ const RAKURAKU_SYSTEM_PROMPT = `今から日本語の漢字問題をOCRします
 3. 私がOKと言う
 4. 指定問題のみOCRする
 5. OCR結果は印刷文字そのまま出力する
-前回のOCRでの失敗例：
+前回のOCRでの失敗例（絶対にやってはいけないこと）：
+- カタカナを漢字に変換しない（「エンキ」→「延期」はNG。「エンキ」のまま出力）
 - 漢字を勝手にカタカナへ変換しない
 - 読み問題でも読みへ変換しない
-- 印刷文字をそのままOCRする`;
+- 印刷文字をそのままOCRする
+- 文章を補完・推測・書き換えしない`;
 
 function openRakuraku() {
   // 状態リセット
@@ -1697,7 +1699,7 @@ function renderRakurakuStep3() {
         <span class="ocr-item-num">${i + 1}問目</span>
         <button class="ocr-edit-btn" onclick="toggleOcrEdit(${i})">編集</button>
       </div>
-      <div class="ocr-item-text" id="ocr-text-${i}">${escapeHtml(item.text)}</div>
+      <div class="ocr-item-text" id="ocr-text-${i}">${renderOcrText(item.text)}</div>
       <input class="ocr-item-input" id="ocr-input-${i}" type="text" value="${escapeHtml(item.text)}" 
         onblur="saveOcrEdit(${i})">
     </div>
@@ -1975,6 +1977,18 @@ ${inputText}
 function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// OCR結果表示用：<u>タグだけHTMLとして描画、それ以外はエスケープ
+function renderOcrText(str) {
+  if (!str) return '';
+  // いったん全部エスケープしてから<u>だけ戻す
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/&lt;u&gt;/g,'<u>')
+    .replace(/&lt;\/u&gt;/g,'</u>');
 }
 
 // ===== 既存機能（問題を読み込む） =====
