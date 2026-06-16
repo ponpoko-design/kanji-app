@@ -159,11 +159,16 @@ header {
 .content { flex: 1; overflow: hidden; position: relative; }
 .page { display: none; height: 100%; flex-direction: column; }
 .page.active { display: flex; }
+#page-stats {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+  background: #f0f4f8;
+}
 #page-stats.active {
-  display: block !important;
-  overflow-y: scroll !important;
-  -webkit-overflow-scrolling: touch !important;
-  height: 100% !important;
+  display: block;
 }
 .main-area {
   flex: 1;
@@ -1130,7 +1135,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
     </div>
 
     <!-- あなたの記録ページ -->
-    <div class="page" id="page-stats" style="overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <div class="page" id="page-stats">
       <div id="statsContent" style="padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;">
         <!-- JSで描画 -->
       </div>
@@ -1396,6 +1401,11 @@ function switchTab(name, el) {
   el.classList.add('active');
   const page = document.getElementById('page-' + name);
   if (page) page.classList.add('active');
+  // statsページはcontentのoverflowをvisibleにしてページ自体でスクロール
+  const contentEl = document.querySelector('.content');
+  if (contentEl) {
+    contentEl.style.overflow = name === 'stats' ? 'visible' : 'hidden';
+  }
   if (name === 'display') fixLayout();
   if (name === 'stats') setTimeout(() => renderStatsPage(), 50);
 }
@@ -2379,6 +2389,7 @@ function execResetToday(btn) {
       parentOv.remove();
       showToast('今日の結果をリセットしました');
       updateMenuStats();
+      if (typeof renderStatsPage === 'function') renderStatsPage();
     }
   );
 }
@@ -2428,6 +2439,7 @@ function confirmResetUnits(btn) {
       savePracticeData(reset);
       parentOv.remove();
       showToast(`${unitSet.size}単元の結果をリセットしました`);
+      if (typeof renderStatsPage === 'function') renderStatsPage();
       initPractice();
     }
   );
@@ -2456,6 +2468,7 @@ function execResetAll(btn) {
       parentOv.remove();
       showToast('全ての結果をリセットしました');
       updateMenuStats();
+      if (typeof renderStatsPage === 'function') renderStatsPage();
       initPractice();
     }
   );
@@ -2603,6 +2616,7 @@ function execDeleteFromList(btn) {
       savePracticeData(newData);
       document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
       showToast(`${idxSet.size}問を削除しました`);
+      if (typeof renderStatsPage === 'function') renderStatsPage();
       initPractice();
     }
   );
@@ -3732,10 +3746,22 @@ function restartPractice() {
 
 // 問題の設定を変える → ページ内出題選択へ
 function changeMode() {
-  document.getElementById('completeScreen').classList.remove('visible');
+  // 完了画面を完全に非表示
+  const cs = document.getElementById('completeScreen');
+  cs.classList.remove('visible');
+  cs.style.display = 'none';
   const bar = document.getElementById('donutBar');
   if (bar) { bar.style.transition='none'; bar.style.strokeDashoffset='452'; setTimeout(()=>{ bar.style.transition='stroke-dashoffset 1s ease'; }, 50); }
-  openDojoSelectInPage();
+  // page-practiceがactiveか確認、なければswitchTab
+  const pp = document.getElementById('page-practice');
+  if (!pp.classList.contains('active')) {
+    switchTab('practice', document.querySelectorAll('.tab')[1]);
+  }
+  setTimeout(() => {
+    cs.style.display = '';
+    openDojoSelectInPage();
+    fixLayout();
+  }, 100);
 }
 
 // ===== あなたの記録ページ描画 =====
