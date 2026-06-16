@@ -1402,33 +1402,37 @@ const RAKURAKU_SYSTEM_PROMPT = `今から日本語の漢字問題をOCRします
 - 印刷されている文字をそのままOCRする
 - 勝手な補完、推測、修正、意訳をしない
 - 漢字を読み仮名に変換しない
-- カタカナを漢字に変換しない
+- カタカナを漢字に変換しない（最重要：「エンキ」→「延期」は絶対NG）
 - 読めない場合は推測せず、その箇所を示して確認を求める
 - 手書き回答は無視
 - 赤字は無視
 - 下部の解答欄や四角は無視
 - 採点記号は無視
-【文章の右側の線】
-- 問題文の右側に罫線が引かれている語句のみHTMLの下線タグで囲む
-- 例：  <u>余興</u>を楽しむ。
+【傍線（下線タグ）のルール】
+- 問題文の右側（縦書きなので文字の右側）に縦の罫線が引かれている語句のみ<u>タグで囲む
+- 漢字に罫線がある例：<u>遺言</u>を残す。
+- カタカナに罫線がある例：試合が<u>エンキ</u>になった。
+- 罫線がある語句はカタカナでも漢字でも必ず<u>タグで囲む
+- 罫線がない語句には<u>タグをつけない
 【出力ルール】
 - OCR結果のみ出力
 - 解説しない
 - 読み方を書かない
 - 問題番号を書かない
-- コードブロックで出力する
+- 必ずコードブロック（\`\`\`）で出力する（これは絶対に守ること）
+- コードブロックの外に説明文を書かない
 【作業手順】
 1. 画像を受け取る
 2. ×が付いている問題番号だけ報告する
 3. 私がOKと言う
 4. 指定問題のみOCRする
-5. OCR結果は印刷文字そのまま出力する
-前回のOCRでの失敗例（絶対にやってはいけないこと）：
-- カタカナを漢字に変換しない（「エンキ」→「延期」はNG。「エンキ」のまま出力）
-- 漢字を勝手にカタカナへ変換しない
-- 読み問題でも読みへ変換しない
-- 印刷文字をそのままOCRする
-- 文章を補完・推測・書き換えしない`;
+5. OCR結果を必ずコードブロックで出力する
+【絶対にやってはいけないこと】
+- カタカナを漢字に変換すること（「エンキ」→「延期」はNG）
+- 漢字をカタカナや読み仮名に変換すること
+- 文章を補完・推測・書き換えすること
+- コードブロックを使わずに出力すること
+- カタカナの語句に<u>タグをつけ忘れること`;
 
 function openRakuraku() {
   // 状態リセット
@@ -1619,16 +1623,30 @@ async function sendRakurakuChat() {
   addChatBubble('ai', reply);
   rakuraku.chatHistory.push({ role: 'assistant', content: reply });
 
-  // OCR結果が含まれているか判定（コードブロックがあればOCR結果とみなす）
-  if (reply.includes('```')) {
-    // OCR結果を抽出してSTEP3へ
-    const ocrText = extractCodeBlocks(reply);
+  // OCR結果が含まれているか判定
+  // コードブロックあり → そのまま抽出
+  // コードブロックなしで<u>タグや問題文らしい行がある → フォールバックで抽出
+  const hasCodeBlock = reply.includes('```');
+  const hasUTag = reply.includes('<u>');
+  const looksLikeOcr = hasCodeBlock || (hasUTag && reply.includes('。'));
+
+  if (looksLikeOcr) {
+    let ocrText = '';
+    if (hasCodeBlock) {
+      ocrText = extractCodeBlocks(reply);
+    } else {
+      // コードブロックなしの場合：<u>タグを含む行だけ抽出
+      ocrText = reply.split('\n')
+        .filter(line => line.trim().length > 0 && (line.includes('<u>') || line.includes('。') || line.includes('する') || line.includes('なった')))
+        .join('\n');
+    }
     rakuraku.ocrResults = parseOcrLines(ocrText);
-    // 少し待ってからSTEP3へ誘導
-    setTimeout(() => {
-      addChatBubble('ai', 'OCR完了です！内容を確認してください 👇');
-      setTimeout(() => goToStep3(), 800);
-    }, 400);
+    if (rakuraku.ocrResults.length > 0) {
+      setTimeout(() => {
+        addChatBubble('ai', 'OCR完了です！内容を確認してください 👇');
+        setTimeout(() => goToStep3(), 800);
+      }, 400);
+    }
   }
 }
 
