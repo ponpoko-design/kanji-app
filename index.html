@@ -3933,6 +3933,14 @@ function fixLayout() {
   const mainArea = document.querySelector('.main-area');
   if (mainArea) { mainArea.style.height = Math.max(vh-headerH-bottomH,80)+'px'; mainArea.style.flex='none'; }
   const contentH = Math.max(vh - headerH, 100);
+
+  // dojo-startの高さを明示的に設定（SE3などで余白が出るのを防ぐ）
+  const dojoStart = document.getElementById('dojoStart');
+  if (dojoStart) {
+    dojoStart.style.height = contentH + 'px';
+    dojoStart.style.minHeight = contentH + 'px';
+  }
+
   const practiceBottom = document.getElementById('practiceBottom');
   const bottomBtnH = practiceBottom ? practiceBottom.offsetHeight || 80 : 80;
   const qa = document.getElementById('questionArea');
