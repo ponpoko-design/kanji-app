@@ -515,12 +515,12 @@ rt {
   box-shadow: 0 2px 8px rgba(240,192,64,0.3);
 }
 .dojo-start {
-  display:none; position:absolute; inset:0;
+  display:none;
+  width:100%; height:100%;
   background: linear-gradient(160deg, #0d3d7a 0%, #1a6fc4 60%, #2ec4e8 100%);
   flex-direction:column;
   align-items:center; justify-content:center;
   gap:0; text-align:center; padding:32px 24px;
-  z-index:10;
 }
 .dojo-start.visible { display:flex; }
 .dojo-start-icon { font-size:52px; margin-bottom:8px; }
@@ -1110,7 +1110,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
     </div>
 
     <!-- あなたの記録ページ -->
-    <div class="page" id="page-stats" style="overflow-y:auto;">
+    <div class="page" id="page-stats" style="overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;">
       <div id="statsContent" style="padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;">
         <!-- JSで描画 -->
       </div>
@@ -1118,13 +1118,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 
     <!-- れんしゅうページ -->
     <div class="page" id="page-practice">
-      <div class="no-data" id="noDataMsg">
-        <div style="margin-bottom:8px;">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#90a8c0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-        </div>
-        <div class="no-data-title">問題がありません</div>
-        <div class="no-data-desc">右上のメニューから<br>「写真からラクラク問題化」を押して<br>テストの写真を取り込んでください</div>
-      </div>
+
 
       <div id="questionArea" style="display:none;">
         <div id="practiceTop">
@@ -1172,7 +1166,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       </div>
 
       <!-- 道場スタート画面 -->
-      <div class="dojo-start" id="dojoStart">
+      <div class="dojo-start visible" id="dojoStart">
         <div class="dojo-start-icon">⛩️</div>
         <div class="dojo-start-title">目指せ漢字の達人！</div>
         <div class="dojo-start-sub">今日も練習をはじめよう</div>
@@ -2813,7 +2807,7 @@ function startSession(pool, btn) {
   window._sessionLocked = true;
   switchTab('practice', document.querySelectorAll('.tab')[1]);
   setTimeout(() => {
-    document.getElementById('noDataMsg').style.display = 'none';
+    document.getElementById('dojoStart').classList.remove('visible');
     document.getElementById('questionArea').style.display = 'flex';
     document.getElementById('questionArea').style.flexDirection = 'column';
     document.getElementById('completeScreen').classList.remove('visible');
@@ -3010,7 +3004,7 @@ function initPractice() {
 // 道場スタート画面を表示
 function showDojoStart() {
   const data = loadPracticeData();
-  document.getElementById('noDataMsg').style.display = 'none';
+  
   document.getElementById('questionArea').style.display = 'none';
   document.getElementById('completeScreen').classList.remove('visible');
   document.getElementById('dojoStart').classList.add('visible');
@@ -3204,7 +3198,7 @@ function dojoStartPool(pool) {
   session = pool;
   current = 0; correctCount = 0;
   window._sessionLocked = true;
-  document.getElementById('noDataMsg').style.display = 'none';
+  
   document.getElementById('questionArea').style.display = 'flex';
   document.getElementById('questionArea').style.flexDirection = 'column';
   document.getElementById('completeScreen').classList.remove('visible');
