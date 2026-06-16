@@ -1819,14 +1819,19 @@ function renderRakurakuStep4() {
           <span class="answer-review-label">種類</span>
           <span class="answer-review-val">${q.type}</span>
         </div>
+        ${q.type === 'よみがなを書く' ? `
+        <div class="answer-review-row">
+          <span class="answer-review-label">答え</span>
+          <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${escapeHtml(q.answerText||'')}</span>
+        </div>` : `
         <div class="answer-review-row">
           <span class="answer-review-label">答え漢字</span>
-          <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${(q.answerKanji||[]).join('、') || '（なし）'}</span>
+          <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${(q.answerKanji||[]).join('') || '（なし）'}</span>
         </div>
         ${q.answerText ? `<div class="answer-review-row">
           <span class="answer-review-label">送り仮名</span>
           <span class="answer-review-val">${escapeHtml(q.answerText)}</span>
-        </div>` : ''}
+        </div>` : ''}`}
       </div>
 
       <!-- 編集モード -->
@@ -1846,14 +1851,20 @@ function renderRakurakuStep4() {
             <option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option>
           </select>
         </div>
+        ${q.type === 'よみがなを書く' ? `
+        <div style="margin-bottom:4px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答え（ひらがな）</label>
+          <input class="answer-review-input" id="ans-a-${i}" type="text" value="${escapeHtml(q.answerText||'')}">
+          <input type="hidden" id="ans-k-${i}" value="">
+        </div>` : `
         <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答えの漢字（カンマ区切り）</label>
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答えの漢字（複数はカンマ区切り）</label>
           <input class="answer-review-input" id="ans-k-${i}" type="text" value="${(q.answerKanji||[]).join(',')}">
         </div>
         <div style="margin-bottom:4px;">
           <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">送り仮名</label>
           <input class="answer-review-input" id="ans-a-${i}" type="text" value="${escapeHtml(q.answerText||'')}">
-        </div>
+        </div>`}
         <button onclick="saveAnsEdit(${i})" style="margin-top:8px;padding:8px 16px;background:#1a6fc4;color:#fff;border:none;border-radius:8px;font-family:${ZMG};font-size:13px;font-weight:700;cursor:pointer;">保存</button>
       </div>
     </div>
@@ -1891,8 +1902,14 @@ function saveAnsEdit(i) {
   q.question = document.getElementById(`ans-q-${i}`).value.trim();
   q.underline = document.getElementById(`ans-u-${i}`).value.trim();
   q.type = document.getElementById(`ans-t-${i}`).value;
-  q.answerKanji = document.getElementById(`ans-k-${i}`).value.split(',').map(k=>k.trim()).filter(k=>k);
   q.answerText = document.getElementById(`ans-a-${i}`).value.trim();
+  if (q.type === 'よみがなを書く') {
+    // よみがな問題：answerKanjiは空、answerTextが答え
+    q.answerKanji = [];
+  } else {
+    // 漢字を書く問題：answerKanjiに漢字、answerTextに送り仮名
+    q.answerKanji = document.getElementById(`ans-k-${i}`).value.split(',').map(k=>k.trim()).filter(k=>k);
+  }
   // 表示を更新して閉じる
   renderRakurakuStep4();
 }
