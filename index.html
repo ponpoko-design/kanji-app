@@ -1553,6 +1553,7 @@ function showLoadingOverlay(msg) {
 const rakuraku = {
   step: 1,
   photos: [],        // File[]
+  rotations: [],     // 各写真の回転角度（0/90/180/270）
   photosBase64: [],  // base64文字列[]
   chatHistory: [],   // {role, content}[] (OpenAI形式)
   ocrResults: [],    // [{num, text}]
@@ -1609,6 +1610,7 @@ function openRakuraku() {
   // 状態リセット
   rakuraku.step = 1;
   rakuraku.photos = [];
+  rakuraku.rotations = [];
   rakuraku.photosBase64 = [];
   rakuraku.chatHistory = [];
   rakuraku.ocrResults = [];
@@ -1669,6 +1671,8 @@ function onPhotosSelected(e) {
   // 上書きではなく追加
   if (!rakuraku.photos) rakuraku.photos = [];
   rakuraku.photos = [...rakuraku.photos, ...files];
+  // 新しく追加した写真の回転を0で初期化
+  files.forEach(() => rakuraku.rotations.push(0));
   // inputをリセット（同じファイルを再選択できるよう）
   e.target.value = '';
   renderPhotoGrid();
@@ -1680,22 +1684,41 @@ function renderPhotoGrid() {
   grid.innerHTML = '';
   (rakuraku.photos || []).forEach((f, i) => {
     const url = URL.createObjectURL(f);
+    const rot = rakuraku.rotations[i] || 0;
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;display:inline-block;';
+    wrap.style.cssText = 'position:relative;display:inline-block;overflow:hidden;border-radius:6px;';
     const img = document.createElement('img');
     img.className = 'photo-thumb';
     img.src = url;
+    img.style.transform = `rotate(${rot}deg)`;
+    img.style.transition = 'transform 0.3s ease';
+    // 90/270度のとき縦横比を調整
+    if (rot === 90 || rot === 270) {
+      img.style.maxWidth = '80px';
+      img.style.maxHeight = '80px';
+    }
+    // 回転ボタン（↻）
+    const rotBtn = document.createElement('button');
+    rotBtn.textContent = '↻';
+    rotBtn.title = '90度回転';
+    rotBtn.style.cssText = 'position:absolute;bottom:2px;right:2px;background:rgba(26,111,196,0.85);color:#fff;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
+    rotBtn.onclick = () => {
+      rakuraku.rotations[i] = ((rakuraku.rotations[i] || 0) + 90) % 360;
+      renderPhotoGrid();
+    };
     // ×ボタンで削除
     const del = document.createElement('button');
     del.textContent = '✕';
     del.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;';
     del.onclick = () => {
       rakuraku.photos.splice(i, 1);
+      rakuraku.rotations.splice(i, 1);
       renderPhotoGrid();
       const btn = document.getElementById('step1NextBtn');
       if (btn) btn.disabled = rakuraku.photos.length === 0;
     };
     wrap.appendChild(img);
+    wrap.appendChild(rotBtn);
     wrap.appendChild(del);
     grid.appendChild(wrap);
   });
@@ -1713,7 +1736,7 @@ async function goToStep2() {
   body.innerHTML = `<div style="text-align:center;padding:40px 0;"><div class="spinner"></div><p style="font-family:'Zen Maru Gothic',serif;font-size:14px;color:#999;margin-top:16px;">写真を圧縮中...</p></div>`;
 
   try {
-    rakuraku.photosBase64 = await Promise.all(rakuraku.photos.map(fileToBase64));
+    rakuraku.photosBase64 = await Promise.all(rakuraku.photos.map((f, i) => fileToBase64(f, rakuraku.rotations[i] || 0)));
   } catch(e) {
     body.innerHTML = `<div style="padding:20px;text-align:center;"><p style="font-family:'Zen Maru Gothic',serif;font-size:14px;color:#C62828;">⚠️ 画像の変換に失敗しました。<br>写真のサイズが大きすぎる可能性があります。</p><button onclick="openRakuraku()" class="rakuraku-btn-secondary" style="margin-top:16px;">最初からやり直す</button></div>`;
     return;
@@ -1726,8 +1749,8 @@ async function goToStep2() {
   await sendToGPTWithImages();
 }
 
-// 画像をCanvasで圧縮してbase64化（iOSのメモリ制限・サイズ制限対策）
-function fileToBase64(file) {
+// 画像をCanvasで圧縮してbase64化（回転対応・iOSのメモリ制限対策）
+function fileToBase64(file, rotation = 0) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -1735,7 +1758,6 @@ function fileToBase64(file) {
       const img = new Image();
       img.onerror = reject;
       img.onload = () => {
-        // 長辺1600px以下に縮小（OCRに十分な解像度を保ちつつ圧縮）
         const MAX = 1600;
         let w = img.naturalWidth;
         let h = img.naturalHeight;
@@ -1744,11 +1766,17 @@ function fileToBase64(file) {
           else       { w = Math.round(w * MAX / h); h = MAX; }
         }
         const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
+        // 90/270度回転のときはcanvasの縦横を入れ替える
+        const isRotated90or270 = rotation === 90 || rotation === 270;
+        canvas.width  = isRotated90or270 ? h : w;
+        canvas.height = isRotated90or270 ? w : h;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        // JPEG品質0.85で圧縮（テスト写真なら十分）
+        // 回転を中心に適用
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // リセット
+        // JPEG品質0.85で圧縮
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         resolve(dataUrl.split(",")[1]);
       };
