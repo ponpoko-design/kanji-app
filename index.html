@@ -838,6 +838,12 @@ rt {
   line-height: 1.8;
   word-break: break-all;
 }
+/* OCR結果の<u>タグに下線を明示（ブラウザデフォルトがリセットされている場合の対策） */
+.ocr-item-text u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
 .ocr-item-input {
   width: 100%;
   box-sizing: border-box;
@@ -924,6 +930,22 @@ rt {
   cursor: pointer;
   margin-top: 10px;
 }
+/* OKワンタップボタン */
+.rakuraku-btn-ok {
+  width: 100%;
+  padding: 15px;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  cursor: pointer;
+  margin-top: 12px;
+  letter-spacing: 0.05em;
+}
+.rakuraku-btn-ok:active { background: #16a34a; }
 /* スピナー */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner {
@@ -1552,17 +1574,49 @@ function renderRakurakuStep2() {
   const body = document.getElementById('rakurakuBody');
   body.innerHTML = `
     <div class="rakuraku-chat" id="rakurakuChat"></div>
-    <div class="rakuraku-input-row" style="margin-top:12px;">
-      <input type="text" id="rakurakuChatInput" placeholder="「OK」または「3番も追加」など" 
+    <!-- OKワンタップボタン -->
+    <button class="rakuraku-btn-ok" onclick="sendOk()">
+      ✅ OK！　OCRしてください
+    </button>
+    <!-- 自由入力チャット -->
+    <div class="rakuraku-input-row" style="margin-top:10px;">
+      <input type="text" id="rakurakuChatInput" placeholder="「3番も追加」など調整はここから" 
         onkeydown="if(event.key==='Enter')sendRakurakuChat()">
       <button onclick="sendRakurakuChat()">送信</button>
     </div>
     <button class="rakuraku-btn-secondary" onclick="openRakuraku()">最初からやり直す</button>
   `;
-  // チャットエリアの高さを動的に調整
   const chat = document.getElementById('rakurakuChat');
-  if (chat) chat.style.maxHeight = '220px';
+  if (chat) chat.style.maxHeight = '200px';
   addChatBubble('thinking', '写真を解析中...');
+}
+
+// OKボタン専用：「OK」をそのまま送信
+async function sendOk() {
+  addChatBubble('user', 'OK');
+  rakuraku.chatHistory.push({ role: 'user', content: 'OK' });
+  addChatBubble('thinking', 'OCR中...');
+  const reply = await callOpenAI(rakuraku.chatHistory);
+  const chat = document.getElementById('rakurakuChat');
+  const thinking = chat?.querySelector('.thinking');
+  if (thinking) thinking.remove();
+  addChatBubble('ai', reply);
+  rakuraku.chatHistory.push({ role: 'assistant', content: reply });
+
+  const hasCodeBlock = reply.includes('\`\`\`');
+  const hasUTag = reply.includes('<u>');
+  const looksLikeOcr = hasCodeBlock || (hasUTag && reply.includes('。'));
+  if (looksLikeOcr) {
+    let ocrText = hasCodeBlock ? extractCodeBlocks(reply)
+      : reply.split('\n').filter(line => line.trim().length > 0 && (line.includes('<u>') || line.includes('。'))).join('\n');
+    rakuraku.ocrResults = parseOcrLines(ocrText);
+    if (rakuraku.ocrResults.length > 0) {
+      setTimeout(() => {
+        addChatBubble('ai', 'OCR完了です！内容を確認してください 👇');
+        setTimeout(() => goToStep3(), 800);
+      }, 400);
+    }
+  }
 }
 
 function addChatBubble(role, text) {
