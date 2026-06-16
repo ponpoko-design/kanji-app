@@ -2467,6 +2467,7 @@ function execResetToday(btn) {
     [`📅 ${today}　${todayCount}問ぶんの記録`],
     'リセットする',
     () => {
+      // stats（daily・streak）から今日分を削除
       if (stats.daily) delete stats.daily[today];
       if (stats.lastActiveDate === today) {
         const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
@@ -2474,10 +2475,43 @@ function execResetToday(btn) {
         if (stats.streak > 0) stats.streak = stats.streak - 1;
       }
       saveStats(stats);
+
+      // 問題データから今日分だけ差し引く
+      const data = loadPracticeData();
+      let changed = false;
+      data.forEach(q => {
+        const todayMiss    = (q.dailyMiss    || {})[today] || 0;
+        const todayTotal   = (q.dailyTotal   || {})[today] || 0;
+        const todayCorrect = todayTotal - todayMiss;
+        const todayCharMiss = (q.dailyCharMiss || {})[today] || {};
+
+        if (todayTotal > 0 || todayMiss > 0) {
+          // 累計から今日分を差し引く
+          q.missCount    = Math.max(0, (q.missCount    || 0) - todayMiss);
+          q.totalCount   = Math.max(0, (q.totalCount   || 0) - todayTotal);
+          q.correctCount = Math.max(0, (q.correctCount || 0) - todayCorrect);
+          // charMissから今日分を差し引く
+          if (!q.charMiss) q.charMiss = {};
+          Object.entries(todayCharMiss).forEach(([k, v]) => {
+            q.charMiss[k] = Math.max(0, (q.charMiss[k] || 0) - v);
+            if (q.charMiss[k] === 0) delete q.charMiss[k];
+          });
+          // 日別記録を削除
+          if (q.dailyMiss)     delete q.dailyMiss[today];
+          if (q.dailyTotal)    delete q.dailyTotal[today];
+          if (q.dailyCharMiss) delete q.dailyCharMiss[today];
+          // lastTestedAtが今日なら前回テスト日をリセット
+          if (q.lastTestedAt === today) delete q.lastTestedAt;
+          changed = true;
+        }
+      });
+      if (changed) savePracticeData(data);
+
       parentOv.remove();
       showToast('今日の結果をリセットしました');
       updateMenuStats();
       if (typeof renderStatsPage === 'function') renderStatsPage();
+      initPractice();
     }
   );
 }
@@ -3115,11 +3149,28 @@ function confirmSaveQuestions(btn) {
 function loadPracticeData() {
   return JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
 }
+function cleanupDailyData(data) {
+  // 30日より古い日別記録を削除してデータ量を一定に保つ
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+  data.forEach(q => {
+    ['dailyTotal', 'dailyMiss', 'dailyCharMiss'].forEach(key => {
+      if (!q[key]) return;
+      Object.keys(q[key]).forEach(date => {
+        if (date < cutoffStr) delete q[key][date];
+      });
+    });
+  });
+  return data;
+}
+
 function savePracticeData(data) {
   if (window._setLocalSaving) window._setLocalSaving(true);
   setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 5000);
-  localStorage.setItem('kanji_practice_data', JSON.stringify(data));
-  if (window.firestoreSave) window.firestoreSave(data);
+  const cleaned = cleanupDailyData(data);
+  localStorage.setItem('kanji_practice_data', JSON.stringify(cleaned));
+  if (window.firestoreSave) window.firestoreSave(cleaned);
 }
 
 // ===== れんしゅう =====
@@ -3768,10 +3819,21 @@ function recordResult(correct) {
     item.lastTestedAt = today;
     item.totalCount = (item.totalCount || 0) + 1;
     if (correct) item.correctCount = (item.correctCount || 0) + 1;
+    // 日別記録（今日の削除時に使う）
+    if (!item.dailyTotal) item.dailyTotal = {};
+    item.dailyTotal[today] = (item.dailyTotal[today] || 0) + 1;
     if (!correct) {
       item.missCount++;
       if (!item.charMiss) item.charMiss = {};
       q.answerKanji.forEach(k => { item.charMiss[k] = (item.charMiss[k] || 0) + 1; });
+      // 日別間違い記録
+      if (!item.dailyMiss) item.dailyMiss = {};
+      item.dailyMiss[today] = (item.dailyMiss[today] || 0) + 1;
+      if (!item.dailyCharMiss) item.dailyCharMiss = {};
+      if (!item.dailyCharMiss[today]) item.dailyCharMiss[today] = {};
+      q.answerKanji.forEach(k => {
+        item.dailyCharMiss[today][k] = (item.dailyCharMiss[today][k] || 0) + 1;
+      });
     }
     savePracticeData(data);
   }
