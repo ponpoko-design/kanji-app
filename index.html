@@ -2189,87 +2189,126 @@ function deleteResultData() {
 }
 
 // 今日の結果だけリセット
+// 今日の結果リセット：確認モーダル経由
 function execResetToday(btn) {
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') { showToast('パスワードが違います'); return; }
   const today = getTodayJST();
   const stats = loadStats();
-  if (stats.daily) delete stats.daily[today];
-  // 今日が最終アクティブ日なら streak も1戻す
-  if (stats.lastActiveDate === today) {
-    const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
-    stats.lastActiveDate = yesterday;
-    if (stats.streak > 0) stats.streak = stats.streak - 1;
-  }
-  saveStats(stats);
-  btn.closest('[style*=fixed]').remove();
-  showToast('今日の結果をリセットしました');
-  updateMenuStats();
+  const todayCount = (stats.daily || {})[today] || 0;
+  const parentOverlay = btn.closest('[style*=fixed]');
+
+  showConfirmModal(
+    '今日の結果をリセットします',
+    [`📅 ${today}　${todayCount}問ぶんの記録`],,
+    'リセットする'
+    () => {
+      if (stats.daily) delete stats.daily[today];
+      if (stats.lastActiveDate === today) {
+        const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
+        stats.lastActiveDate = yesterday;
+        if (stats.streak > 0) stats.streak = stats.streak - 1;
+      }
+      saveStats(stats);
+      parentOverlay.remove();
+      showToast('今日の結果をリセットしました');
+      updateMenuStats();
+    }
+  );
 }
 
-// 単元ごとリセット
+// 単元ごとリセット：単元選択 → 確認モーダル経由
 function execResetByUnit(btn) {
   const data = loadPracticeData();
   const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
   if (!units.length) { showToast('問題がありません'); return; }
 
-  const overlay = btn.closest('[style*=fixed]');
+  const parentOverlay = btn.closest('[style*=fixed]');
   const ZMG = "'Zen Maru Gothic',serif";
   const unitOpts = units.map(u => {
     const count = data.filter(q => q.unit === u).length;
-    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f4f8;cursor:pointer;">
+    return `<label style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f0f4f8;cursor:pointer;">
       <input type="checkbox" value="${u}" style="width:18px;height:18px;cursor:pointer;accent-color:#1a6fc4;">
       <span style="font-size:15px;font-family:${ZMG};">単元 ${u}</span>
       <span style="font-size:12px;color:#999;font-family:${ZMG};margin-left:auto;">${count}問</span>
     </label>`;
   }).join('');
 
-  // 選択画面に差し替え
-  overlay.innerHTML = `
+  parentOverlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
       <div style="padding:18px 20px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};">単元を選んでリセット</div>
-        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-top:4px;">リセットする単元にチェックを入れてください</div>
       </div>
       <div style="overflow-y:auto;flex:1;">${unitOpts}</div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
-        <button onclick="confirmResetUnits(this)" style="flex:2;padding:12px;background:#C62828;color:#fff;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">選んだ単元をリセット</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
+        <button onclick="confirmResetUnits(this)" style="flex:2;padding:12px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
       </div>
     </div>`;
-};
+}
 
 function confirmResetUnits(btn) {
   const checked = [...btn.closest('[style*=fixed]').querySelectorAll('input:checked')];
   if (!checked.length) { showToast('単元を選んでください'); return; }
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') { showToast('パスワードが違います'); return; }
+
   const unitSet = new Set(checked.map(cb => parseInt(cb.value)));
   const data = loadPracticeData();
-  const reset = data.map(q => {
-    if (unitSet.has(q.unit)) {
-      return { ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined };
-    }
-    return q;
+  const parentOverlay = btn.closest('[style*=fixed]');
+
+  // 確認内容：単元ごとに問題数を表示
+  const lines = [...unitSet].sort((a,b)=>a-b).map(u => {
+    const count = data.filter(q => q.unit === u).length;
+    return `単元 ${u}（${count}問）`;
   });
-  savePracticeData(reset);
-  btn.closest('[style*=fixed]').remove();
-  showToast(`${unitSet.size}単元の結果をリセットしました`);
-  initPractice();
+
+  showConfirmModal(
+    `${unitSet.size}単元の結果をリセットします`,
+    lines,,
+    'リセットする'
+    () => {
+      const reset = data.map(q => {
+        if (unitSet.has(q.unit)) {
+          return { ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined };
+        }
+        return q;
+      });
+      savePracticeData(reset);
+      parentOverlay.remove();
+      showToast(`${unitSet.size}単元の結果をリセットしました`);
+      initPractice();
+    }
+  );
 }
 
-// 全部リセット
+// 全部リセット：確認モーダル経由
 function execResetAll(btn) {
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') { showToast('パスワードが違います'); return; }
   const data = loadPracticeData();
-  const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined }));
-  savePracticeData(reset);
-  saveStats({});
-  btn.closest('[style*=fixed]').remove();
-  showToast('全ての結果をリセットしました');
-  updateMenuStats();
-  initPractice();
+  const stats = loadStats();
+  const totalQ = data.length;
+  const totalAnswered = Object.values(stats.daily || {}).reduce((a,b)=>a+b,0);
+  const parentOverlay = btn.closest('[style*=fixed]');
+
+  showConfirmModal(
+    '全ての結果をリセットします',
+    [
+      `問題数：${totalQ}問ぶんの成績（missCount・正答率など）`,
+      `統計：累計${totalAnswered}問ぶんの記録・連続日数・★`
+    ],,
+    'リセットする'
+    () => {
+      const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined }));
+      savePracticeData(reset);
+      saveStats({});
+      parentOverlay.remove();
+      showToast('全ての結果をリセットしました');
+      updateMenuStats();
+      initPractice();
+    }
+  );
 }
 
 // ===== 問題文一覧 =====
@@ -2392,18 +2431,70 @@ function openEditFromList(dataIndex) {
   window._editFromListPrevSession = prevSession;
   window._editFromListPrevCurrent = prevCurrent;
 }
+// ===== 確認モーダル共通関数 =====
+// title: 確認タイトル
+// lines: 確認内容の行配列
+// onConfirm: 確認後に実行する関数
+// confirmBtnLabel省略時は「削除する」、リセット系は「リセットする」を渡す
+function showConfirmModal(title, lines, onConfirm, confirmBtnLabel = '削除する') {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  const listHTML = lines.map(line =>
+    `<div style="padding:10px 14px;border-bottom:1px solid #f0f4f8;font-size:15px;font-family:${ZMG};color:#1a2a3a;line-height:1.6;">${line}</div>`
+  ).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:18px 20px 14px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">${title}</div>
+      </div>
+      <div style="overflow-y:auto;flex:1;max-height:320px;">
+        ${listHTML}
+      </div>
+      <div style="padding:14px 16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:13px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
+        <button id="confirmExecBtn" style="flex:2;padding:13px;background:#C62828;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">${confirmBtnLabel}</button>
+      </div>
+    </div>`;
+
+  overlay.querySelector('#confirmExecBtn').addEventListener('click', () => {
+    overlay.remove();
+    onConfirm();
+  });
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 function execDeleteFromList(btn) {
   const checked = [...document.getElementById('qListRows').querySelectorAll('input:checked')];
   if (!checked.length) { showToast('問題を選択してください'); return; }
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') { showToast('パスワードが違います'); return; }
+
   const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
   const data = loadPracticeData();
-  const newData = data.filter((_, i) => !idxSet.has(i));
-  savePracticeData(newData);
-  document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
-  showToast(`${idxSet.size}問を削除しました`);
-  initPractice();
+  const targets = data.filter((_, i) => idxSet.has(i));
+
+  // 確認モーダルを表示
+  const lines = targets.map(q => {
+    const grade = q.grade ? `${q.grade}年` : '?年';
+    const unit = q.unit ? `単元${q.unit}` : '';
+    return `<span style="color:#999;font-size:12px;">${grade} ${unit}　</span>${q.question || ''}`;
+  });
+
+  showConfirmModal(
+    `${targets.length}問を削除します`,
+    lines,
+    () => {
+      const newData = data.filter((_, i) => !idxSet.has(i));
+      savePracticeData(newData);
+      document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
+      showToast(`${idxSet.size}問を削除しました`);
+      initPractice();
+    }
+  );
 }
 
 // ===== 出題選択 =====
