@@ -1033,7 +1033,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#90a8c0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
         </div>
         <div class="no-data-title">問題がありません</div>
-        <div class="no-data-desc">右上のメニューから<br>「問題を読み込む」を押して<br>テストの写真を取り込んでください</div>
+        <div class="no-data-desc">右上のメニューから<br>「写真からラクラク問題化」を押して<br>テストの写真を取り込んでください</div>
       </div>
 
       <div id="questionArea" style="display:none;">
@@ -1131,15 +1131,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       </div>
     </div>
 
-    <!-- ★ 新メニュー：写真からラクラク問題化（上に追加） -->
-    <div class="menu-item" onclick="closeMenu();openRakuraku();">
-      <span class="menu-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      </span>
-      写真からラクラク問題化
-      <span class="menu-badge-new">NEW</span>
-    </div>
-
     <div class="menu-item" onclick="closeMenu();showShutsudaiSelect();">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
       出題範囲を選ぶ
@@ -1148,9 +1139,11 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
       間違いが多い漢字
     </div>
-    <div class="menu-item" onclick="menuLoadQuestions()">
-      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-      問題を読み込む
+    <div class="menu-item" onclick="closeMenu();openRakuraku();">
+      <span class="menu-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </span>
+      写真からラクラク問題化
     </div>
     <div class="menu-item" onclick="menuSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
@@ -2144,13 +2137,125 @@ function exportData() {
 
 // ===== 結果削除 =====
 function deleteResultData() {
+  // 3択選択画面を表示
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const ZMG = "'Zen Maru Gothic',serif";
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
+      <div style="padding:18px 20px 12px;border-bottom:1px solid #f0f4f8;">
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">結果をリセット</div>
+        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-top:4px;">リセットする範囲を選んでください</div>
+      </div>
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+
+        <!-- 今日の結果 -->
+        <button onclick="execResetToday(this)" style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #e0e4ea;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};">
+          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">今日の結果をリセット</div>
+          <div style="font-size:12px;color:#999;margin-top:3px;">今日の統計（問題数・★）のみ削除</div>
+        </button>
+
+        <!-- 単元ごと -->
+        <button onclick="execResetByUnit(this)" style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #e0e4ea;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};">
+          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">単元ごとの結果をリセット</div>
+          <div style="font-size:12px;color:#999;margin-top:3px;">選んだ単元の missCount・正答率などをリセット</div>
+        </button>
+
+        <!-- 全部 -->
+        <button onclick="execResetAll(this)" style="width:100%;padding:14px 16px;background:#fff8f8;border:1.5px solid #EF9A9A;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};">
+          <div style="font-size:15px;font-weight:700;color:#C62828;">全ての結果をリセット ⚠️</div>
+          <div style="font-size:12px;color:#999;margin-top:3px;">全問題の成績＋統計をすべて削除（取り消し不可）</div>
+        </button>
+
+      </div>
+      <div style="padding:8px 16px 16px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+// 今日の結果だけリセット
+function execResetToday(btn) {
   const pw = prompt('パスワードを入力してください');
-  if (pw !== '1223') { alert('パスワードが違います'); return; }
+  if (pw !== '1223') { showToast('パスワードが違います'); return; }
+  const today = getTodayJST();
+  const stats = loadStats();
+  if (stats.daily) delete stats.daily[today];
+  // 今日が最終アクティブ日なら streak も1戻す
+  if (stats.lastActiveDate === today) {
+    const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
+    stats.lastActiveDate = yesterday;
+    if (stats.streak > 0) stats.streak = stats.streak - 1;
+  }
+  saveStats(stats);
+  btn.closest('[style*=fixed]').remove();
+  showToast('今日の結果をリセットしました');
+  updateMenuStats();
+}
+
+// 単元ごとリセット
+function execResetByUnit(btn) {
   const data = loadPracticeData();
-  const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0 }));
+  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  if (!units.length) { showToast('問題がありません'); return; }
+
+  const overlay = btn.closest('[style*=fixed]');
+  const ZMG = "'Zen Maru Gothic',serif";
+  const unitOpts = units.map(u => {
+    const count = data.filter(q => q.unit === u).length;
+    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f4f8;cursor:pointer;">
+      <input type="checkbox" value="${u}" style="width:18px;height:18px;cursor:pointer;accent-color:#1a6fc4;">
+      <span style="font-size:15px;font-family:${ZMG};">単元 ${u}</span>
+      <span style="font-size:12px;color:#999;font-family:${ZMG};margin-left:auto;">${count}問</span>
+    </label>`;
+  }).join('');
+
+  // 選択画面に差し替え
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:18px 20px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">単元を選んでリセット</div>
+        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-top:4px;">リセットする単元にチェックを入れてください</div>
+      </div>
+      <div style="overflow-y:auto;flex:1;">${unitOpts}</div>
+      <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+        <button onclick="confirmResetUnits(this)" style="flex:2;padding:12px;background:#C62828;color:#fff;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">選んだ単元をリセット</button>
+      </div>
+    </div>`;
+};
+
+function confirmResetUnits(btn) {
+  const checked = [...btn.closest('[style*=fixed]').querySelectorAll('input:checked')];
+  if (!checked.length) { showToast('単元を選んでください'); return; }
+  const pw = prompt('パスワードを入力してください');
+  if (pw !== '1223') { showToast('パスワードが違います'); return; }
+  const unitSet = new Set(checked.map(cb => parseInt(cb.value)));
+  const data = loadPracticeData();
+  const reset = data.map(q => {
+    if (unitSet.has(q.unit)) {
+      return { ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined };
+    }
+    return q;
+  });
+  savePracticeData(reset);
+  btn.closest('[style*=fixed]').remove();
+  showToast(`${unitSet.size}単元の結果をリセットしました`);
+  initPractice();
+}
+
+// 全部リセット
+function execResetAll(btn) {
+  const pw = prompt('パスワードを入力してください');
+  if (pw !== '1223') { showToast('パスワードが違います'); return; }
+  const data = loadPracticeData();
+  const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined }));
   savePracticeData(reset);
   saveStats({});
-  showToast('結果をリセットしました');
+  btn.closest('[style*=fixed]').remove();
+  showToast('全ての結果をリセットしました');
   updateMenuStats();
   initPractice();
 }
