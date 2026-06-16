@@ -2459,10 +2459,7 @@ function execResetAll(btn) {
   const parentOv = btn.closest('[style*=fixed]');
   showConfirmModal(
     '全ての結果をリセットします',
-    [
-      `問題数：${totalQ}問ぶんの成績（missCount・正答率など）`,
-      `統計：累計${totalAnswered}問ぶんの記録・連続日数・★`
-    ],
+    [],
     'リセットする',
     () => {
       const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined }));
@@ -4071,7 +4068,7 @@ function renderStatsPage() {
             const showLabel = (period === 'week' || period === 'month') && b.val > 0;
             return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
               ${showLabel ? `<div style="font-size:9px;font-weight:700;color:${labelColor};font-family:'Zen Maru Gothic',serif;margin-bottom:2px;white-space:nowrap;">${b.val}</div>` : '<div style="margin-bottom:2px;height:14px;"></div>'}
-              <div style="width:60%;height:${h}px;background:${bg};border-radius:6px 6px 0 0;min-height:4px;"></div>
+              <div style="width:60%;height:${h}px;background:${bg};border-radius:999px 999px 0 0;min-height:4px;"></div>
             </div>`;
           }).join('')}
         </div>
