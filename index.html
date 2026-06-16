@@ -386,31 +386,33 @@ rt {
   border-top: 1px solid #ddd;
   padding: 8px 12px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  gap: 8px;
+  height: 64px;
+  align-items: stretch;
 }
 #practiceMainBtns {
+  flex: 3; /* 左60% = 正解エリアと同幅 */
   display: flex;
   align-items: stretch;
   gap: 8px;
-  height: 48px;
 }
 #btnQuit {
-  flex: 0 0 23%;
+  flex: 2; /* 右40% = 問題エリアと同幅 */
   padding: 0 4px;
   background: #e8edf2;
   border: none;
-  border-radius: 999px;
+  border-radius: 12px;
   color: #888;
-  font-size: 11px;
+  font-size: 12px;
   font-family: 'Zen Maru Gothic', serif;
   cursor: pointer;
   text-align: center;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 #btnQuit:active { background: #d0d8e0; }
 #answerBtn {
-  flex: 3;
+  flex: 1;
   background: #f0c040; color: #1a3060;
   font-size: 16px; font-weight: 700;
   border: none; border-radius: 999px; cursor: pointer;
@@ -1208,8 +1210,8 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
               次の問題
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
-            <button id="btnQuit" onclick="quitPractice()">ここで<br>やめる</button>
           </div>
+          <button id="btnQuit" onclick="quitPractice()">ここで<br>やめる</button>
         </div>
       </div>
 
@@ -1229,7 +1231,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 
       <!-- 完了画面（ドーナツグラフ） -->
       <div class="complete-screen" id="completeScreen">
-        <div class="complete-title">よく頑張りました！</div>
+        <div class="complete-title" id="completeTitle">よく頑張りました！</div>
         <!-- ドーナツグラフ -->
         <div class="donut-wrap">
           <svg width="180" height="180" viewBox="0 0 180 180">
@@ -1266,37 +1268,11 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()">
   <div class="menu-panel" onclick="event.stopPropagation()">
     <div style="background:linear-gradient(160deg,#0d3d7a,#1a6fc4);padding:16px 16px 14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
         <div style="font-size:16px;font-weight:700;color:#fff;font-family:'Zen Maru Gothic',serif;">漢字アプリ</div>
         <button onclick="closeMenu()" style="background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
-      </div>
-      <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="#FF6B35"><path d="M12 2c0 0-1.5 3.5-1.5 6c0 1.6 1 2.8 1 2.8s-3-1.2-3-4.3c0 0-3.5 3.5-3.5 7.5a6 6 0 0 0 12 0c0-5-5-12-5-12z"/></svg>
-        <div>
-          <div id="menuStreak" style="font-size:20px;font-weight:700;color:#fff;line-height:1;font-family:'Zen Maru Gothic',serif;">－</div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-family:'Zen Maru Gothic',serif;">今日もやろう</div>
-        </div>
-      </div>
-      <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;">
-        <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:8px;font-family:'Zen Maru Gothic',serif;">今週の★（月〜日）</div>
-        <div id="menuStars" style="display:flex;gap:4px;justify-content:space-between;"></div>
-      </div>
-    </div>
-
-    <div style="display:flex;border-bottom:1px solid #f0f4f8;">
-      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #f0f4f8;">
-        <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">今日</div>
-        <div id="menuTodayCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
-      </div>
-      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #f0f4f8;">
-        <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">今週</div>
-        <div id="menuWeekCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
-      </div>
-      <div style="flex:1;padding:10px;text-align:center;">
-        <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">合計</div>
-        <div id="menuTotalCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
       </div>
     </div>
 
@@ -3738,7 +3714,60 @@ function showComplete(answeredCount) {
   const circumference = 452;
   const offset = circumference * (1 - pct);
   document.getElementById('donutNum').textContent = `${correct}/${total}`;
+  // 成績に応じたランダムメッセージ
+  let msg = '';
+  if (total === 0) {
+    msg = 'また今度ね！';
+  } else if (correct === total) {
+    const perfect = [
+      '君って天才？🎉',
+      '完璧じゃないか！すごすぎる！🌟',
+      '全問正解！もしかして神？✨',
+      '全部合ってた！航大、天才かも！🎊',
+      'パーフェクト！先生よりできるんじゃない？🏆'
+    ];
+    msg = perfect[Math.floor(Math.random() * perfect.length)];
+  } else if (total > 0 && correct === 0) {
+    const zero = [
+      'チャレンジしただけで100点！🌟',
+      '始めることが一番大事！次も来てね！✨',
+      'トライしただけエラい！次は頑張ろう！👊'
+    ];
+    msg = zero[Math.floor(Math.random() * zero.length)];
+  } else {
+    const pct = correct / total;
+    if (pct >= 0.8) {
+      const good = [
+        'すごい！もう少しで満点！👏',
+        'よくできた！この調子でいこう！🌈',
+        'ほぼ完璧！次は全問正解いけるよ！⭐',
+        'めちゃくちゃいい感じ！続けよう！🎵',
+        'もうちょっとで天才になれる！🚀'
+      ];
+      msg = good[Math.floor(Math.random() * good.length)];
+    } else if (pct >= 0.5) {
+      const mid = [
+        '半分以上できた！いい調子！📚',
+        'なかなかやるじゃん！もう一回！🎯',
+        '惜しい！また練習したら絶対伸びる！✏️',
+        'どんどん上手くなってるよ！😊',
+        'いいペース！続けることが大事！🌱'
+      ];
+      msg = mid[Math.floor(Math.random() * mid.length)];
+    } else {
+      const low = [
+        '伸びしろMAX！これからが楽しみ！🚀',
+        'まだまだこれから！トライしただけエラい！💪',
+        '間違えたところが次の正解になる！✨',
+        '難しかったね！でも続けたら必ず上手くなる！🔥',
+        '今日やった分だけ賢くなってるよ！📖',
+        'ゼロなんてない！全部経験値！⭐'
+      ];
+      msg = low[Math.floor(Math.random() * low.length)];
+    }
+  }
   document.getElementById('completeSub').textContent = `${total}問のうち、${correct}問正解だったよ！`;
+  document.getElementById('completeTitle').textContent = msg;
   setTimeout(() => {
     const bar = document.getElementById('donutBar');
     if (bar) bar.style.strokeDashoffset = offset;
@@ -3792,71 +3821,144 @@ function changeMode() {
 function renderStatsPage() {
   const el = document.getElementById('statsContent');
   if (!el) return;
+
+  // 現在の選択状態を取得（なければデフォルト）
+  const period = window._statsPeriod || 'month';
+  const now = new Date();
+  const jstNow = new Date(now.getTime() + 9*60*60*1000);
+  const curYear = window._statsYear !== undefined ? window._statsYear : jstNow.getFullYear();
+  const curMonth = window._statsMonth !== undefined ? window._statsMonth : jstNow.getMonth();
+
   const data = loadPracticeData();
   const stats = loadStats();
   const daily = stats.daily || {};
   const ZMG = "'Zen Maru Gothic',serif";
 
-  // 今月の集計
-  const now = new Date();
-  const jstNow = new Date(now.getTime() + 9*60*60*1000);
-  const year = jstNow.getFullYear();
-  const month = jstNow.getMonth();
-  const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
-  const daysInMonth = new Date(year, month+1, 0).getDate();
+  // 年リスト（データがある年 + 現在年）
+  const allYears = [...new Set([
+    jstNow.getFullYear(),
+    ...Object.keys(daily).map(k => parseInt(k.slice(0,4)))
+  ])].sort((a,b) => a-b);
 
-  // 今月のdailyデータ
-  const monthlyDaily = {};
-  for (let d = 1; d <= daysInMonth; d++) {
-    const key = `${monthStr}-${String(d).padStart(2,'0')}`;
-    monthlyDaily[d] = daily[key] || 0;
+  // 期間に応じた集計
+  let totalQ = 0, activeDays = 0, avgQ = 0;
+  let barData = []; // {label, val, isToday}
+  let periodLabel = '';
+
+  if (period === 'week') {
+    // 今週（月〜日）
+    const dayOfWeek = jstNow.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(jstNow.getTime() + mondayOffset * 86400000);
+    const days = ['月','火','水','木','金','土','日'];
+    barData = days.map((label, i) => {
+      const d = new Date(monday.getTime() + i * 86400000);
+      const key = d.toISOString().split('T')[0];
+      const val = daily[key] || 0;
+      const isToday = key === getTodayJST();
+      return { label, val, isToday };
+    });
+    totalQ = barData.reduce((a,b) => a+b.val, 0);
+    activeDays = barData.filter(b => b.val > 0).length;
+    const nonZero = barData.filter(b => b.val > 0);
+    avgQ = nonZero.length ? Math.round(nonZero.reduce((a,b) => a+b.val, 0) / nonZero.length) : 0;
+    periodLabel = '今週';
+  } else if (period === 'month') {
+    const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
+    const monthStr = `${curYear}-${String(curMonth+1).padStart(2,'0')}`;
+    barData = Array.from({length: daysInMonth}, (_, i) => {
+      const d = i + 1;
+      const key = `${monthStr}-${String(d).padStart(2,'0')}`;
+      const val = daily[key] || 0;
+      const isToday = key === getTodayJST();
+      return { label: String(d), val, isToday };
+    });
+    totalQ = barData.reduce((a,b) => a+b.val, 0);
+    activeDays = barData.filter(b => b.val > 0).length;
+    const nonZero = barData.filter(b => b.val > 0);
+    avgQ = nonZero.length ? Math.round(nonZero.reduce((a,b) => a+b.val, 0) / nonZero.length) : 0;
+    periodLabel = `${curYear}年${curMonth+1}月`;
+  } else if (period === 'year') {
+    // 月別集計
+    barData = Array.from({length:12}, (_, i) => {
+      const monthStr = `${curYear}-${String(i+1).padStart(2,'0')}`;
+      const val = Object.entries(daily)
+        .filter(([k]) => k.startsWith(monthStr))
+        .reduce((a,[,v]) => a+v, 0);
+      return { label: `${i+1}月`, val, isToday: false };
+    });
+    totalQ = barData.reduce((a,b) => a+b.val, 0);
+    activeDays = barData.filter(b => b.val > 0).length;
+    avgQ = 0;
+    periodLabel = `${curYear}年`;
+  } else { // all
+    // 年別集計
+    barData = allYears.map(y => {
+      const val = Object.entries(daily)
+        .filter(([k]) => k.startsWith(String(y)))
+        .reduce((a,[,v]) => a+v, 0);
+      return { label: `${y}年`, val, isToday: false };
+    });
+    totalQ = barData.reduce((a,b) => a+b.val, 0);
+    activeDays = 0;
+    avgQ = 0;
+    periodLabel = 'すべて';
   }
-  const totalQ = Object.values(monthlyDaily).reduce((a,b)=>a+b,0);
-  const activeDays = Object.values(monthlyDaily).filter(v=>v>0).length;
-  const nonZero = Object.values(monthlyDaily).filter(v=>v>0);
-  const avgQ = nonZero.length ? Math.round(nonZero.reduce((a,b)=>a+b,0)/nonZero.length) : 0;
-  const streak = stats.streak || 0;
 
-  // 正答率（全問題）
+  // 正答率
   const totalAnswered = data.reduce((a,q)=>a+(q.totalCount||0),0);
   const totalCorrect = data.reduce((a,q)=>a+(q.correctCount||0),0);
   const overallRate = totalAnswered > 0 ? Math.round(totalCorrect/totalAnswered*100) : 0;
 
   // 今週の★
   const weekStars = getWeekStars();
+  const todayCount = daily[getTodayJST()] || 0;
+  const streak = stats.streak || 0;
 
-  // 今日
-  const todayKey = getTodayJST();
-  const todayCount = daily[todayKey] || 0;
-  const todayD = jstNow.getDate();
-
-  // よく間違う漢字トップ5
-  const kanjiMap = {};
-  const kanjiUnit = {};
+  // よく間違う漢字
+  const kanjiMap = {}, kanjiUnit = {};
   data.forEach(q => {
     (q.answerKanji||[]).forEach(k => {
       const miss = (q.charMiss||{})[k] || 0;
-      if (miss > 0) {
-        kanjiMap[k] = (kanjiMap[k]||0) + miss;
-        kanjiUnit[k] = q.unit;
-      }
+      if (miss > 0) { kanjiMap[k] = (kanjiMap[k]||0) + miss; kanjiUnit[k] = q.unit; }
     });
   });
   const topKanji = Object.entries(kanjiMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxMiss = topKanji.length ? topKanji[0][1] : 1;
+  const barMax = Math.max(...barData.map(b=>b.val), 1);
 
-  // バーグラフデータ
-  const barMax = Math.max(...Object.values(monthlyDaily), 1);
-  const bars = Array.from({length:daysInMonth},(_,i)=>{
-    const d = i+1;
-    return { d, val: monthlyDaily[d]||0, isToday: d===todayD };
-  });
+  // 月セレクト用オプション
+  const monthOpts = Array.from({length:12},(_,i)=>`<option value="${i}" ${i===curMonth?'selected':''}>${i+1}月</option>`).join('');
+  const yearOpts = allYears.map(y=>`<option value="${y}" ${y===curYear?'selected':''}>${y}年</option>`).join('');
+
+  // 期間ピッカー（月・年の場合のみ）
+  let pickerHTML = '';
+  if (period === 'month') {
+    pickerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${yearOpts}</select>
+        <select onchange="window._statsMonth=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${monthOpts}</select>
+      </div>`;
+  } else if (period === 'year') {
+    pickerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <select onchange="window._statsYear=parseInt(this.value);renderStatsPage()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};background:#fff;">${yearOpts}</select>
+      </div>`;
+  } else if (period === 'week' || period === 'all') {
+    pickerHTML = `<div style="margin-bottom:14px;font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${periodLabel}</div>`;
+  }
 
   el.innerHTML = `
-    <!-- 月ラベル -->
-    <div style="font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};display:flex;align-items:center;gap:6px;">
-      ${year}年${month+1}月
+    <!-- 期間タブ -->
+    <div style="display:flex;background:#e8edf2;border-radius:12px;padding:3px;gap:2px;margin-bottom:4px;">
+      ${['week','month','year','all'].map((p,i) => {
+        const labels = ['週','月','年','すべて'];
+        const active = period === p;
+        return `<button onclick="window._statsPeriod='${p}';renderStatsPage()" style="flex:1;padding:8px 0;border:none;border-radius:9px;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;background:${active?'#fff':'transparent'};color:${active?'#1a3060':'#999'};box-shadow:${active?'0 1px 4px rgba(0,0,0,0.1)':'none'};transition:all 0.2s;">${labels[i]}</button>`;
+      }).join('')}
     </div>
+
+    ${pickerHTML}
 
     <!-- ビッグナンバー -->
     <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
@@ -3870,11 +3972,11 @@ function renderStatsPage() {
           <div style="font-size:10px;color:#999;font-family:${ZMG};margin-top:2px;line-height:1.3;">取り組んだ<br>日数</div>
         </div>
         <div style="flex:1;text-align:center;border-right:1px solid #f0f4f8;">
-          <div style="font-size:22px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${totalAnswered > 0 ? overallRate + "%" : "－"}</div>
+          <div style="font-size:22px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${totalAnswered > 0 ? overallRate + '%' : '－'}</div>
           <div style="font-size:10px;color:#999;font-family:${ZMG};margin-top:2px;line-height:1.3;">正答率</div>
         </div>
         <div style="flex:1;text-align:center;">
-          <div style="font-size:22px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${avgQ}</div>
+          <div style="font-size:22px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">${avgQ || '－'}</div>
           <div style="font-size:10px;color:#999;font-family:${ZMG};margin-top:2px;line-height:1.3;">1日平均</div>
         </div>
       </div>
@@ -3893,7 +3995,8 @@ function renderStatsPage() {
       </div>
     </div>
 
-    <!-- 今週の★ -->
+    <!-- 今週の★（weekタブのみ） -->
+    ${period === 'week' ? `
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
       <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;">今週の★（月〜日）</div>
       <div style="display:flex;justify-content:space-between;gap:4px;">
@@ -3906,14 +4009,14 @@ function renderStatsPage() {
             <span style="font-size:11px;color:${s.done?'#1a6fc4':'#bbb'};font-family:${ZMG};">${s.label}</span>
           </div>`).join('')}
       </div>
-    </div>
+    </div>` : ''}
 
     <!-- バーグラフ -->
     <div style="background:#fff;border-radius:16px;padding:16px 16px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
-      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">1日の問題数（${month+1}月）</div>
+      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">${period==='week'?'今週の問題数':period==='month'?`${curYear}年${curMonth+1}月`:period==='year'?`${curYear}年（月別）`:'年別'}</div>
       <div style="position:relative;">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;height:80px;gap:2px;margin-bottom:6px;">
-          ${bars.map(b => {
+          ${barData.map(b => {
             const h = b.val > 0 ? Math.max((b.val/barMax)*100, 6) : 2;
             const bg = b.isToday ? '#1a6fc4' : (b.val>0 ? 'rgba(26,111,196,0.5)' : '#e8eef4');
             return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
@@ -3921,16 +4024,14 @@ function renderStatsPage() {
             </div>`;
           }).join('')}
         </div>
-        ${avgQ > 0 ? `<div style="position:absolute;left:0;right:0;top:${80-(avgQ/barMax)*80}px;border-top:1.5px dashed #f0c040;pointer-events:none;">
-          <span style="position:absolute;right:0;font-size:10px;color:#f0c040;font-weight:700;transform:translateY(-14px);">平均${avgQ}問</span>
-        </div>` : ''}
+        ${avgQ > 0 ? `<div style="position:absolute;left:0;right:0;top:${80-(avgQ/barMax)*80}px;border-top:1.5px dashed #f0c040;pointer-events:none;"><span style="position:absolute;right:0;font-size:10px;color:#f0c040;font-weight:700;transform:translateY(-14px);">平均${avgQ}問</span></div>` : ''}
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 2px;">
-        <span style="font-size:10px;color:#bbb;">1</span>
-        <span style="font-size:10px;color:#bbb;">7</span>
-        <span style="font-size:10px;color:#bbb;">14</span>
-        <span style="font-size:10px;color:#bbb;">21</span>
-        <span style="font-size:10px;color:#bbb;">${daysInMonth}</span>
+        ${period==='week' ? ['月','火','水','木','金','土','日'].map(l=>`<span style="font-size:10px;color:#bbb;">${l}</span>`).join('') :
+          period==='month' ? ['1','','','','','','7','','','','','','14','','','','','','','','21','','','','','','','',barData.length.toString()].slice(0,5).map((l,i)=>`<span style="font-size:10px;color:#bbb;">${[1,7,14,21,barData.length][i]}</span>`).join('') :
+          period==='year' ? Array.from({length:12},(_,i)=>`<span style="font-size:10px;color:#bbb;">${i+1}</span>`).join('') :
+          barData.map(b=>`<span style="font-size:10px;color:#bbb;">${b.label.replace('年','')}</span>`).join('')
+        }
       </div>
     </div>
 
@@ -3945,7 +4046,7 @@ function renderStatsPage() {
           <div style="font-size:24px;color:#1a2a3a;min-width:28px;text-align:center;font-family:'Zen Maru Gothic',serif;">${k}</div>
           <div style="flex:1;">
             <div style="height:8px;background:#f0f4f8;border-radius:999px;overflow:hidden;">
-              <div style="height:100%;width:${pct}%;background:${color};border-radius:999px;transition:width 0.8s ease;"></div>
+              <div style="height:100%;width:${pct}%;background:${color};border-radius:999px;"></div>
             </div>
             <div style="font-size:10px;color:#bbb;font-family:${ZMG};margin-top:2px;">単元${kanjiUnit[k]||'?'}　${cnt}回まちがい</div>
           </div>
