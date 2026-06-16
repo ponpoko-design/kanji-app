@@ -2143,32 +2143,44 @@ function deleteResultData() {
   const ZMG = "'Zen Maru Gothic',serif";
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
-      <div style="padding:18px 20px 12px;border-bottom:1px solid #f0f4f8;">
+      <div style="padding:18px 20px 14px;border-bottom:1px solid #f0f4f8;">
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};">結果をリセット</div>
-        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-top:4px;">リセットする範囲を選んでください</div>
       </div>
-      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
 
-        <!-- 今日の結果 -->
-        <button onclick="execResetToday(this)" style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #e0e4ea;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};">
-          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">今日の結果をリセット</div>
-          <div style="font-size:12px;color:#999;margin-top:3px;">今日の統計（問題数・★）のみ削除</div>
+        <!-- 今日の結果：青ボーダー、タップでアクティブ -->
+        <button onclick="execResetToday(this)"
+          onmousedown="this.style.background='#EFF6FF';this.style.borderColor='#1a6fc4'"
+          ontouchstart="this.style.background='#EFF6FF';this.style.borderColor='#1a6fc4'"
+          onmouseup="this.style.background='#fff';this.style.borderColor='#1a6fc4'"
+          ontouchend="this.style.background='#fff';this.style.borderColor='#1a6fc4'"
+          style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};transition:background 0.15s;">
+          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">リセット ＞ 今日の結果のみ</div>
         </button>
 
-        <!-- 単元ごと -->
-        <button onclick="execResetByUnit(this)" style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #e0e4ea;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};">
-          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">単元ごとの結果をリセット</div>
-          <div style="font-size:12px;color:#999;margin-top:3px;">選んだ単元の missCount・正答率などをリセット</div>
+        <!-- 単元ごと：青ボーダー、タップでアクティブ -->
+        <button onclick="execResetByUnit(this)"
+          onmousedown="this.style.background='#EFF6FF';this.style.borderColor='#1a6fc4'"
+          ontouchstart="this.style.background='#EFF6FF';this.style.borderColor='#1a6fc4'"
+          onmouseup="this.style.background='#fff';this.style.borderColor='#1a6fc4'"
+          ontouchend="this.style.background='#fff';this.style.borderColor='#1a6fc4'"
+          style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};transition:background 0.15s;">
+          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">リセット ＞ 単元ごとの結果</div>
         </button>
 
-        <!-- 全部 -->
-        <button onclick="execResetAll(this)" style="width:100%;padding:14px 16px;background:#fff8f8;border:1.5px solid #EF9A9A;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};">
-          <div style="font-size:15px;font-weight:700;color:#C62828;">全ての結果をリセット ⚠️</div>
-          <div style="font-size:12px;color:#999;margin-top:3px;">全問題の成績＋統計をすべて削除（取り消し不可）</div>
+        <!-- 全部：注意アイコン付き、グレーボーダー -->
+        <button onclick="execResetAll(this)"
+          onmousedown="this.style.background='#fff0f0'"
+          ontouchstart="this.style.background='#fff0f0'"
+          onmouseup="this.style.background='#fff'"
+          ontouchend="this.style.background='#fff'"
+          style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #e0e4ea;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};transition:background 0.15s;display:flex;align-items:center;gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style="font-size:15px;font-weight:700;color:#C62828;">リセット ＞ これまでの全ての結果</div>
         </button>
 
       </div>
-      <div style="padding:8px 16px 16px;">
+      <div style="padding:4px 16px 16px;">
         <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
       </div>
     </div>`;
