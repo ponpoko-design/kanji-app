@@ -2478,34 +2478,37 @@ function execResetToday(btn) {
 
       // 問題データから今日分だけ差し引く
       const data = loadPracticeData();
-      let changed = false;
       data.forEach(q => {
-        const todayMiss    = (q.dailyMiss    || {})[today] || 0;
-        const todayTotal   = (q.dailyTotal   || {})[today] || 0;
-        const todayCorrect = todayTotal - todayMiss;
+        // dailyデータがある場合：正確に差し引く
+        const todayMiss     = (q.dailyMiss    || {})[today] || 0;
+        const todayTotal    = (q.dailyTotal   || {})[today] || 0;
+        const todayCorrect  = todayTotal - todayMiss;
         const todayCharMiss = (q.dailyCharMiss || {})[today] || {};
 
         if (todayTotal > 0 || todayMiss > 0) {
-          // 累計から今日分を差し引く
           q.missCount    = Math.max(0, (q.missCount    || 0) - todayMiss);
           q.totalCount   = Math.max(0, (q.totalCount   || 0) - todayTotal);
           q.correctCount = Math.max(0, (q.correctCount || 0) - todayCorrect);
-          // charMissから今日分を差し引く
           if (!q.charMiss) q.charMiss = {};
           Object.entries(todayCharMiss).forEach(([k, v]) => {
             q.charMiss[k] = Math.max(0, (q.charMiss[k] || 0) - v);
             if (q.charMiss[k] === 0) delete q.charMiss[k];
           });
-          // 日別記録を削除
           if (q.dailyMiss)     delete q.dailyMiss[today];
           if (q.dailyTotal)    delete q.dailyTotal[today];
           if (q.dailyCharMiss) delete q.dailyCharMiss[today];
-          // lastTestedAtが今日なら前回テスト日をリセット
           if (q.lastTestedAt === today) delete q.lastTestedAt;
-          changed = true;
+        } else if (q.lastTestedAt === today) {
+          // dailyデータがない古い形式のデータ：lastTestedAtが今日なら
+          // charMissとmissCountをゼロにする（保守的だが今日やった分は消す）
+          q.charMiss = {};
+          q.missCount = 0;
+          q.totalCount = 0;
+          q.correctCount = 0;
+          delete q.lastTestedAt;
         }
       });
-      if (changed) savePracticeData(data);
+      savePracticeData(data);
 
       parentOv.remove();
       showToast('今日の結果をリセットしました');
