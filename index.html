@@ -1222,7 +1222,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       </div>
 
       <!-- ページ内出題選択エリア -->
-      <div id="dojoSelectArea" style="display:none;flex:1;width:100%;background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;"></div>
+      <div id="dojoSelectArea" style="display:none;position:absolute;inset:0;background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:5;"></div>
 
       <!-- 完了画面（ドーナツグラフ） -->
       <div class="complete-screen" id="completeScreen">
@@ -3142,8 +3142,6 @@ function openDojoSelectInPage() {
   // スタート画面を隠して選択エリアを表示
   document.getElementById('dojoStart').classList.remove('visible');
   area.style.display = 'block';
-  area.style.overflowY = 'auto';
-  area.style.webkitOverflowScrolling = 'touch';
   fixLayout();
   area.scrollTop = 0;
 }
@@ -3237,7 +3235,7 @@ function renderDojoStartCard() {
   }
 
   card.innerHTML = `
-    <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題モードを選ぶ</div>
+    <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題する問題は、どうする？</div>
     ${radioItem('miss','miss',true,'間違いが多い順')}
     ${radioItem('random','random',false,'ランダム')}
     ${radioItem('unit','unit',false,'単元範囲指定')}
@@ -3288,7 +3286,7 @@ function dojoNext() {
     if (!unitFrom || !unitTo) { return; }
     card.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <button onclick="renderDojoStartCard()" style="background:none;border:none;cursor:pointer;padding:0;">
+        <button onclick="openDojoSelectInPage()" style="background:none;border:none;cursor:pointer;padding:0;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};">出題方法を選ぶ（単元${unitFrom}〜${unitTo}）</div>
@@ -4118,10 +4116,7 @@ function fixLayout() {
     dojoStart.style.height = contentH + 'px';
     dojoStart.style.minHeight = contentH + 'px';
   }
-  const dojoSelectArea = document.getElementById('dojoSelectArea');
-  if (dojoSelectArea && dojoSelectArea.style.display !== 'none') {
-    dojoSelectArea.style.height = contentH + 'px';
-  }
+
 
   const practiceBottom = document.getElementById('practiceBottom');
   const bottomBtnH = practiceBottom ? practiceBottom.offsetHeight || 80 : 80;
