@@ -3708,7 +3708,8 @@ function nextQuestion() {
 
 // 途中でやめる
 function quitPractice() {
-  // 途中でやめた場合：実際に回答した問題数（current）でカウント
+  // 途中でやめた場合：専用メッセージフラグをセット
+  window._isQuit = true;
   showComplete(current);
 }
 
@@ -3723,7 +3724,17 @@ function showComplete(answeredCount) {
   document.getElementById('donutNum').textContent = `${correct}/${total}`;
   // 成績に応じたランダムメッセージ
   let msg = '';
-  if (total === 0) {
+  if (window._isQuit) {
+    // 途中でやめた場合の専用メッセージ
+    const quitMsgs = [
+      'またチャレンジしてね！',
+      'また来てね！',
+      '途中までやっただけエラい！',
+      '後で再チャレンジだ！'
+    ];
+    msg = quitMsgs[Math.floor(Math.random() * quitMsgs.length)];
+    window._isQuit = false; // フラグリセット
+  } else if (total === 0) {
     msg = 'また今度ね！';
   } else if (correct === total) {
     const perfect = [
@@ -4060,7 +4071,7 @@ function renderStatsPage() {
             const showLabel = (period === 'week' || period === 'month') && b.val > 0;
             return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
               ${showLabel ? `<div style="font-size:9px;font-weight:700;color:${labelColor};font-family:'Zen Maru Gothic',serif;margin-bottom:2px;white-space:nowrap;">${b.val}</div>` : '<div style="margin-bottom:2px;height:14px;"></div>'}
-              <div style="width:100%;height:${h}px;background:${bg};border-radius:3px 3px 0 0;min-height:2px;"></div>
+              <div style="width:100%;height:${h}px;background:${bg};border-radius:999px;min-height:4px;"></div>
             </div>`;
           }).join('')}
         </div>
