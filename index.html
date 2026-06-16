@@ -22,13 +22,11 @@
   const DATA_DOC = doc(db, 'kanji', 'practiceData');
   const STATS_DOC = doc(db, 'kanji', 'stats');
 
-  // Stats保存
   async function saveStatsToFirestore(stats) {
     try {
       await setDoc(STATS_DOC, { ...stats, updatedAt: new Date().toISOString() });
     } catch(e) { console.log('Stats保存エラー:', e); }
   }
-  // Stats読み込み
   async function loadStatsFromFirestore() {
     try {
       const snap = await getDoc(STATS_DOC);
@@ -40,7 +38,6 @@
   window.firestoreStatsSave = saveStatsToFirestore;
   window.firestoreStatsLoad = loadStatsFromFirestore;
 
-  // Firestoreからデータ読み込み
   async function loadFromFirestore() {
     try {
       const snap = await getDoc(DATA_DOC);
@@ -53,7 +50,6 @@
     }
   }
 
-  // Firestoreにデータ保存
   async function saveToFirestore(data) {
     try {
       await setDoc(DATA_DOC, { questions: data, updatedAt: new Date().toISOString() });
@@ -62,25 +58,21 @@
     }
   }
 
-  // リアルタイム同期：他デバイスの変更を自動反映（練習中はinitを呼ばない）
   let _localSaving = false;
   window._setLocalSaving = (v) => { _localSaving = v; };
   onSnapshot(DATA_DOC, (snap) => {
     if (snap.exists()) {
       const data = snap.data().questions || [];
       localStorage.setItem('kanji_practice_data', JSON.stringify(data));
-      // 自分の保存によるスナップショットは無視する
       if (!_localSaving && !document.getElementById('page-practice').classList.contains('active')) {
         if (typeof initPractice === 'function') initPractice();
       }
     }
   });
 
-  // グローバルに公開
   window.firestoreSave = saveToFirestore;
   window.firestoreLoad = loadFromFirestore;
 
-  // 初回読み込み
   loadStatsFromFirestore();
   loadFromFirestore().then(() => {
     console.log('Firestore初期読み込み完了');
@@ -96,23 +88,18 @@ html, body {
   background: #f0f4f8;
   -webkit-font-smoothing: antialiased;
 }
-
-/* ===== 全体レイアウト ===== */
 .layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
   height: -webkit-fill-available;
 }
-
-/* ===== ヘッダー ===== */
 header {
   flex-shrink: 0;
   background: linear-gradient(135deg, #0d3d7a 0%, #1a6fc4 50%, #2ec4e8 100%);
   padding: clamp(8px,2vw,14px) 16px 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-
 .header-top {
   display: flex;
   align-items: center;
@@ -128,8 +115,6 @@ header {
   font-family: 'Zen Maru Gothic', serif;
   text-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-
-/* メニューボタン（右上） */
 .menu-btn {
   position: absolute;
   right: 0;
@@ -149,8 +134,6 @@ header {
   gap: 5px;
 }
 .menu-btn:active { background: rgba(255,255,255,0.35); }
-
-/* タブ */
 .tabs {
   display: flex;
   gap: 3px;
@@ -172,13 +155,9 @@ header {
   background: #f0f4f8;
   color: #1a3060;
 }
-
-/* ===== コンテンツ ===== */
 .content { flex: 1; overflow: hidden; position: relative; }
 .page { display: none; height: 100%; flex-direction: column; }
 .page.active { display: flex; }
-
-/* ===== 漢字表示ページ ===== */
 .main-area {
   flex: 1;
   min-height: 0;
@@ -234,8 +213,6 @@ header {
   padding:40px 0; line-height:2.2;
   font-family:'Zen Maru Gothic',serif;
 }
-
-/* ボトムバー（漢字表示ページ） */
 .bottom-bar {
   flex-shrink: 0;
   background: linear-gradient(135deg, #0d3d7a 0%, #1a6fc4 50%, #2ec4e8 100%);
@@ -284,24 +261,18 @@ header {
   white-space:nowrap;
 }
 .search-row button:active { background:#d4a820; }
-
-/* ===== れんしゅうページ ===== */
 #page-practice { flex-direction:column; overflow:hidden; position:relative; }
-
 #questionArea {
   flex: 1;
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
 }
-
 #practiceTop {
   display: flex;
   align-items: stretch;
   overflow: hidden;
 }
-
-/* 左2/3：正解エリア */
 #leftPanel {
   flex: 0 0 60%;
   height: 100%;
@@ -313,8 +284,6 @@ header {
   overflow: hidden;
   box-sizing: border-box;
 }
-
-/* 正解表示エリア */
 #answerImagesWrap {
   width: 100%;
   height: 100%;
@@ -328,8 +297,6 @@ header {
   transition: opacity 0.3s;
 }
 #answerImagesWrap.visible { opacity: 1; }
-
-/* 各カード — heightはJSで直接設定 */
 .kanji-img-box {
   width: 100%;
   flex-shrink: 0;
@@ -346,7 +313,6 @@ header {
   font-family: 'I-OTF-G教科書Pro L';
   color: #1a2a3a;
 }
-/* よみがな問題（テキストのみ）*/
 .answer-kana-text {
   font-family: 'I-OTF-G教科書Pro L';
   writing-mode: vertical-rl;
@@ -357,22 +323,16 @@ header {
   width: 100%;
   height: 100%;
 }
-
-/* ルビ */
 rt {
   font-family: 'I-OTF-G教科書Pro L';
   font-size: 0.5em;
 }
-
-/* 右1/3：問題文エリア */
 #rightPanel {
   flex: 0 0 40%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-
-/* 問題文ボックス */
 #qVerticalWrap {
   flex: 1;
   min-height: 0;
@@ -385,13 +345,11 @@ rt {
   justify-content: center;
   align-items: flex-start;
 }
-/* 縦書きラッパー */
 #qVerticalInner {
   writing-mode: vertical-rl;
   height: 100%;
   overflow: hidden;
 }
-/* 問題文テキスト */
 #qText {
   font-size: 28px;
   color: #1A1A1A;
@@ -403,8 +361,6 @@ rt {
   padding-right: 3px;
   margin-right: 1px;
 }
-
-/* 単元情報・まちがいバー：右パネル下部にコンパクトに */
 #qMeta {
   flex-shrink: 0;
   padding: 6px 8px 4px;
@@ -412,7 +368,6 @@ rt {
   flex-direction: column;
   gap: 0;
 }
-
 #practiceBottom {
   flex-shrink: 0;
   height: 64px;
@@ -423,7 +378,6 @@ rt {
   align-items: stretch;
   gap: 10px;
 }
-
 #answerBtn {
   flex: 1;
   background: #f0c040; color: #1a3060;
@@ -433,13 +387,11 @@ rt {
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 #answerBtn:active { background: #d4a820; }
-
 #resultButtons {
   flex: 1;
   gap: 10px;
 }
 #resultButtons.visible { display: flex; }
-
 #btnCorrect {
   flex: 1;
   background: #E8F5E9; color: #2E7D32;
@@ -449,7 +401,6 @@ rt {
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 #btnCorrect:active { background: #C8E6C9; }
-
 #btnWrong {
   flex: 1;
   background: #FFEBEE; color: #C62828;
@@ -459,7 +410,6 @@ rt {
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 #btnWrong:active { background: #FFCDD2; }
-
 #btnNext {
   flex: 1;
   background: #f0c040; color: #1a3060;
@@ -469,9 +419,6 @@ rt {
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 #btnNext:active { background: #d4a820; }
-
-/* データなし */
-/* 左：正解エリア */
 .left-panel {
   flex: 0 0 66.666%;
   display: flex;
@@ -491,11 +438,7 @@ rt {
 }
 .answer-btn:active { background:#444; }
 .answer-btn.shown { background:#555; }
-
-
 .kanji-img-box .k-label { font-size:11px; color:#999; font-family:'Zen Maru Gothic',serif; }
-
-
 .result-buttons {
   display:grid; grid-template-columns:1fr 1fr;
   gap:10px; flex-shrink:0;
@@ -528,8 +471,6 @@ rt {
   flex-shrink:0; display:none;
 }
 .btn-next.visible { display:block; }
-
-/* 右：問題エリア */
 .right-panel {
   flex: 0 0 33.333%;
   display:flex; flex-direction:column;
@@ -544,8 +485,6 @@ rt {
 .miss-bar-track { flex:1; height:4px; background:#eee; border-radius:2px; overflow:hidden; }
 .miss-bar-fill { height:100%; background:#FF4D4D; border-radius:2px; transition:width 0.4s ease; }
 .miss-bar-count { font-size:11px; color:#FF4D4D; font-weight:700; min-width:28px; text-align:right; font-family:'Zen Maru Gothic',serif; }
-
-/* データなし表示 */
 .no-data {
   flex:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
@@ -555,8 +494,6 @@ rt {
 .no-data-icon { font-size:56px; }
 .no-data-title { font-size:18px; font-weight:700; color:#1a3060; font-family:'Zen Maru Gothic',serif; }
 .no-data-desc { font-size:13px; color:#888; line-height:1.9; font-family:'Zen Maru Gothic',serif; }
-
-/* 完了画面 */
 .complete-screen {
   display:none; position:absolute; inset:0;
   background:#f0f4f8;
@@ -568,7 +505,6 @@ rt {
 .complete-emoji { font-size:64px; }
 .complete-title { font-size:26px; font-weight:700; color:#1A1A1A; font-family:'Zen Maru Gothic',serif; }
 .complete-sub { font-size:15px; color:#777; font-family:'Zen Maru Gothic',serif; }
-/* ===== メニューオーバーレイ ===== */
 .menu-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.6); z-index:800;
@@ -606,8 +542,15 @@ rt {
   font-size:10px; font-weight:700;
   padding:2px 7px; border-radius:10px;
 }
-
-/* ポップアップ（漢字表示用） */
+/* NEW badge for ラクラク */
+.menu-item .menu-badge-new {
+  margin-left:auto;
+  background: linear-gradient(135deg,#ff6b35,#f0c040);
+  color:#fff;
+  font-size:10px; font-weight:700;
+  padding:2px 8px; border-radius:10px;
+  letter-spacing:0.05em;
+}
 .popup-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.75); z-index:500;
@@ -651,8 +594,6 @@ rt {
   font-family:'Zen Maru Gothic',serif; font-weight:700;
   cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2); z-index:10;
 }
-
-/* 書き順オーバーレイ */
 .stroke-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.88); z-index:600;
@@ -671,6 +612,324 @@ rt {
 .stroke-replay-btn { background:#1a5fa8; color:#fff; border:none; border-radius:20px; padding:10px 28px; font-size:16px; font-family:'Zen Maru Gothic',serif; font-weight:700; cursor:pointer; }
 .stroke-title { color:#fff; font-size:20px; font-family:'Zen Maru Gothic',serif; font-weight:700; }
 .stroke-loading { color:#888; font-size:16px; font-family:'Zen Maru Gothic',serif; }
+
+/* ===== ラクラク問題化 スタイル ===== */
+.rakuraku-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.75); z-index:900;
+  align-items:flex-start; justify-content:center;
+  padding: 16px;
+  overflow-y: auto;
+}
+.rakuraku-overlay.active { display:flex; }
+.rakuraku-panel {
+  background:#fff; border-radius:20px;
+  width:100%; max-width:560px;
+  margin: auto;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  animation: popIn 0.2s ease;
+}
+.rakuraku-header {
+  background: linear-gradient(135deg, #0d3d7a 0%, #1a6fc4 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rakuraku-header-title {
+  font-family: 'Zen Maru Gothic', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.rakuraku-header-close {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 50%;
+  width: 30px; height: 30px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+/* ステップインジケーター */
+.rakuraku-steps {
+  display: flex;
+  padding: 12px 20px;
+  gap: 0;
+  border-bottom: 1px solid #f0f4f8;
+  background: #f8f9fa;
+}
+.rakuraku-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.rakuraku-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #ddd;
+  z-index: 0;
+}
+.rakuraku-step.done:not(:last-child)::after { background: #1a6fc4; }
+.rakuraku-step-circle {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: #ddd;
+  color: #999;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+}
+.rakuraku-step.active .rakuraku-step-circle { background: #1a6fc4; color: #fff; }
+.rakuraku-step.done .rakuraku-step-circle { background: #22c55e; color: #fff; }
+.rakuraku-step-label {
+  font-size: 9px;
+  color: #999;
+  font-family: 'Zen Maru Gothic', serif;
+  text-align: center;
+  line-height: 1.3;
+}
+.rakuraku-step.active .rakuraku-step-label { color: #1a6fc4; font-weight: 700; }
+.rakuraku-step.done .rakuraku-step-label { color: #22c55e; }
+/* コンテンツエリア */
+.rakuraku-body {
+  padding: 20px;
+  min-height: 200px;
+}
+/* フォトアップエリア */
+.photo-upload-area {
+  border: 2.5px dashed #b0ccee;
+  border-radius: 16px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f0f6ff;
+}
+.photo-upload-area:hover { border-color: #1a6fc4; background: #e8f0ff; }
+.photo-upload-area .upload-icon { font-size: 40px; margin-bottom: 8px; }
+.photo-upload-area p {
+  font-family: 'Zen Maru Gothic', serif;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+}
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.photo-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  width: 100%;
+  border: 2px solid #b0ccee;
+}
+/* チャットエリア（STEP2） */
+.rakuraku-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.chat-bubble {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-family: 'Zen Maru Gothic', serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.chat-bubble.ai {
+  background: #f0f4f8;
+  color: #1a2a3a;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+.chat-bubble.user {
+  background: #1a6fc4;
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.chat-bubble.thinking {
+  background: #f0f4f8;
+  color: #999;
+  align-self: flex-start;
+  font-style: italic;
+}
+.rakuraku-input-row {
+  display: flex;
+  gap: 8px;
+}
+.rakuraku-input-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 999px;
+  font-size: 14px;
+  font-family: 'Zen Maru Gothic', serif;
+  outline: none;
+}
+.rakuraku-input-row input:focus { border-color: #1a6fc4; }
+.rakuraku-input-row button {
+  padding: 10px 18px;
+  background: #1a6fc4;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  cursor: pointer;
+}
+/* OCR結果編集エリア（STEP3） */
+.ocr-item {
+  background: #f8f9fa;
+  border: 1.5px solid #e0e4ea;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.ocr-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ocr-item-num {
+  font-size: 12px;
+  color: #999;
+  font-family: 'Zen Maru Gothic', serif;
+}
+.ocr-edit-btn {
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Zen Maru Gothic', serif;
+  cursor: pointer;
+  color: #666;
+}
+.ocr-edit-btn:hover { background: #f0f4f8; }
+.ocr-item-text {
+  font-size: 15px;
+  font-family: 'Zen Maru Gothic', serif;
+  color: #1a2a3a;
+  line-height: 1.7;
+  word-break: break-all;
+}
+.ocr-item-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1.5px solid #1a6fc4;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: 'Zen Maru Gothic', serif;
+  outline: none;
+  display: none;
+}
+/* 答え確認エリア（STEP4） */
+.answer-review-item {
+  background: #f8f9fa;
+  border: 1.5px solid #e0e4ea;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.answer-review-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.answer-review-label {
+  font-size: 11px;
+  color: #999;
+  font-family: 'Zen Maru Gothic', serif;
+  min-width: 52px;
+  padding-top: 2px;
+}
+.answer-review-val {
+  font-size: 14px;
+  font-family: 'Zen Maru Gothic', serif;
+  color: #1a2a3a;
+  flex: 1;
+}
+.answer-review-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1.5px solid #1a6fc4;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Zen Maru Gothic', serif;
+  outline: none;
+}
+.answer-review-type-sel {
+  padding: 6px 10px;
+  border: 1.5px solid #1a6fc4;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Zen Maru Gothic', serif;
+  outline: none;
+  background: #fff;
+}
+/* ボタン共通 */
+.rakuraku-btn-primary {
+  width: 100%;
+  padding: 13px;
+  background: #1a6fc4;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  cursor: pointer;
+  margin-top: 12px;
+}
+.rakuraku-btn-primary:active { background: #1558a0; }
+.rakuraku-btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+.rakuraku-btn-secondary {
+  width: 100%;
+  padding: 11px;
+  background: #f0f4f8;
+  color: #666;
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  cursor: pointer;
+  margin-top: 8px;
+}
+/* スピナー */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid rgba(26,111,196,0.2);
+  border-top-color: #1a6fc4;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
 
 @media screen and (max-width:390px) { .search-row input { width:52vw; } }
 @media screen and (max-height:680px) {
@@ -707,8 +966,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 </script>
 
 <div class="layout">
-
-  <!-- ヘッダー -->
   <header>
     <div class="header-top">
       <h1>漢字アプリ</h1>
@@ -727,7 +984,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
   </header>
 
   <div class="content">
-
     <!-- 漢字表示ページ -->
     <div class="page active" id="page-display">
       <div class="main-area">
@@ -746,8 +1002,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
 
     <!-- れんしゅうページ -->
     <div class="page" id="page-practice">
-
-      <!-- データなし -->
       <div class="no-data" id="noDataMsg">
         <div style="margin-bottom:8px;">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#90a8c0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
@@ -756,16 +1010,11 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
         <div class="no-data-desc">右上のメニューから<br>「問題を読み込む」を押して<br>テストの写真を取り込んでください</div>
       </div>
 
-      <!-- 問題エリア：テスト済みのシンプル構造 -->
       <div id="questionArea" style="display:none;">
-
-        <!-- 上：左右分割 -->
         <div id="practiceTop">
-          <!-- 左2/3：正解 -->
           <div id="leftPanel">
             <div id="answerImagesWrap"></div>
           </div>
-          <!-- 右1/3：問題 -->
           <div id="rightPanel">
             <div id="qVerticalWrap" oncontextmenu="openEditModal();return false;" ontouchstart="startEditLongPress()" ontouchend="cancelEditLongPress()" ontouchmove="cancelEditLongPress()" style="cursor:pointer;">
               <div id="qVerticalInner">
@@ -784,7 +1033,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           </div>
         </div>
 
-        <!-- 下：ボタン -->
         <div id="practiceBottom">
           <button id="answerBtn" onclick="toggleAnswer()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -805,10 +1053,8 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
-
       </div>
 
-      <!-- 完了画面 -->
       <div class="complete-screen" id="completeScreen">
         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
         <div class="complete-title">おわったよ！</div>
@@ -817,17 +1063,13 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>もう一度やる
         </button>
       </div>
-
     </div>
-
   </div>
 </div>
 
 <!-- メニューオーバーレイ -->
 <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()">
   <div class="menu-panel" onclick="event.stopPropagation()">
-
-    <!-- 統計エリア -->
     <div style="background:linear-gradient(160deg,#0d3d7a,#1a6fc4);padding:16px 16px 14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:16px;font-weight:700;color:#fff;font-family:'Zen Maru Gothic',serif;">漢字アプリ</div>
@@ -835,7 +1077,6 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <!-- 連続日数 -->
       <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="#FF6B35"><path d="M12 2c0 0-1.5 3.5-1.5 6c0 1.6 1 2.8 1 2.8s-3-1.2-3-4.3c0 0-3.5 3.5-3.5 7.5a6 6 0 0 0 12 0c0-5-5-12-5-12z"/></svg>
         <div>
@@ -843,14 +1084,12 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
           <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;font-family:'Zen Maru Gothic',serif;">今日もやろう</div>
         </div>
       </div>
-      <!-- 今週の★ -->
       <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;">
         <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:8px;font-family:'Zen Maru Gothic',serif;">今週の★（月〜日）</div>
         <div id="menuStars" style="display:flex;gap:4px;justify-content:space-between;"></div>
       </div>
     </div>
 
-    <!-- 問題数 -->
     <div style="display:flex;border-bottom:1px solid #f0f4f8;">
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #f0f4f8;">
         <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">今日</div>
@@ -864,6 +1103,15 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
         <div style="font-size:10px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:1px;">合計</div>
         <div id="menuTotalCount" style="font-size:18px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;">－</div>
       </div>
+    </div>
+
+    <!-- ★ 新メニュー：写真からラクラク問題化（上に追加） -->
+    <div class="menu-item" onclick="closeMenu();openRakuraku();">
+      <span class="menu-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </span>
+      写真からラクラク問題化
+      <span class="menu-badge-new">NEW</span>
     </div>
 
     <div class="menu-item" onclick="closeMenu();showShutsudaiSelect();">
@@ -929,6 +1177,43 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
   </div>
 </div>
 
+<!-- ===== ラクラク問題化オーバーレイ ===== -->
+<div class="rakuraku-overlay" id="rakurakuOverlay">
+  <div class="rakuraku-panel" id="rakurakuPanel">
+    <div class="rakuraku-header">
+      <div class="rakuraku-header-title">📷 写真からラクラク問題化</div>
+      <button class="rakuraku-header-close" onclick="closeRakuraku()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- ステップインジケーター -->
+    <div class="rakuraku-steps" id="rakurakuSteps">
+      <div class="rakuraku-step active" id="step-ind-1">
+        <div class="rakuraku-step-circle">1</div>
+        <div class="rakuraku-step-label">写真<br>アップ</div>
+      </div>
+      <div class="rakuraku-step" id="step-ind-2">
+        <div class="rakuraku-step-circle">2</div>
+        <div class="rakuraku-step-label">×番号<br>確認</div>
+      </div>
+      <div class="rakuraku-step" id="step-ind-3">
+        <div class="rakuraku-step-circle">3</div>
+        <div class="rakuraku-step-label">OCR<br>確認</div>
+      </div>
+      <div class="rakuraku-step" id="step-ind-4">
+        <div class="rakuraku-step-circle">4</div>
+        <div class="rakuraku-step-label">答え<br>確認</div>
+      </div>
+    </div>
+
+    <!-- ボディ（ステップごとに切り替え） -->
+    <div class="rakuraku-body" id="rakurakuBody">
+      <!-- STEP1の内容はJS側で描画 -->
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== 共通設定 =====
 const BASE_URL = 'https://ponpoko-design.github.io/kanji-app/images/';
@@ -956,19 +1241,16 @@ function switchTab(name, el) {
 // ===== 学年自動判定 =====
 function getCurrentGrade() {
   const now = new Date();
-  // 2027年2月1日以降は6年
   if (now >= new Date('2027-02-01')) return 6;
   return 5;
 }
 
-// ===== メニュー =====
-// ===== 統計（streak・stars・問題数）=====
+// ===== 統計 =====
 function getTodayJST() {
   const now = new Date();
   const jst = new Date(now.getTime() + 9*60*60*1000);
   return jst.toISOString().split('T')[0];
 }
-
 function loadStats() {
   try { return JSON.parse(localStorage.getItem('kanji_stats') || '{}'); } catch(e) { return {}; }
 }
@@ -976,19 +1258,13 @@ function saveStats(stats) {
   localStorage.setItem('kanji_stats', JSON.stringify(stats));
   if (window.firestoreStatsSave) window.firestoreStatsSave(stats);
 }
-
 function recordDailyActivity(questionsAnswered) {
   const today = getTodayJST();
   const stats = loadStats();
-
-  // 今日の問題数を加算
   if (!stats.daily) stats.daily = {};
   stats.daily[today] = (stats.daily[today] || 0) + questionsAnswered;
-
-  // 連続日数の計算
   const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
   if (stats.lastActiveDate === today) {
-    // 今日すでに記録済み → streak変わらず
   } else if (stats.lastActiveDate === yesterday) {
     stats.streak = (stats.streak || 0) + 1;
   } else {
@@ -997,13 +1273,11 @@ function recordDailyActivity(questionsAnswered) {
   stats.lastActiveDate = today;
   saveStats(stats);
 }
-
 function getWeekStars() {
   const stats = loadStats();
   const daily = stats.daily || {};
   const today = new Date(getTodayJST());
-  // 今週の月曜日を起点に
-  const dayOfWeek = today.getDay(); // 0=日
+  const dayOfWeek = today.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const monday = new Date(today.getTime() + mondayOffset * 86400000);
   const days = ['月','火','水','木','金','土','日'];
@@ -1013,7 +1287,6 @@ function getWeekStars() {
     return { label, done: (daily[key] || 0) > 0 };
   });
 }
-
 function getTodayCount() {
   const stats = loadStats();
   return (stats.daily || {})[getTodayJST()] || 0;
@@ -1037,25 +1310,18 @@ function getTotalCount() {
   return Object.values(stats.daily || {}).reduce((a,b) => a+b, 0);
 }
 
+// ===== メニュー =====
 function openMenu() {
   updateMenuStats();
   document.getElementById('menuOverlay').classList.add('active');
 }
 function closeMenu() { document.getElementById('menuOverlay').classList.remove('active'); }
-
 function updateMenuStats() {
   const stats = loadStats();
   const streak = stats.streak || 0;
   const stars = getWeekStars();
-  const todayCount = getTodayCount();
-  const weekCount = getWeekCount();
-  const totalCount = getTotalCount();
-
-  // 連続日数
   const streakEl = document.getElementById('menuStreak');
   if (streakEl) streakEl.textContent = streak > 0 ? `${streak}日連続！` : 'さあはじめよう';
-
-  // 今週の★
   const starsEl = document.getElementById('menuStars');
   if (starsEl) {
     starsEl.innerHTML = stars.map(s => `
@@ -1067,84 +1333,533 @@ function updateMenuStats() {
         <span style="font-size:11px;color:${s.done ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'};font-family:'Zen Maru Gothic',serif;">${s.label}</span>
       </div>`).join('');
   }
-
-  if (document.getElementById('menuTodayCount')) document.getElementById('menuTodayCount').textContent = todayCount + '問';
-  if (document.getElementById('menuWeekCount')) document.getElementById('menuWeekCount').textContent = weekCount + '問';
-  if (document.getElementById('menuTotalCount')) document.getElementById('menuTotalCount').textContent = totalCount + '問';
+  if (document.getElementById('menuTodayCount')) document.getElementById('menuTodayCount').textContent = getTodayCount() + '問';
+  if (document.getElementById('menuWeekCount')) document.getElementById('menuWeekCount').textContent = getWeekCount() + '問';
+  if (document.getElementById('menuTotalCount')) document.getElementById('menuTotalCount').textContent = getTotalCount() + '問';
 }
 function openSettings() { document.getElementById('settingsOverlay').classList.add('active'); }
 function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
+function menuSettings() { closeMenu(); openSettings(); }
 
-function menuSettings() {
-  closeMenu();
-  openSettings();
-}
-
-// ===== APIキー（LocalStorageから取得） =====
+// ===== APIキー =====
 function getOpenAIKey() { return localStorage.getItem('kanji_openai_key') || ''; }
 function getClaudeKey() { return localStorage.getItem('kanji_claude_key') || ''; }
 
-async function menuLoadQuestions() {
-  closeMenu();
+// ===== トースト =====
+function showToast(msg) {
+  const existing = document.getElementById('toastMsg');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'toastMsg';
+  toast.textContent = msg;
+  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0d3d7a;color:#fff;font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;padding:10px 24px;border-radius:999px;z-index:9999;white-space:nowrap;pointer-events:none;opacity:1;transition:opacity 0.4s;`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+  setTimeout(() => { toast.remove(); }, 2200);
+}
 
-  // APIキー未設定なら設定画面へ
-  if (!getClaudeKey()) {
-    showApiKeySetup();
+// ===== ローディング =====
+function showLoadingOverlay(msg) {
+  const overlay = document.createElement('div');
+  overlay.id = 'loadingOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
+  overlay.innerHTML = `<div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#f0c040;border-radius:50%;animation:spin 0.8s linear infinite;"></div><div id="loadingMsg" style="color:#fff;font-size:16px;font-family:'Zen Maru Gothic',serif;text-align:center;">${msg}</div>`;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+// ===== ラクラク問題化 =====
+// 状態管理
+const rakuraku = {
+  step: 1,
+  photos: [],        // File[]
+  photosBase64: [],  // base64文字列[]
+  chatHistory: [],   // {role, content}[] (OpenAI形式)
+  ocrResults: [],    // [{num, text}]
+  answerResults: [], // [{question, underline, type, answerKanji, answerText}]
+};
+
+// ChatGPTへ送るシステムプロンプト
+const RAKURAKU_SYSTEM_PROMPT = `今から日本語の漢字問題をOCRします。
+【基本ルール】
+- 日本語の縦書き
+- 右から左の列順で読む
+- 私が画像を送ったら、まずOCRはしない
+- 最初に「×が付いている問題番号だけ」を認識して報告する
+- OCRは私が「OK」と言った後に行う
+【OCRルール】
+- ×が付いている問題のみOCRする
+- 問題番号は出力しない
+- 印刷されている文字をそのままOCRする
+- 勝手な補完、推測、修正、意訳をしない
+- 漢字を読み仮名に変換しない
+- カタカナを漢字に変換しない
+- 読めない場合は推測せず、その箇所を示して確認を求める
+- 手書き回答は無視
+- 赤字は無視
+- 下部の解答欄や四角は無視
+- 採点記号は無視
+【文章の右側の線】
+- 問題文の右側に罫線が引かれている語句のみHTMLの下線タグで囲む
+- 例：  <u>余興</u>を楽しむ。
+【出力ルール】
+- OCR結果のみ出力
+- 解説しない
+- 読み方を書かない
+- 問題番号を書かない
+- コードブロックで出力する
+【作業手順】
+1. 画像を受け取る
+2. ×が付いている問題番号だけ報告する
+3. 私がOKと言う
+4. 指定問題のみOCRする
+5. OCR結果は印刷文字そのまま出力する
+前回のOCRでの失敗例：
+- 漢字を勝手にカタカナへ変換しない
+- 読み問題でも読みへ変換しない
+- 印刷文字をそのままOCRする`;
+
+function openRakuraku() {
+  // 状態リセット
+  rakuraku.step = 1;
+  rakuraku.photos = [];
+  rakuraku.photosBase64 = [];
+  rakuraku.chatHistory = [];
+  rakuraku.ocrResults = [];
+  rakuraku.answerResults = [];
+
+  updateRakurakuStepIndicator(1);
+  renderRakurakuStep1();
+  document.getElementById('rakurakuOverlay').classList.add('active');
+}
+
+function closeRakuraku() {
+  document.getElementById('rakurakuOverlay').classList.remove('active');
+}
+
+function updateRakurakuStepIndicator(currentStep) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById(`step-ind-${i}`);
+    if (!el) continue;
+    el.classList.remove('active', 'done');
+    if (i < currentStep) el.classList.add('done');
+    else if (i === currentStep) el.classList.add('active');
+  }
+}
+
+// ===== STEP1: 写真アップ =====
+function renderRakurakuStep1() {
+  const body = document.getElementById('rakurakuBody');
+  body.innerHTML = `
+    <p style="font-family:'Zen Maru Gothic',serif;font-size:13px;color:#666;margin-bottom:12px;line-height:1.7;">
+      テストの写真を選んでください。<br>複数枚まとめて選べます。
+    </p>
+    <div class="photo-upload-area" onclick="document.getElementById('photoFileInput').click()">
+      <div class="upload-icon">📷</div>
+      <p>タップして写真を選ぶ<br><span style="font-size:12px;color:#aaa;">複数枚OK（JPG・PNG・HEIC）</span></p>
+    </div>
+    <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none" onchange="onPhotosSelected(event)">
+    <div class="photo-preview-grid" id="photoPreviewGrid"></div>
+    <button class="rakuraku-btn-primary" id="step1NextBtn" onclick="goToStep2()" disabled>
+      この写真で×番号を確認する →
+    </button>
+  `;
+}
+
+function onPhotosSelected(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  rakuraku.photos = files;
+  const grid = document.getElementById('photoPreviewGrid');
+  grid.innerHTML = '';
+  files.forEach(f => {
+    const url = URL.createObjectURL(f);
+    const img = document.createElement('img');
+    img.className = 'photo-thumb';
+    img.src = url;
+    grid.appendChild(img);
+  });
+  document.getElementById('step1NextBtn').disabled = false;
+}
+
+async function goToStep2() {
+  if (!getOpenAIKey()) {
+    showToast('ChatGPT APIキーを設定してください（設定メニュー）');
     return;
   }
+  // base64変換
+  const body = document.getElementById('rakurakuBody');
+  body.innerHTML = `<div style="text-align:center;padding:40px 0;"><div class="spinner"></div><p style="font-family:'Zen Maru Gothic',serif;font-size:14px;color:#999;margin-top:16px;">写真を送信しています...</p></div>`;
 
-  // テキスト入力画面を表示
-  showTextInputScreen();
+  rakuraku.photosBase64 = await Promise.all(rakuraku.photos.map(fileToBase64));
+
+  rakuraku.step = 2;
+  updateRakurakuStepIndicator(2);
+  renderRakurakuStep2();
+  // 最初のメッセージを自動送信
+  await sendToGPTWithImages();
 }
 
-function showTextInputScreen() {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
-
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
-        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">問題を入力</div>
-        <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-top:4px;">下線部分を &lt;u&gt;〜&lt;/u&gt; で囲んで入力してください</div>
-      </div>
-      <div style="padding:16px;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;">
-        <div style="background:#f8f9fa;border-radius:10px;padding:12px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;line-height:1.8;">
-          例：<br>
-          一矢&lt;u&gt;ムクイル&lt;/u&gt;<br>
-          &lt;u&gt;余興&lt;/u&gt;を楽しむ
-        </div>
-        <textarea id="questionInput" placeholder="ここに問題をペーストしてください"
-          style="flex:1;min-height:160px;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:'Zen Maru Gothic',serif;outline:none;resize:none;line-height:1.8;"></textarea>
-      </div>
-      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
-        <button onclick="submitQuestionText(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">答えを調べる</button>
-      </div>
-    </div>`;
-
-  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
-async function submitQuestionText(btn) {
-  const text = document.getElementById('questionInput').value.trim();
-  if (!text) { alert('問題を入力してください'); return; }
+// ===== STEP2: ×番号確認チャット =====
+function renderRakurakuStep2() {
+  const body = document.getElementById('rakurakuBody');
+  body.innerHTML = `
+    <div class="rakuraku-chat" id="rakurakuChat"></div>
+    <div class="rakuraku-input-row">
+      <input type="text" id="rakurakuChatInput" placeholder="「OK」または「3番も追加」など" 
+        onkeydown="if(event.key==='Enter')sendRakurakuChat()">
+      <button onclick="sendRakurakuChat()">送信</button>
+    </div>
+    <button class="rakuraku-btn-secondary" onclick="openRakuraku()">最初からやり直す</button>
+  `;
+  addChatBubble('thinking', '写真を解析中...');
+}
 
-  const overlay = btn.closest('[style*=fixed]');
-  overlay.remove();
+function addChatBubble(role, text) {
+  const chat = document.getElementById('rakurakuChat');
+  if (!chat) return;
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${role}`;
+  bubble.innerHTML = text.replace(/\n/g, '<br>');
+  chat.appendChild(bubble);
+  chat.scrollTop = chat.scrollHeight;
+  return bubble;
+}
 
-  const loading = showLoadingOverlay('🔍 答えを調べています...');
+async function sendToGPTWithImages() {
+  // 画像つき最初のメッセージを構築
+  const content = [
+    { type: 'text', text: '以下の漢字テストの写真です。まず、×が付いている問題番号だけを教えてください。OCRはまだしないでください。' }
+  ];
+  rakuraku.photos.forEach((_, i) => {
+    content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${rakuraku.photos[i].type};base64,${rakuraku.photosBase64[i]}`,
+        detail: 'high'
+      }
+    });
+  });
+  rakuraku.chatHistory.push({ role: 'user', content });
 
-  try {
-    const questions = await callClaudeForAnswers(text);
-    loading.remove();
-    showConfirmQuestions(questions, getCurrentGrade(), null);
-  } catch(e) {
-    loading.remove();
-    alert('エラーが発生しました：' + e.message);
+  const reply = await callOpenAI(rakuraku.chatHistory);
+  // thinkingバブルを削除して返答表示
+  const chat = document.getElementById('rakurakuChat');
+  const thinking = chat?.querySelector('.thinking');
+  if (thinking) thinking.remove();
+  addChatBubble('ai', reply);
+  rakuraku.chatHistory.push({ role: 'assistant', content: reply });
+}
+
+async function sendRakurakuChat() {
+  const input = document.getElementById('rakurakuChatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addChatBubble('user', text);
+  rakuraku.chatHistory.push({ role: 'user', content: text });
+  addChatBubble('thinking', '考えています...');
+
+  const reply = await callOpenAI(rakuraku.chatHistory);
+  const chat = document.getElementById('rakurakuChat');
+  const thinking = chat?.querySelector('.thinking');
+  if (thinking) thinking.remove();
+  addChatBubble('ai', reply);
+  rakuraku.chatHistory.push({ role: 'assistant', content: reply });
+
+  // OCR結果が含まれているか判定（コードブロックがあればOCR結果とみなす）
+  if (reply.includes('```')) {
+    // OCR結果を抽出してSTEP3へ
+    const ocrText = extractCodeBlocks(reply);
+    rakuraku.ocrResults = parseOcrLines(ocrText);
+    // 少し待ってからSTEP3へ誘導
+    setTimeout(() => {
+      addChatBubble('ai', 'OCR完了です！内容を確認してください 👇');
+      setTimeout(() => goToStep3(), 800);
+    }, 400);
   }
 }
 
+function extractCodeBlocks(text) {
+  const matches = [...text.matchAll(/```(?:\w*\n)?([\s\S]*?)```/g)];
+  return matches.map(m => m[1].trim()).join('\n');
+}
+
+function parseOcrLines(text) {
+  return text.split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map((line, i) => ({ num: i + 1, text: line }));
+}
+
+async function callOpenAI(messages) {
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getOpenAIKey()}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 2000,
+        messages: [
+          { role: 'system', content: RAKURAKU_SYSTEM_PROMPT },
+          ...messages
+        ]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      return `エラーが発生しました：${err.error?.message || 'APIエラー'}`;
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '（返答なし）';
+  } catch(e) {
+    return `通信エラー：${e.message}`;
+  }
+}
+
+// ===== STEP3: OCR結果確認・編集 =====
+function goToStep3() {
+  rakuraku.step = 3;
+  updateRakurakuStepIndicator(3);
+  renderRakurakuStep3();
+}
+
+function renderRakurakuStep3() {
+  const body = document.getElementById('rakurakuBody');
+  const ZMG = "'Zen Maru Gothic',serif";
+
+  const items = rakuraku.ocrResults.map((item, i) => `
+    <div class="ocr-item" id="ocr-item-${i}">
+      <div class="ocr-item-header">
+        <span class="ocr-item-num">${i + 1}問目</span>
+        <button class="ocr-edit-btn" onclick="toggleOcrEdit(${i})">編集</button>
+      </div>
+      <div class="ocr-item-text" id="ocr-text-${i}">${escapeHtml(item.text)}</div>
+      <input class="ocr-item-input" id="ocr-input-${i}" type="text" value="${escapeHtml(item.text)}" 
+        onblur="saveOcrEdit(${i})">
+    </div>
+  `).join('');
+
+  body.innerHTML = `
+    <p style="font-family:${ZMG};font-size:13px;color:#666;margin-bottom:12px;line-height:1.7;">
+      OCR結果を確認してください。間違いがあれば「編集」で直せます。
+    </p>
+    ${items}
+    <button class="rakuraku-btn-primary" onclick="goToStep4()">
+      この内容で答えを調べる →
+    </button>
+    <button class="rakuraku-btn-secondary" onclick="goToStep2Back()">← 番号確認に戻る</button>
+  `;
+}
+
+function toggleOcrEdit(i) {
+  const textEl = document.getElementById(`ocr-text-${i}`);
+  const inputEl = document.getElementById(`ocr-input-${i}`);
+  const btn = document.querySelector(`#ocr-item-${i} .ocr-edit-btn`);
+  if (inputEl.style.display === 'none' || !inputEl.style.display) {
+    inputEl.style.display = 'block';
+    textEl.style.display = 'none';
+    inputEl.focus();
+    btn.textContent = '完了';
+  } else {
+    saveOcrEdit(i);
+    btn.textContent = '編集';
+  }
+}
+
+function saveOcrEdit(i) {
+  const inputEl = document.getElementById(`ocr-input-${i}`);
+  const textEl = document.getElementById(`ocr-text-${i}`);
+  if (!inputEl || !textEl) return;
+  const newVal = inputEl.value;
+  rakuraku.ocrResults[i].text = newVal;
+  textEl.innerHTML = escapeHtml(newVal);
+  inputEl.style.display = 'none';
+  textEl.style.display = 'block';
+  const btn = document.querySelector(`#ocr-item-${i} .ocr-edit-btn`);
+  if (btn) btn.textContent = '編集';
+}
+
+function goToStep2Back() {
+  rakuraku.step = 2;
+  updateRakurakuStepIndicator(2);
+  renderRakurakuStep2();
+  // チャット履歴を再描画
+  rakuraku.chatHistory.forEach(msg => {
+    if (typeof msg.content === 'string') {
+      addChatBubble(msg.role === 'user' ? 'user' : 'ai', msg.content);
+    }
+  });
+}
+
+// ===== STEP4: 答え確認・編集 =====
+async function goToStep4() {
+  rakuraku.step = 4;
+  updateRakurakuStepIndicator(4);
+
+  const body = document.getElementById('rakurakuBody');
+  body.innerHTML = `<div style="text-align:center;padding:40px 0;"><div class="spinner"></div><p style="font-family:'Zen Maru Gothic',serif;font-size:14px;color:#999;margin-top:16px;">答えをClaudeで調べています...</p></div>`;
+
+  // OCRテキストをまとめてClaudeに送る
+  const ocrText = rakuraku.ocrResults.map(r => r.text).join('\n');
+  try {
+    const questions = await callClaudeForAnswers(ocrText);
+    rakuraku.answerResults = questions;
+    renderRakurakuStep4();
+  } catch(e) {
+    body.innerHTML = `<div style="text-align:center;padding:40px;font-family:'Zen Maru Gothic',serif;color:#C62828;">エラー：${e.message}<br><br><button onclick="goToStep4()" style="padding:10px 20px;background:#f0c040;border:none;border-radius:999px;font-family:'Zen Maru Gothic',serif;font-weight:700;cursor:pointer;">再試行</button></div>`;
+  }
+}
+
+function renderRakurakuStep4() {
+  const body = document.getElementById('rakurakuBody');
+  const ZMG = "'Zen Maru Gothic',serif";
+
+  const items = rakuraku.answerResults.map((q, i) => `
+    <div class="answer-review-item" id="ans-item-${i}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:12px;font-weight:700;color:#1a6fc4;font-family:${ZMG};">${i+1}問目</span>
+        <button class="ocr-edit-btn" onclick="toggleAnsEdit(${i})">編集</button>
+      </div>
+
+      <!-- 表示モード -->
+      <div id="ans-view-${i}">
+        <div class="answer-review-row">
+          <span class="answer-review-label">問題文</span>
+          <span class="answer-review-val">${escapeHtml(q.question)}</span>
+        </div>
+        <div class="answer-review-row">
+          <span class="answer-review-label">下線部</span>
+          <span class="answer-review-val">${escapeHtml(q.underline)}</span>
+        </div>
+        <div class="answer-review-row">
+          <span class="answer-review-label">種類</span>
+          <span class="answer-review-val">${q.type}</span>
+        </div>
+        <div class="answer-review-row">
+          <span class="answer-review-label">答え漢字</span>
+          <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${(q.answerKanji||[]).join('、') || '（なし）'}</span>
+        </div>
+        ${q.answerText ? `<div class="answer-review-row">
+          <span class="answer-review-label">送り仮名</span>
+          <span class="answer-review-val">${escapeHtml(q.answerText)}</span>
+        </div>` : ''}
+      </div>
+
+      <!-- 編集モード -->
+      <div id="ans-edit-${i}" style="display:none;">
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">問題文</label>
+          <input class="answer-review-input" id="ans-q-${i}" type="text" value="${escapeHtml(q.question)}">
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">下線部分</label>
+          <input class="answer-review-input" id="ans-u-${i}" type="text" value="${escapeHtml(q.underline)}">
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">種類</label>
+          <select class="answer-review-type-sel" id="ans-t-${i}">
+            <option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option>
+            <option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option>
+          </select>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答えの漢字（カンマ区切り）</label>
+          <input class="answer-review-input" id="ans-k-${i}" type="text" value="${(q.answerKanji||[]).join(',')}">
+        </div>
+        <div style="margin-bottom:4px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">送り仮名</label>
+          <input class="answer-review-input" id="ans-a-${i}" type="text" value="${escapeHtml(q.answerText||'')}">
+        </div>
+        <button onclick="saveAnsEdit(${i})" style="margin-top:8px;padding:8px 16px;background:#1a6fc4;color:#fff;border:none;border-radius:8px;font-family:${ZMG};font-size:13px;font-weight:700;cursor:pointer;">保存</button>
+      </div>
+    </div>
+  `).join('');
+
+  body.innerHTML = `
+    <p style="font-family:${ZMG};font-size:13px;color:#666;margin-bottom:12px;line-height:1.7;">
+      答えを確認してください。間違いがあれば「編集」で直せます。
+    </p>
+    ${items}
+    <button class="rakuraku-btn-primary" onclick="saveRakurakuQuestions()">
+      ✓ 保存する
+    </button>
+    <button class="rakuraku-btn-secondary" onclick="goToStep3()">← OCR結果に戻る</button>
+  `;
+}
+
+function toggleAnsEdit(i) {
+  const viewEl = document.getElementById(`ans-view-${i}`);
+  const editEl = document.getElementById(`ans-edit-${i}`);
+  const btn = document.querySelector(`#ans-item-${i} .ocr-edit-btn`);
+  if (editEl.style.display === 'none') {
+    editEl.style.display = 'block';
+    viewEl.style.display = 'none';
+    btn.textContent = '閉じる';
+  } else {
+    editEl.style.display = 'none';
+    viewEl.style.display = 'block';
+    btn.textContent = '編集';
+  }
+}
+
+function saveAnsEdit(i) {
+  const q = rakuraku.answerResults[i];
+  q.question = document.getElementById(`ans-q-${i}`).value.trim();
+  q.underline = document.getElementById(`ans-u-${i}`).value.trim();
+  q.type = document.getElementById(`ans-t-${i}`).value;
+  q.answerKanji = document.getElementById(`ans-k-${i}`).value.split(',').map(k=>k.trim()).filter(k=>k);
+  q.answerText = document.getElementById(`ans-a-${i}`).value.trim();
+  // 表示を更新して閉じる
+  renderRakurakuStep4();
+}
+
+// 保存処理
+function saveRakurakuQuestions() {
+  const unitStr = prompt('単元番号を入力してください（例：16）');
+  if (!unitStr) return;
+  const unit = parseInt(unitStr);
+  if (isNaN(unit)) { showToast('数字で入力してください'); return; }
+  const grade = getCurrentGrade();
+  const today = new Date().toISOString().split('T')[0];
+  const existing = loadPracticeData();
+  const newItems = rakuraku.answerResults.map((q, i) => ({
+    id: q.no || (i + 1),
+    _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
+    grade,
+    unit,
+    registeredAt: today,
+    type: q.type,
+    question: q.question,
+    underline: q.underline,
+    answerKanji: q.answerKanji || [],
+    answerText: q.answerText || '',
+    missCount: 0,
+    charMiss: {},
+    totalCount: 0,
+    correctCount: 0
+  }));
+  const updated = [...existing, ...newItems];
+  savePracticeData(updated);
+  closeRakuraku();
+  showToast(`✅ ${newItems.length}問を保存しました！`);
+  switchTab('practice', document.querySelectorAll('.tab')[1]);
+  setTimeout(() => initPractice(), 100);
+}
+
+// ===== Claude API（答え調べ）=====
 async function callClaudeForAnswers(inputText) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -1156,7 +1871,7 @@ async function callClaudeForAnswers(inputText) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-opus-4-6',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{
         role: 'user',
@@ -1193,16 +1908,71 @@ ${inputText}
       }]
     })
   });
-
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error?.message || 'APIエラー');
   }
-
   const data = await res.json();
   const text = data.content?.[0]?.text || '';
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
+}
+
+// ===== ユーティリティ =====
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== 既存機能（問題を読み込む） =====
+async function menuLoadQuestions() {
+  closeMenu();
+  if (!getClaudeKey()) {
+    showApiKeySetup();
+    return;
+  }
+  showTextInputScreen();
+}
+
+function showTextInputScreen() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">問題を入力</div>
+        <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-top:4px;">下線部分を &lt;u&gt;〜&lt;/u&gt; で囲んで入力してください</div>
+      </div>
+      <div style="padding:16px;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;">
+        <div style="background:#f8f9fa;border-radius:10px;padding:12px;font-size:12px;color:#666;font-family:'Zen Maru Gothic',serif;line-height:1.8;">
+          例：<br>一矢&lt;u&gt;ムクイル&lt;/u&gt;<br>&lt;u&gt;余興&lt;/u&gt;を楽しむ
+        </div>
+        <textarea id="questionInput" placeholder="ここに問題をペーストしてください"
+          style="flex:1;min-height:160px;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:'Zen Maru Gothic',serif;outline:none;resize:none;line-height:1.8;"></textarea>
+      </div>
+      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
+        <button onclick="submitQuestionText(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">答えを調べる</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+async function submitQuestionText(btn) {
+  const text = document.getElementById('questionInput').value.trim();
+  if (!text) { alert('問題を入力してください'); return; }
+  const overlay = btn.closest('[style*=fixed]');
+  overlay.remove();
+  const loading = showLoadingOverlay('🔍 答えを調べています...');
+  try {
+    const questions = await callClaudeForAnswers(text);
+    loading.remove();
+    showConfirmQuestions(questions, getCurrentGrade(), null);
+  } catch(e) {
+    loading.remove();
+    alert('エラーが発生しました：' + e.message);
+  }
 }
 
 // ===== データエクスポート =====
@@ -1221,42 +1991,33 @@ function exportData() {
   showToast(`${data.length}問をエクスポートしました`);
 }
 
-// ===== 結果を削除（missCount・charMissをリセット）=====
+// ===== 結果削除 =====
 function deleteResultData() {
   const pw = prompt('パスワードを入力してください');
   if (pw !== '1223') { alert('パスワードが違います'); return; }
-  // 問題の結果をリセット
   const data = loadPracticeData();
   const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0 }));
   savePracticeData(reset);
-  // 統計（星・連続日数・問題数）もリセット
   saveStats({});
   showToast('結果をリセットしました');
   updateMenuStats();
   initPractice();
 }
 
-// ===== 問題文を削除（選択式）=====
+// ===== 問題文一覧 =====
 function showQuestionList() {
   const data = loadPracticeData();
   if (!data.length) { showToast('問題がありません'); return; }
-
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
-
   const ZMG = "'Zen Maru Gothic',serif";
-
-  // 学年・単元リスト
   const grades = [...new Set(data.map(q => q.grade).filter(Boolean))].sort((a,b)=>a-b);
   const gradeOpts = `<option value="">全学年</option>` + grades.map(g => `<option value="${g}">${g}年</option>`).join('');
-
   function buildUnitOpts(gradeFilter) {
     const units = [...new Set(data.filter(q => !gradeFilter || q.grade == gradeFilter).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
     return `<option value="">全単元</option>` + units.map(u => `<option value="${u}">${u}</option>`).join('');
   }
-
   function buildList(gradeFilter, unitFilter, keyword) {
-    // 絞り込み（数値と文字列の比較ミスを防ぐためString()で統一）
     const filtered = data.map((q,i) => ({...q, _listIdx: i})).filter(q => {
       if (gradeFilter && String(q.grade) !== String(gradeFilter)) return false;
       if (unitFilter && String(q.unit) !== String(unitFilter)) return false;
@@ -1269,19 +2030,14 @@ function showQuestionList() {
       }
       return true;
     });
-
     if (!filtered.length) return `<div style="padding:24px;text-align:center;color:#999;font-family:${ZMG};">該当する問題がありません</div>`;
-
-    // 単元でグループ化
     const groups = {};
     filtered.forEach(q => {
       const key = `${q.grade||'?'}_${q.unit||'?'}`;
       if (!groups[key]) groups[key] = { grade: q.grade, unit: q.unit, items: [] };
       groups[key].items.push(q);
     });
-
     const hasFilter = gradeFilter || unitFilter || keyword;
-
     return Object.values(groups).sort((a,b) => (a.grade||0)-(b.grade||0) || (a.unit||0)-(b.unit||0)).map(g => {
       const isOpen = hasFilter || Object.keys(groups).length === 1;
       const groupId = `qgroup_${g.grade}_${g.unit}`;
@@ -1291,7 +2047,6 @@ function showQuestionList() {
           <span style="font-size:15px;font-family:${ZMG};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${q.question||''}</span>
           <button onclick="openEditFromList(${q._listIdx})" style="flex-shrink:0;padding:5px 10px;background:#f0f4f8;border:none;border-radius:6px;font-size:12px;font-family:${ZMG};cursor:pointer;">編集</button>
         </div>`).join('');
-
       return `
         <div>
           <div onclick="toggleQGroup('${groupId}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8f9fa;border-bottom:1px solid #e0e4ea;cursor:pointer;user-select:none;">
@@ -1303,7 +2058,6 @@ function showQuestionList() {
         </div>`;
     }).join('');
   }
-
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
@@ -1312,8 +2066,6 @@ function showQuestionList() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-
-      <!-- 絞り込み -->
       <div style="padding:10px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:8px;">
           <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
@@ -1321,25 +2073,19 @@ function showQuestionList() {
         </div>
         <input id="qFilterKeyword" type="text" placeholder="問題文・漢字で検索" oninput="refreshQList()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
       </div>
-
-      <!-- 全選択/解除 -->
       <div style="padding:6px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;gap:8px;">
         <button onclick="document.getElementById('qListRows').querySelectorAll('input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-family:${ZMG};cursor:pointer;">全選択</button>
         <button onclick="document.getElementById('qListRows').querySelectorAll('input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-family:${ZMG};cursor:pointer;">全解除</button>
       </div>
-
       <div id="qListRows" style="overflow-y:auto;flex:1;">${buildList('','','')}</div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
         <button onclick="execDeleteFromList(this)" style="width:100%;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">選択した問題を削除</button>
       </div>
     </div>`;
-
-  // グローバルに関数を保持
   window._qListData = data;
   window._qListBuild = buildList;
   window._qListZMG = ZMG;
   window._qListBuildUnitOpts = buildUnitOpts;
-
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
@@ -1352,45 +2098,32 @@ function toggleQGroup(id) {
   el.style.display = isOpen ? 'none' : 'block';
   if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
 }
-
 function updateQListUnits() {
   const grade = document.getElementById('qFilterGrade').value;
   const unitSel = document.getElementById('qFilterUnit');
-  if (unitSel && window._qListBuildUnitOpts) {
-    unitSel.innerHTML = window._qListBuildUnitOpts(grade);
-  }
+  if (unitSel && window._qListBuildUnitOpts) unitSel.innerHTML = window._qListBuildUnitOpts(grade);
   refreshQList();
 }
-
 function refreshQList() {
   const grade = document.getElementById('qFilterGrade')?.value || '';
   const unit = document.getElementById('qFilterUnit')?.value || '';
   const keyword = document.getElementById('qFilterKeyword')?.value || '';
   const rows = document.getElementById('qListRows');
-  if (rows && window._qListBuild) {
-    rows.innerHTML = window._qListBuild(grade, unit, keyword);
-  }
+  if (rows && window._qListBuild) rows.innerHTML = window._qListBuild(grade, unit, keyword);
 }
-
 function openEditFromList(dataIndex) {
-  // 一覧から編集を開く（sessionのcurrentを使わずdataIndexで直接開く）
   const data = loadPracticeData();
   const q = data[dataIndex];
   if (!q) return;
-
-  // 一時的にsessionとcurrentを設定して既存のopenEditModalを流用
   const prevSession = session;
   const prevCurrent = current;
   session = [{ ...q, _dataIndex: dataIndex }];
   current = 0;
   openEditModal();
-
-  // saveEditModal後にsessionを戻す処理をオーバーライド
   window._editFromListDataIndex = dataIndex;
   window._editFromListPrevSession = prevSession;
   window._editFromListPrevCurrent = prevCurrent;
 }
-
 function execDeleteFromList(btn) {
   const checked = [...document.getElementById('qListRows').querySelectorAll('input:checked')];
   if (!checked.length) { showToast('問題を選択してください'); return; }
@@ -1405,100 +2138,13 @@ function execDeleteFromList(btn) {
   initPractice();
 }
 
-function showDeleteQuestions() {
-  const data = loadPracticeData();
-  if (!data.length) { alert('問題がありません'); return; }
-
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
-
-  const rows = data.map((q, i) => {
-    const unit = q.unit || '−';
-    const ans = (q.answerKanji||[]).join('') + (q.answerText||'');
-    return `<label style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f4f8;cursor:pointer;">
-      <input type="checkbox" data-idx="${i}" style="width:18px;height:18px;cursor:pointer;">
-      <span style="font-size:13px;color:#666;font-family:'Zen Maru Gothic',serif;min-width:28px;">${unit}</span>
-      <span style="font-size:15px;font-family:'Zen Maru Gothic',serif;flex:1;">${ans}</span>
-    </label>`;
-  }).join('');
-
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
-        <div style="font-size:17px;font-weight:700;font-family:'Zen Maru Gothic',serif;">問題文を削除</div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div style="padding:8px 16px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;gap:8px;">
-        <button onclick="document.getElementById('delQList').querySelectorAll('input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全選択</button>
-        <button onclick="document.getElementById('delQList').querySelectorAll('input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-family:'Zen Maru Gothic',serif;cursor:pointer;">全解除</button>
-      </div>
-      <div id="delQList" style="overflow-y:auto;flex:1;">${rows}</div>
-      <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
-        <button onclick="execDeleteQuestions()" style="width:100%;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">選択した問題を削除</button>
-      </div>
-    </div>`;
-
-  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-}
-
-// ===== トースト通知 =====
-function showToast(msg) {
-  const existing = document.getElementById('toastMsg');
-  if (existing) existing.remove();
-  const toast = document.createElement('div');
-  toast.id = 'toastMsg';
-  toast.textContent = msg;
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #0d3d7a;
-    color: #fff;
-    font-family: 'Zen Maru Gothic', serif;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 10px 24px;
-    border-radius: 999px;
-    z-index: 9999;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 0.4s;
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; }, 1800);
-  setTimeout(() => { toast.remove(); }, 2200);
-}
-
-function execDeleteQuestions() {
-  const checked = [...document.getElementById('delQList').querySelectorAll('input:checked')];
-  if (!checked.length) { alert('問題を選択してください'); return; }
-  const pw = prompt('パスワードを入力してください');
-  if (pw !== '1223') { alert('パスワードが違います'); return; }
-  const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
-  const data = loadPracticeData();
-  const newData = data.filter((_, i) => !idxSet.has(i));
-  savePracticeData(newData);
-  // ポップアップを全部閉じる
-  document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
-  showToast(`${idxSet.size}問を削除しました`);
-  initPractice();
-}
-
 // ===== 出題選択 =====
 function showShutsudaiSelect() {
   const data = loadPracticeData();
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
-
-  // 単元リストを取得
   const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
   const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
-
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;">
@@ -1508,7 +2154,6 @@ function showShutsudaiSelect() {
         </button>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
-        <!-- ラジオ選択 -->
         <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="radioMiss">
           <input type="radio" name="shutsudai" value="miss" checked style="accent-color:#3B82F6;" onchange="updateShutsudaiUI()">
           <span style="font-family:'Zen Maru Gothic',serif;font-size:14px;">間違いが多い順（上位10問）</span>
@@ -1545,7 +2190,6 @@ function showShutsudaiSelect() {
         <button onclick="applyShutsudai()" style="width:100%;background:#3B82F6;color:#fff;border:none;border-radius:999px;padding:13px;font-size:16px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">この設定で出題</button>
       </div>
     </div>`;
-
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
@@ -1556,7 +2200,6 @@ function updateShutsudaiUI() {
   const dr = document.getElementById('dateRange');
   if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
   if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
-  // 全ラベルのボーダー更新
   ['radioMiss','radioRandom','radioUnit','radioDate','radioEbbinghaus'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1572,12 +2215,9 @@ function applyShutsudai() {
   const data = loadPracticeData();
   let pool = [];
   const today = new Date(); today.setHours(0,0,0,0);
-
   if (v === 'miss') {
-    // 間違い多い順トップ10
     pool = [...data].map((q,i) => ({...q, _dataIndex: i})).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   } else if (v === 'random') {
-    // ランダム10問
     const shuffled = [...data].map((q,i) => ({...q, _dataIndex: i})).sort(() => Math.random() - 0.5);
     pool = shuffled.slice(0, Math.min(10, shuffled.length));
   } else if (v === 'unit') {
@@ -1587,10 +2227,8 @@ function applyShutsudai() {
     const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
     const hasMiss = rangeData.some(q => q.missCount > 0);
     if (!hasMiss) {
-      // 初回: 範囲内全問出題
       pool = rangeData;
     } else {
-      // 2回目以降: missCount>0を優先、missCount=0を30%混ぜる、上限20問
       const withMiss = rangeData.filter(q => q.missCount > 0).sort((a,b) => b.missCount - a.missCount);
       const noMiss = rangeData.filter(q => q.missCount === 0).sort(() => Math.random() - 0.5);
       const maxTotal = 20;
@@ -1605,22 +2243,20 @@ function applyShutsudai() {
       return (!from || q.registeredAt >= from) && (!to || q.registeredAt <= to);
     }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   } else if (v === 'ebbinghaus') {
-    const intervals = [1, 2, 7, 30, 60]; // 日数
+    const intervals = [1, 2, 7, 30, 60];
     pool = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => {
-      if (!q.lastTestedAt) return true; // 未受験は含める
+      if (!q.lastTestedAt) return true;
       const last = new Date(q.lastTestedAt); last.setHours(0,0,0,0);
       const diff = Math.floor((today - last) / (1000*60*60*24));
       return intervals.some(d => diff >= d);
     }).sort((a,b) => b.missCount - a.missCount).slice(0, 10);
   }
-
   if (!pool.length) { alert('該当する問題がありません'); return; }
-
   document.querySelector('[style*="fixed"]').remove();
   session = pool;
   current = 0;
   correctCount = 0;
-  window._sessionLocked = true; // タブクリックイベントでinitPracticeが走らないようにする
+  window._sessionLocked = true;
   switchTab('practice', document.querySelectorAll('.tab')[1]);
   setTimeout(() => {
     document.getElementById('noDataMsg').style.display = 'none';
@@ -1632,21 +2268,7 @@ function applyShutsudai() {
   }, 100);
 }
 
-function deleteAllData() {
-  const pw = prompt('パスワードを入力してください');
-  if (pw !== '1223') {
-    alert('パスワードが違います');
-    return;
-  }
-  if (confirm('全てのデータを削除しますか？\nこの操作は取り消せません。')) {
-    localStorage.removeItem('kanji_practice_data');
-    if (window.firestoreSave) window.firestoreSave([]);
-    alert('✅ データを削除しました');
-    location.reload();
-  }
-}
-
-// ===== APIキー設定画面 =====
+// ===== APIキー設定 =====
 function showApiKeySetup() {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -1657,14 +2279,12 @@ function showApiKeySetup() {
       <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">APIキーの設定</div>
       <div style="font-size:12px;color:#999;font-family:'Zen Maru Gothic',serif;margin-bottom:20px;">このiPhoneにのみ保存されます</div>
       <div style="margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">OpenAI APIキー</div>
-        <input id="openaiKeyInput" type="password" placeholder="sk-proj-..." value="${openaiVal}"
-          style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
+        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">OpenAI APIキー <span style="font-size:11px;color:#888;font-weight:400;">（写真からラクラク問題化に使用）</span></div>
+        <input id="openaiKeyInput" type="password" placeholder="sk-proj-..." value="${openaiVal}" style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
       </div>
       <div style="margin-bottom:24px;">
-        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">Claude APIキー</div>
-        <input id="claudeKeyInput" type="password" placeholder="sk-ant-..." value="${claudeVal}"
-          style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
+        <div style="font-size:13px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;margin-bottom:6px;">Claude APIキー <span style="font-size:11px;color:#888;font-weight:400;">（答えを調べるのに使用）</span></div>
+        <input id="claudeKeyInput" type="password" placeholder="sk-ant-..." value="${claudeVal}" style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;font-family:monospace;outline:none;"/>
       </div>
       <div style="display:flex;gap:10px;">
         <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
@@ -1678,241 +2298,72 @@ function showApiKeySetup() {
 function saveApiKeys(btn) {
   const openai = document.getElementById('openaiKeyInput').value.trim();
   const claude = document.getElementById('claudeKeyInput').value.trim();
-  if (!openai || !claude) { alert('両方のキーを入力してください'); return; }
-  localStorage.setItem('kanji_openai_key', openai);
-  localStorage.setItem('kanji_claude_key', claude);
+  if (!openai && !claude) { alert('少なくとも1つのキーを入力してください'); return; }
+  if (openai) localStorage.setItem('kanji_openai_key', openai);
+  if (claude) localStorage.setItem('kanji_claude_key', claude);
   btn.closest('[style*=fixed]').remove();
-  alert('✅ APIキーを保存しました！\nメニューから「問題を読み込む」を押してください。');
+  showToast('✅ APIキーを保存しました');
 }
 
-// 読み込みオーバーレイ
-function showLoadingOverlay(msg) {
-  const overlay = document.createElement('div');
-  overlay.id = 'loadingOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
-  overlay.innerHTML = `
-    <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#f0c040;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-    <div id="loadingMsg" style="color:#fff;font-size:16px;font-family:'Zen Maru Gothic',serif;text-align:center;">${msg}</div>
-    
-  `;
-  document.body.appendChild(overlay);
-  return overlay;
-}
-function updateLoadingOverlay(overlay, msg) {
-  const el = overlay.querySelector('#loadingMsg');
-  if (el) el.textContent = msg;
-}
-
-// 画像をbase64に変換
-
-// 確認画面
-function showConfirmQuestions(questions, grade, unit) {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
-
-  const ZMG = "'Zen Maru Gothic',serif";
-
-  const rows = questions.map((q, i) => {
-    const answer = (q.answerKanji||[]).join('') + (q.answerText||'');
-    const typeLabel = q.type === 'よみがなを書く' ? 'よみがな' : '書き取り';
-    return `
-      <tr style="border-bottom:1px solid #f0f4f8;">
-        <td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};">${q.no}番</td>
-        <td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};">${q.underline}</td>
-        <td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};font-weight:700;">${answer}</td>
-        <td style="padding:10px 8px;font-size:14px;color:#000000;font-family:${ZMG};white-space:nowrap;">${typeLabel}</td>
-      </tr>`;
-  }).join('');
-
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
-        <div style="font-size:17px;font-weight:700;color:#000000;font-family:${ZMG};">検索結果を確認してください</div>
-        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-top:4px;">${questions.length}問</div>
-      </div>
-      <div style="overflow-y:auto;flex:1;padding:8px 0;">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:#f8f9fa;">
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">番号</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">問題箇所</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">正解</th>
-              <th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">種類</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">やり直す</button>
-        <button onclick="confirmSaveQuestions(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">✓ これで保存する</button>
-      </div>
-    </div>`;
-
-  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-}
-
-function confirmSaveQuestions(btn) {
-  const questions = JSON.parse(btn.dataset.questions);
-  const grade = parseInt(btn.dataset.grade);
-
-  btn.closest('[style*=fixed]').remove();
-
-  // 単元番号を聞く
-  const unitStr = prompt('単元番号を入力してください（例：16）');
-  if (!unitStr) return;
-  const unit = parseInt(unitStr);
-  const today = new Date().toISOString().split('T')[0];
-
-  const existing = loadPracticeData();
-  const newItems = questions.map((q, i) => ({
-    id: q.no,
-    _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
-    grade: grade,
-    unit: unit,
-    registeredAt: today,
-    type: q.type,
-    question: q.question,
-    underline: q.underline,
-    answerKanji: q.answerKanji || [],
-    answerText: q.answerText || '',
-    missCount: 0,
-    charMiss: {}
-  }));
-
-  // 既存の問題は一切削除せず、新しい問題を末尾に追加するだけ
-  const updated = [...existing, ...newItems];
-  savePracticeData(updated);
-
-  alert(`✅ ${newItems.length}問を保存しました！`);
-  switchTab('practice', document.querySelectorAll('.tab')[1]);
-  setTimeout(() => initPractice(), 100);
-}
-
+// ===== まちがい一覧 =====
 function menuShowData() {
   closeMenu();
   closeSettings();
   const data = loadPracticeData();
-
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
-
   if (!data.length) {
-    overlay.innerHTML = `
-      <div style="background:#fff;border-radius:20px;padding:32px;text-align:center;font-family:'Zen Maru Gothic',serif;">
-        <div style="font-size:16px;color:#666;margin-bottom:20px;">まだデータがありません</div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:#f0c040;color:#000000;border:none;border-radius:999px;padding:10px 28px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">閉じる</button>
-      </div>`;
+    overlay.innerHTML = `<div style="background:#fff;border-radius:20px;padding:32px;text-align:center;font-family:'Zen Maru Gothic',serif;"><div style="font-size:16px;color:#666;margin-bottom:20px;">まだデータがありません</div><button onclick="this.closest('[style*=fixed]').remove()" style="background:#f0c040;color:#000000;border:none;border-radius:999px;padding:10px 28px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">閉じる</button></div>`;
     document.body.appendChild(overlay);
     return;
   }
-
   function renderMondaiBetsu() {
-    const sorted = [...data]
-      .sort((a,b) => b.missCount - a.missCount || (b.registeredAt||'').localeCompare(a.registeredAt||''))
-      .filter(q => q.missCount > 0)
-      .slice(0, 10);
+    const sorted = [...data].sort((a,b) => b.missCount - a.missCount || (b.registeredAt||'').localeCompare(a.registeredAt||'')).filter(q => q.missCount > 0).slice(0, 10);
     const max = Math.max(...sorted.map(q => q.missCount), 1);
     return sorted.map(q => {
       const grade = q.grade ? `${q.grade}年` : '−';
       const unit = q.unit ? `${q.unit}` : '−';
-      const answerKanji = (q.answerKanji || []).join('');
-      const answerText = q.answerText || '';
-      const answer = answerKanji + answerText || '−';
+      const answer = (q.answerKanji||[]).join('') + (q.answerText||'') || '−';
       const pct = (q.missCount / max) * 100;
-      return `<tr style="border-bottom:1px solid #f0f4f8;">
-        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
-        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
-        <td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td>
-        <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td>
-        <td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
-      </tr>`;
+      return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td><td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
     }).join('');
   }
-
   function renderKanjiBetsu() {
-    const map = {};
-    const gradeMap = {};
-    const unitMap = {};
-    const dateMap = {};
+    const map = {}; const gradeMap = {}; const unitMap = {}; const dateMap = {};
     data.forEach(q => {
       (q.answerKanji || []).forEach(k => {
         const miss = (q.charMiss && q.charMiss[k]) ? q.charMiss[k] : 0;
         map[k] = (map[k] || 0) + miss;
-        // charMissに記録がある問題の学年・単元を優先して使う
-        if (miss > 0) {
-          if (q.grade) gradeMap[k] = q.grade;
-          if (q.unit) unitMap[k] = q.unit;
-        } else {
-          if (q.grade && !gradeMap[k]) gradeMap[k] = q.grade;
-          if (q.unit && !unitMap[k]) unitMap[k] = q.unit;
-        }
+        if (miss > 0) { if (q.grade) gradeMap[k] = q.grade; if (q.unit) unitMap[k] = q.unit; }
+        else { if (q.grade && !gradeMap[k]) gradeMap[k] = q.grade; if (q.unit && !unitMap[k]) unitMap[k] = q.unit; }
         if (!dateMap[k] || (q.registeredAt||'') > (dateMap[k]||'')) dateMap[k] = q.registeredAt||'';
       });
     });
-    const sorted = Object.entries(map)
-      .filter(([,cnt]) => cnt > 0)
-      .sort((a,b) => b[1]-a[1] || (dateMap[b[0]]||'').localeCompare(dateMap[a[0]]||''))
-      .slice(0, 10);
+    const sorted = Object.entries(map).filter(([,cnt]) => cnt > 0).sort((a,b) => b[1]-a[1] || (dateMap[b[0]]||'').localeCompare(dateMap[a[0]]||'')).slice(0, 10);
     if (!sorted.length) return `<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
     const max = Math.max(...sorted.map(e => e[1]), 1);
     return sorted.map(([k, cnt]) => {
       const grade = gradeMap[k] ? `${gradeMap[k]}年` : '−';
       const unit = unitMap[k] ? `${unitMap[k]}` : '−';
       const pct = (cnt / max) * 100;
-      return `<tr style="border-bottom:1px solid #f0f4f8;">
-        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td>
-        <td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td>
-        <td style="padding:8px 6px;font-size:20px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;width:40px;">${k}</td>
-        <td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${cnt}回</td>
-        <td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td>
-      </tr>`;
+      return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td><td style="padding:8px 6px;font-size:20px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;width:40px;">${k}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${cnt}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
     }).join('');
   }
-
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;flex-shrink:0;">
         <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <!-- タブ -->
       <div style="display:flex;gap:0;padding:12px 20px 0;flex-shrink:0;border-bottom:2px solid #f0f4f8;">
         <button id="missTab1" onclick="switchMissTab(1)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid #3B82F6;margin-bottom:-2px;font-size:14px;font-weight:700;color:#3B82F6;font-family:'Zen Maru Gothic',serif;cursor:pointer;">問題別</button>
         <button id="missTab2" onclick="switchMissTab(2)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">漢字別</button>
       </div>
       <div style="overflow-y:auto;flex:1;">
-        <div id="missPane1">
-          <table style="width:100%;border-collapse:collapse;">
-            <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th>
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
-              <th style="padding:8px 6px;font-size:11px;width:60px;"></th>
-            </tr></thead>
-            <tbody>${renderMondaiBetsu()}</tbody>
-          </table>
-        </div>
-        <div id="missPane2" style="display:none;">
-          <table style="width:100%;border-collapse:collapse;">
-            <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th>
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th>
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;font-weight:600;">漢字</th>
-              <th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th>
-              <th style="padding:8px 6px;font-size:11px;width:60px;"></th>
-            </tr></thead>
-            <tbody>${renderKanjiBetsu()}</tbody>
-          </table>
-        </div>
-
+        <div id="missPane1"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;"><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th><th style="padding:8px 6px;font-size:11px;width:60px;"></th></tr></thead><tbody>${renderMondaiBetsu()}</tbody></table></div>
+        <div id="missPane2" style="display:none;"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;"><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;font-weight:600;">漢字</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th><th style="padding:8px 6px;font-size:11px;width:60px;"></th></tr></thead><tbody>${renderKanjiBetsu()}</tbody></table></div>
       </div>
     </div>`;
-
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
@@ -1926,59 +2377,62 @@ function switchMissTab(n) {
   });
 }
 
-function renderUnitBetsu() {
-  const data = loadPracticeData();
+// ===== 確認画面 =====
+function showConfirmQuestions(questions, grade, unit) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
   const ZMG = "'Zen Maru Gothic',serif";
-
-  // 単元ごとに集計
-  const unitMap = {};
-  data.forEach(q => {
-    const key = `${q.grade || '?'}年_${q.unit || '?'}`;
-    if (!unitMap[key]) unitMap[key] = { grade: q.grade, unit: q.unit, total: 0, correct: 0 };
-    unitMap[key].total += (q.totalCount || 0);
-    unitMap[key].correct += (q.correctCount || 0);
-    unitMap[key].questions = (unitMap[key].questions || 0) + 1;
-  });
-
-  const sorted = Object.values(unitMap)
-    .filter(u => u.questions > 0)
-    .sort((a,b) => (a.grade||0) - (b.grade||0) || (a.unit||0) - (b.unit||0));
-
-  const pane = document.getElementById('missPane3');
-  if (!sorted.length) {
-    pane.innerHTML = `<div style="padding:24px;text-align:center;color:#999;font-family:${ZMG};font-size:14px;">データがまだありません</div>`;
-    return;
-  }
-
-  pane.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-    <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
-      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;">学年</th>
-      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;">単元</th>
-      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:right;">問題数</th>
-      <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;min-width:80px;">正答率</th>
-    </tr></thead>
-    <tbody>${sorted.map(u => {
-      const rate = u.total > 0 ? Math.round(u.correct / u.total * 100) : null;
-      const barW = rate !== null ? rate : 0;
-      const barColor = barW >= 80 ? '#22c55e' : barW >= 50 ? '#F5A623' : '#FF4D4D';
-      const rateText = rate !== null ? rate + '%' : '未出題';
-      return `<tr style="border-bottom:1px solid #f0f4f8;">
-        <td style="padding:10px 6px;font-size:13px;font-family:${ZMG};">${u.grade || '?'}年</td>
-        <td style="padding:10px 6px;font-size:13px;font-family:${ZMG};">単元${u.unit || '?'}</td>
-        <td style="padding:10px 6px;font-size:13px;font-family:${ZMG};text-align:right;color:#666;">${u.questions}問</td>
-        <td style="padding:10px 6px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <div style="flex:1;background:#eee;border-radius:4px;height:6px;overflow:hidden;">
-              <div style="background:${barColor};height:100%;width:${barW}%;border-radius:4px;transition:width 0.4s;"></div>
-            </div>
-            <span style="font-size:12px;font-weight:700;color:${barColor};min-width:36px;font-family:${ZMG};">${rateText}</span>
-          </div>
-        </td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
+  const rows = questions.map((q, i) => {
+    const answer = (q.answerKanji||[]).join('') + (q.answerText||'');
+    const typeLabel = q.type === 'よみがなを書く' ? 'よみがな' : '書き取り';
+    return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};">${q.no}番</td><td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};">${q.underline}</td><td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};font-weight:700;">${answer}</td><td style="padding:10px 8px;font-size:14px;color:#000000;font-family:${ZMG};white-space:nowrap;">${typeLabel}</td></tr>`;
+  }).join('');
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000000;font-family:${ZMG};">検索結果を確認してください</div>
+        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-top:4px;">${questions.length}問</div>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:8px 0;"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;"><th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">番号</th><th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">問題箇所</th><th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">正解</th><th style="padding:10px 8px;font-size:12px;color:#000000;font-family:${ZMG};text-align:left;">種類</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">やり直す</button>
+        <button onclick="confirmSaveQuestions(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">✓ これで保存する</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
+function confirmSaveQuestions(btn) {
+  const questions = JSON.parse(btn.dataset.questions);
+  const grade = parseInt(btn.dataset.grade);
+  btn.closest('[style*=fixed]').remove();
+  const unitStr = prompt('単元番号を入力してください（例：16）');
+  if (!unitStr) return;
+  const unit = parseInt(unitStr);
+  const today = new Date().toISOString().split('T')[0];
+  const existing = loadPracticeData();
+  const newItems = questions.map((q, i) => ({
+    id: q.no,
+    _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
+    grade, unit,
+    registeredAt: today,
+    type: q.type,
+    question: q.question,
+    underline: q.underline,
+    answerKanji: q.answerKanji || [],
+    answerText: q.answerText || '',
+    missCount: 0,
+    charMiss: {},
+    totalCount: 0,
+    correctCount: 0
+  }));
+  const updated = [...existing, ...newItems];
+  savePracticeData(updated);
+  alert(`✅ ${newItems.length}問を保存しました！`);
+  switchTab('practice', document.querySelectorAll('.tab')[1]);
+  setTimeout(() => initPractice(), 100);
+}
 
 // ===== れんしゅうデータ管理 =====
 function loadPracticeData() {
@@ -1988,22 +2442,7 @@ function savePracticeData(data) {
   if (window._setLocalSaving) window._setLocalSaving(true);
   setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 2000);
   localStorage.setItem('kanji_practice_data', JSON.stringify(data));
-  // Firestoreにも保存（非同期）
   if (window.firestoreSave) window.firestoreSave(data);
-}
-
-// サンプルデータ（APIが使えるまでの仮データ）
-function loadSampleData(grade, unit) {
-  grade = grade || getCurrentGrade();
-  unit = unit || 1;
-  const today = new Date().toISOString().split('T')[0];
-  const sample = [
-    { id:1, grade:grade, unit:unit, registeredAt:today, type:"よみがなを書く", question:"北海道から空輸される。", underline:"空輸", answerKanji:[], answerText:"くうゆ", missCount:1 },
-    { id:5, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"大事な荷物をアズカル。", underline:"アズカル", answerKanji:["預"], answerText:"かる", missCount:1 },
-    { id:8, grade:grade, unit:unit, registeredAt:today, type:"漢字を書く", question:"説明をショウリャクする。", underline:"ショウリャク", answerKanji:["省","略"], answerText:"", missCount:1 },
-  ];
-  savePracticeData(sample);
-  initPractice();
 }
 
 // ===== れんしゅう =====
@@ -2028,15 +2467,12 @@ function initPractice() {
 
 function buildQ(question, underline, ruby) {
   const cleaned = question.replace(/^[。、・\s]+/, '');
-
-  // テキストにルビを適用してDOMを生成するヘルパー
   function applyRuby(text) {
     const frag = document.createDocumentFragment();
     if (!ruby || Object.keys(ruby).length === 0) {
       frag.appendChild(document.createTextNode(text));
       return frag;
     }
-    // ルビの漢字でテキストを分割
     let remaining = text;
     while (remaining.length > 0) {
       let matched = false;
@@ -2054,20 +2490,17 @@ function buildQ(question, underline, ruby) {
         }
       }
       if (!matched) {
-        // 1文字ずつTextNodeで追加
         frag.appendChild(document.createTextNode(remaining[0]));
         remaining = remaining.slice(1);
       }
     }
     return frag;
   }
-
   if (!underline) {
     const span = document.createElement('span');
     span.appendChild(applyRuby(cleaned));
     return span;
   }
-
   const parts = cleaned.split(underline);
   const span = document.createElement('span');
   parts.forEach((p, i) => {
@@ -2085,14 +2518,10 @@ function buildQ(question, underline, ruby) {
 function buildAnswerImages(q) {
   const wrap = document.getElementById('answerImagesWrap');
   wrap.innerHTML = '';
-
   const kanjiList = q.answerKanji || [];
-  // 空白・改行を除去してから1文字ずつに分割
   const kanaChars = q.answerText ? [...q.answerText].filter(ch => ch.trim() !== '') : [];
   const total = kanjiList.length + kanaChars.length;
   if (total === 0) return;
-
-  // DOMに追加してからrAFで高さを計算してセット
   function addItems() {
     if (q.type === 'よみがなを書く' && kanjiList.length === 0 && kanaChars.length > 0) {
       kanaChars.forEach(ch => {
@@ -2134,15 +2563,11 @@ function buildAnswerImages(q) {
       });
     }
   }
-
   addItems();
-
-  // 全画像読み込み完了後にスケール計算
   const imgs = [...wrap.querySelectorAll('img')];
   const imgPromises = imgs.map(img =>
     img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
   );
-
   Promise.all(imgPromises).then(() => {
     const pt = document.getElementById('practiceTop');
     const availH = pt ? pt.offsetHeight : window.innerHeight * 0.7;
@@ -2152,34 +2577,23 @@ function buildAnswerImages(q) {
     const padT = parseFloat(lpStyle.paddingTop) || 8;
     const padB = parseFloat(lpStyle.paddingBottom) || 6;
     const usableH = availH - padT - padB;
-
-    // 各boxの自然な高さを取得（width:100%で読み込み済みのimg高さ）
     const boxes = [...wrap.querySelectorAll('.kanji-img-box')];
     if (!boxes.length) return;
-
-    // imgの自然な高さ（naturalHeight/naturalWidth * wrapW）で計算
     const naturalHeights = boxes.map(box => {
       const img = box.querySelector('img');
-      if (img && img.naturalWidth > 0) {
-        return (img.naturalHeight / img.naturalWidth) * wrapW;
-      }
-      return wrapW; // ひらがなboxはwrapWを正方形と仮定
+      if (img && img.naturalWidth > 0) return (img.naturalHeight / img.naturalWidth) * wrapW;
+      return wrapW;
     });
-
     const totalNaturalH = naturalHeights.reduce((a, b) => a + b, 0);
     const scale = totalNaturalH > usableH ? usableH / totalNaturalH : 1;
     const scaledW = Math.floor(wrapW * scale);
-
     boxes.forEach((box, i) => {
       const img = box.querySelector('img');
       const t = box.querySelector('.kana-box, .answer-kana-text');
       const h = Math.floor(naturalHeights[i] * scale);
       box.style.width = scaledW + 'px';
       box.style.height = h + 'px';
-      if (img) {
-        img.style.width = scaledW + 'px';
-        img.style.height = h + 'px';
-      }
+      if (img) { img.style.width = scaledW + 'px'; img.style.height = h + 'px'; }
       if (t) t.style.fontSize = Math.floor(Math.min(h, scaledW) * 0.55) + 'px';
     });
   });
@@ -2197,15 +2611,11 @@ function loadQuestion(i) {
   buildAnswerImages(q);
   document.getElementById('missBarFill').style.width = (maxMiss > 0 ? (q.missCount/maxMiss)*100 : 0) + '%';
   document.getElementById('missBarCount').textContent = q.missCount + '回';
-  // リセット
   document.getElementById('answerImagesWrap').classList.remove('visible');
   document.getElementById('answerBtn').style.display = 'flex';
   document.getElementById('resultButtons').style.display = 'none';
   document.getElementById('btnNext').style.display = 'none';
-
-  // フォントサイズ自動調整＋正解欄の高さ確定後に再描画
   setTimeout(() => {
-    // 問題文フォントサイズ自動調整
     const inner = document.getElementById('qVerticalInner');
     const text = document.getElementById('qText');
     if (inner && text) {
@@ -2216,14 +2626,12 @@ function loadQuestion(i) {
         text.style.fontSize = size + 'px';
       }
     }
-    // 正解欄: leftPanelの高さが確定してから再描画
     buildAnswerImages(session[i]);
   }, 80);
 }
 
 // ===== 問題編集 =====
 let _editLongPressTimer = null;
-
 function startEditLongPress() {
   _editLongPressTimer = setTimeout(() => openEditModal(), 600);
 }
@@ -2234,80 +2642,46 @@ function cancelEditLongPress() {
 function openEditModal() {
   const q = session[current];
   if (!q) return;
-
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
-
   const ZMG = "'Zen Maru Gothic',serif";
   const inp = `width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};`;
   const lbl = `font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;`;
-
-  // 既存ルビ（ruby: {"難読":"なんどく"} の形式）
   const existingRuby = q.ruby || {};
   const rubyEntries = Object.entries(existingRuby);
-  // 最初の1行は必ず表示（空でも）、2行目以降は既存データがあれば表示
   const rubyRows = rubyEntries.length > 0 ? rubyEntries : [['', '']];
-
-  const rubyRowsHTML = rubyRows.map((entry, i) => `
+  const rubyRowsHTML = rubyRows.map((entry) => `
     <div class="ruby-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
       <input class="ruby-kanji" type="text" placeholder="漢字" value="${entry[0]}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
       <span style="color:#999;flex-shrink:0;font-size:13px;">→</span>
       <input class="ruby-yomi" type="text" placeholder="よみ" value="${entry[1]}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
       <button onclick="this.closest('.ruby-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>
     </div>`).join('');
-
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
         <div style="font-size:17px;font-weight:700;color:#000;font-family:${ZMG};">問題を編集</div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
-
-        <div>
-          <label style="${lbl}">問題文</label>
-          <input id="editQuestion" type="text" value="${q.question.replace(/"/g,'&quot;')}" style="${inp}">
-        </div>
-
-        <div>
-          <label style="${lbl}">下線部分（答えの箇所）</label>
-          <input id="editUnderline" type="text" value="${(q.underline||'').replace(/"/g,'&quot;')}" style="${inp}">
-        </div>
-
+        <div><label style="${lbl}">問題文</label><input id="editQuestion" type="text" value="${q.question.replace(/"/g,'&quot;')}" style="${inp}"></div>
+        <div><label style="${lbl}">下線部分（答えの箇所）</label><input id="editUnderline" type="text" value="${(q.underline||'').replace(/"/g,'&quot;')}" style="${inp}"></div>
         <div style="display:flex;gap:8px;">
-          <div style="flex:1;">
-            <label style="${lbl}">正解の漢字<span style="font-weight:400;font-size:11px;">（複数はカンマ区切り）</span></label>
-            <input id="editKanji" type="text" value="${(q.answerKanji||[]).join(',')}" style="${inp}">
-          </div>
-          <div style="flex:1;">
-            <label style="${lbl}">送り仮名</label>
-            <input id="editKana" type="text" value="${(q.answerText||'').replace(/"/g,'&quot;')}" placeholder="例：かる" style="${inp}">
-          </div>
+          <div style="flex:1;"><label style="${lbl}">正解の漢字<span style="font-weight:400;font-size:11px;">（複数はカンマ区切り）</span></label><input id="editKanji" type="text" value="${(q.answerKanji||[]).join(',')}" style="${inp}"></div>
+          <div style="flex:1;"><label style="${lbl}">送り仮名</label><input id="editKana" type="text" value="${(q.answerText||'').replace(/"/g,'&quot;')}" placeholder="例：かる" style="${inp}"></div>
         </div>
-
-        <div>
-          <label style="${lbl}">種類</label>
-          <select id="editType" style="${inp}">
-            <option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option>
-            <option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option>
-          </select>
-        </div>
-
+        <div><label style="${lbl}">種類</label><select id="editType" style="${inp}"><option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option><option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option></select></div>
         <div style="border-top:1px solid #f0f4f8;padding-top:12px;">
           <label style="${lbl}">ルビ <span style="font-weight:400;">（問題文中の漢字によみがなをつける）</span></label>
           <div id="rubyRows">${rubyRowsHTML}</div>
           <button onclick="addRubyRow()" style="width:100%;padding:8px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};cursor:pointer;color:#666;margin-top:2px;">＋ ルビを追加</button>
         </div>
-
       </div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:8px;flex-shrink:0;">
         <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f5f5f5;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
         <button onclick="saveEditModal(this)" style="flex:1;padding:12px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">保存</button>
       </div>
     </div>`;
-
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
@@ -2317,60 +2691,39 @@ function addRubyRow() {
   const row = document.createElement('div');
   row.className = 'ruby-row';
   row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
-  row.innerHTML = `
-    <input class="ruby-kanji" type="text" placeholder="漢字" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
-    <span style="color:#999;flex-shrink:0;font-size:13px;">→</span>
-    <input class="ruby-yomi" type="text" placeholder="よみ" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
-    <button onclick="this.closest('.ruby-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>`;
+  row.innerHTML = `<input class="ruby-kanji" type="text" placeholder="漢字" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;"><span style="color:#999;flex-shrink:0;font-size:13px;">→</span><input class="ruby-yomi" type="text" placeholder="よみ" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;"><button onclick="this.closest('.ruby-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>`;
   document.getElementById('rubyRows').appendChild(row);
 }
 
 function saveEditModal(btn) {
   const q = session[current];
   if (!q) return;
-
   const question = document.getElementById('editQuestion').value.trim();
   const underline = document.getElementById('editUnderline').value.trim();
   const kanjiRaw = document.getElementById('editKanji').value.trim();
   const kana = document.getElementById('editKana').value.trim();
   const type = document.getElementById('editType').value;
-
   if (!question) { showToast('問題文を入力してください'); return; }
-
   const answerKanji = kanjiRaw ? kanjiRaw.split(',').map(k => k.trim()).filter(k => k) : [];
-
-  // ルビを収集
   const ruby = {};
   document.querySelectorAll('#rubyRows .ruby-row').forEach(row => {
     const k = row.querySelector('.ruby-kanji').value.trim();
     const y = row.querySelector('.ruby-yomi').value.trim();
     if (k && y) ruby[k] = y;
   });
-
-  // localStorageを更新
   const data = loadPracticeData();
   const item = data.find(d => d.id === q.id);
   if (item) {
-    item.question = question;
-    item.underline = underline;
-    item.answerKanji = answerKanji;
-    item.answerText = kana;
-    item.type = type;
+    item.question = question; item.underline = underline; item.answerKanji = answerKanji;
+    item.answerText = kana; item.type = type;
     item.ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
     savePracticeData(data);
   }
-
-  // sessionも更新
-  session[current].question = question;
-  session[current].underline = underline;
-  session[current].answerKanji = answerKanji;
-  session[current].answerText = kana;
+  session[current].question = question; session[current].underline = underline;
+  session[current].answerKanji = answerKanji; session[current].answerText = kana;
   session[current].type = type;
   session[current].ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
-
   btn.closest('[style*="fixed"]').remove();
-
-  // 一覧から編集した場合はsessionを元に戻す
   if (window._editFromListDataIndex !== undefined) {
     session = window._editFromListPrevSession || session;
     current = window._editFromListPrevCurrent || 0;
@@ -2378,7 +2731,7 @@ function saveEditModal(btn) {
     window._editFromListPrevSession = undefined;
     window._editFromListPrevCurrent = undefined;
     showToast('保存しました');
-    showQuestionList(); // 一覧を再表示
+    showQuestionList();
   } else {
     loadQuestion(current);
     showToast('保存しました');
@@ -2394,13 +2747,10 @@ function toggleAnswer() {
 }
 
 function recordResult(correct) {
-  // correctCountは最初に1回だけカウント
   if (correct) correctCount++;
-
   const today = new Date().toISOString().split('T')[0];
   const data = loadPracticeData();
   const q = session[current];
-  // _dataIndexがあればそれを使う、なければ_uidで検索、なければidで検索
   let item;
   if (q._dataIndex !== undefined) {
     item = data[q._dataIndex];
@@ -2411,7 +2761,6 @@ function recordResult(correct) {
   }
   if (item) {
     item.lastTestedAt = today;
-    // 累計出題数・正解数を記録
     item.totalCount = (item.totalCount || 0) + 1;
     if (correct) item.correctCount = (item.correctCount || 0) + 1;
     if (!correct) {
@@ -2421,9 +2770,7 @@ function recordResult(correct) {
     }
     savePracticeData(data);
   }
-  // 今日の活動を記録（1問ごと）
   recordDailyActivity(1);
-  // 即座に次の問題へ
   document.getElementById('answerImagesWrap').classList.remove('visible');
   document.getElementById('resultButtons').style.display = 'none';
   document.getElementById('btnNext').style.display = 'none';
@@ -2443,9 +2790,7 @@ function showComplete() {
 
 function restartPractice() {
   document.getElementById('completeScreen').classList.remove('visible');
-  // sessionはそのまま維持して最初から
-  current = 0;
-  correctCount = 0;
+  current = 0; correctCount = 0;
   loadQuestion(0);
 }
 
@@ -2593,18 +2938,14 @@ async function doDisplay() {
 }
 
 document.getElementById('textInput').addEventListener('keydown', e => { if(e.key==='Enter') doDisplay(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape') closePopup(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') { closePopup(); closeRakuraku(); } });
 
 function fixLayout() {
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   const headerH = document.querySelector('header').offsetHeight;
-
-  // 漢字表示ページ
   const bottomH = document.querySelector('.bottom-bar') ? document.querySelector('.bottom-bar').offsetHeight : 0;
   const mainArea = document.querySelector('.main-area');
   if (mainArea) { mainArea.style.height = Math.max(vh-headerH-bottomH,80)+'px'; mainArea.style.flex='none'; }
-
-  // れんしゅうページ：ヘッダー分を引いた残りをquestionAreaに設定
   const contentH = Math.max(vh - headerH, 100);
   const practiceBottom = document.getElementById('practiceBottom');
   const bottomBtnH = practiceBottom ? practiceBottom.offsetHeight || 80 : 80;
@@ -2614,7 +2955,6 @@ function fixLayout() {
     const pt = document.getElementById('practiceTop');
     const ptH = contentH - bottomBtnH;
     if (pt) pt.style.height = ptH + 'px';
-    // leftPanelにも明示的にheightを設定
     const lp = document.getElementById('leftPanel');
     if (lp) lp.style.height = ptH + 'px';
   }
@@ -2627,17 +2967,13 @@ if (window.visualViewport) {
 }
 updateHistoryChips();
 
-// れんしゅうページを開いたらデータ確認
 document.querySelectorAll('.tab')[1].addEventListener('click', () => {
   setTimeout(() => {
-    // applyShutsudaiでsessionがセット済みの場合はinitPracticeをスキップ
     if (!window._sessionLocked) initPractice();
     window._sessionLocked = false;
     fixLayout();
   }, 50);
 });
-
-
 </script>
 </body>
 </html>
