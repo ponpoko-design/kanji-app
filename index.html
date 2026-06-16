@@ -3988,6 +3988,19 @@ function renderStatsPage() {
     `;
   }
 
+  // headerを描画後に高さを計算してstatsContentに設定
+  requestAnimationFrame(() => {
+    const vh2 = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const headerH2 = document.querySelector('header')?.offsetHeight || 0;
+    const statsHeaderH2 = headerEl ? headerEl.offsetHeight : 60;
+    const contentH2 = vh2 - headerH2 - statsHeaderH2;
+    if (el) {
+      el.style.height = Math.max(contentH2, 200) + 'px';
+      el.style.overflowY = 'scroll';
+      el.style.webkitOverflowScrolling = 'touch';
+    }
+  });
+
   el.innerHTML = `
     <!-- ビッグナンバー -->
     <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
