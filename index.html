@@ -161,14 +161,14 @@ header {
 .page.active { display: flex; }
 #page-stats {
   display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   background: #f0f4f8;
   flex-direction: column;
-  overflow: hidden;
-  height: 100%;
+  z-index: 1;
 }
 #page-stats.active {
   display: flex;
-  height: 100%;
 }
 .main-area {
   flex: 1;
@@ -1163,7 +1163,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
       <!-- 固定ヘッダー（タブ＋選択ボックス） -->
       <div id="statsHeader" style="flex-shrink:0;background:#f0f4f8;padding:12px 16px 8px;border-bottom:1px solid #e0e4ea;"></div>
       <!-- スクロールエリア -->
-      <div id="statsContent" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;"></div>
+      <div id="statsContent" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;"></div>
     </div>
 
     <!-- れんしゅうページ -->
@@ -1403,9 +1403,14 @@ function switchTab(name, el) {
   el.classList.add('active');
   const page = document.getElementById('page-' + name);
   if (page) page.classList.add('active');
-  // stats scroll handled by statsContent flex child
   if (name === 'display') fixLayout();
-  if (name === 'stats') setTimeout(() => renderStatsPage(), 50);
+  if (name === 'stats') {
+    // ヘッダー高さ分だけ下にずらす
+    const headerH = document.querySelector('header')?.offsetHeight || 0;
+    const statsPage = document.getElementById('page-stats');
+    if (statsPage) statsPage.style.top = headerH + 'px';
+    setTimeout(() => renderStatsPage(), 50);
+  }
 }
 
 // ===== 学年自動判定 =====
@@ -3988,18 +3993,7 @@ function renderStatsPage() {
     `;
   }
 
-  // headerを描画後に高さを計算してstatsContentに設定
-  requestAnimationFrame(() => {
-    const vh2 = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const headerH2 = document.querySelector('header')?.offsetHeight || 0;
-    const statsHeaderH2 = headerEl ? headerEl.offsetHeight : 60;
-    const contentH2 = vh2 - headerH2 - statsHeaderH2;
-    if (el) {
-      el.style.height = Math.max(contentH2, 200) + 'px';
-      el.style.overflowY = 'scroll';
-      el.style.webkitOverflowScrolling = 'touch';
-    }
-  });
+
 
   el.innerHTML = `
     <!-- ビッグナンバー -->
