@@ -1176,7 +1176,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
         <div class="dojo-start-icon">⛩️</div>
         <div class="dojo-start-title">目指せ漢字の達人！</div>
         <div class="dojo-start-sub">今日も練習をはじめよう</div>
-        <button class="dojo-start-btn" onclick="openDojoSelect()">
+        <button class="dojo-start-btn" id="dojoStartBtn" onclick="openDojoSelect()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           問題を選ぶ
         </button>
@@ -3003,24 +3003,32 @@ function savePracticeData(data) {
 let session = [], current = 0, correctCount = 0, answerShown = false;
 
 function initPractice() {
-  const data = loadPracticeData();
-  if (!data.length) {
-    document.getElementById('noDataMsg').style.display = 'flex';
-    document.getElementById('questionArea').style.display = 'none';
-    document.getElementById('dojoStart').classList.remove('visible');
-    document.getElementById('completeScreen').classList.remove('visible');
-    return;
-  }
-  // データがあればスタート画面を表示
+  // データの有無に関わらず常にスタート画面を表示
   showDojoStart();
 }
 
 // 道場スタート画面を表示
 function showDojoStart() {
+  const data = loadPracticeData();
   document.getElementById('noDataMsg').style.display = 'none';
   document.getElementById('questionArea').style.display = 'none';
   document.getElementById('completeScreen').classList.remove('visible');
   document.getElementById('dojoStart').classList.add('visible');
+  // データなしのときはボタンを変える
+  const btn = document.getElementById('dojoStartBtn');
+  if (btn) {
+    if (!data.length) {
+      btn.textContent = '問題を登録してください';
+      btn.style.background = '#90a8c0';
+      btn.style.cursor = 'default';
+      btn.onclick = null;
+    } else {
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>問題を選ぶ';
+      btn.style.background = '#f0c040';
+      btn.style.cursor = 'pointer';
+      btn.onclick = openDojoSelect;
+    }
+  }
   setTimeout(fixLayout, 10);
 }
 
