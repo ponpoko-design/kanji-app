@@ -2559,7 +2559,7 @@ function confirmResetUnits(btn) {
     'リセットする',
     () => {
       const reset = data.map(q =>
-        unitSet.has(q.unit) ? { ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined } : q
+        unitSet.has(q.unit) ? { ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined, dailyMiss: {}, dailyTotal: {}, dailyCharMiss: {} } : q
       );
       savePracticeData(reset);
       parentOv.remove();
@@ -2584,7 +2584,7 @@ function execResetAll(btn) {
     [],
     'リセットする',
     () => {
-      const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined }));
+      const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined, dailyMiss: {}, dailyTotal: {}, dailyCharMiss: {} }));
       savePracticeData(reset);
       saveStats({});
       parentOv.remove();
