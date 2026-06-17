@@ -388,7 +388,7 @@ rt {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  height: 64px;
+  height: 68px;
   align-items: stretch;
 }
 #practiceMainBtns {
@@ -422,6 +422,7 @@ rt {
 }
 #answerBtn:active { background: #d4a820; }
 #resultButtons {
+  display: none;
   flex: 1;
   gap: 10px;
 }
@@ -588,7 +589,7 @@ rt {
   text-align:center; padding:40px;
 }
 .complete-screen.visible { display:flex; }
-.complete-title { font-size:28px; font-weight:700; color:#fff; font-family:'Zen Maru Gothic',serif; text-shadow:0 2px 8px rgba(0,0,0,0.2); }
+.complete-title { font-size:27px; font-weight:700; color:#fff; font-family:'Zen Maru Gothic',serif; text-shadow:0 2px 8px rgba(0,0,0,0.2); }
 .complete-sub { font-size:15px; color:rgba(255,255,255,0.8); font-family:'Zen Maru Gothic',serif; }
 /* ドーナツSVG */
 .donut-wrap {
@@ -1205,9 +1206,8 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;min-width:0;">
                 <div style="min-width:0;overflow:hidden;">
                   <div id="qId" style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;line-height:1.4;white-space:pre-line;"></div>
-                  <div style="display:flex;align-items:center;gap:4px;margin-top:3px;">
-                    <div style="width:40px;height:3px;background:#eee;border-radius:2px;overflow:hidden;"><div id="missBarFill" style="height:100%;background:#FF4D4D;border-radius:2px;transition:width 0.4s;"></div></div>
-                    <span id="missBarCount" style="font-size:9px;color:#FF4D4D;font-weight:700;font-family:'Zen Maru Gothic',serif;"></span>
+                  <div style="margin-top:2px;">
+                    <span id="missBarCount" style="font-size:10px;color:#FF4D4D;font-weight:700;font-family:'Zen Maru Gothic',serif;"></span>
                   </div>
                 </div>
                 <button id="btnQuit" onclick="quitPractice()" style="flex-shrink:0;background:rgba(0,0,0,0.10);border:none;border-radius:999px;padding:4px 8px;color:#666;font-size:11px;font-family:'Zen Maru Gothic',serif;cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap;">
@@ -3683,8 +3683,7 @@ function loadQuestion(i) {
   qt.innerHTML = '';
   qt.appendChild(buildQ(q.question, q.underline, q.ruby));
   buildAnswerImages(q);
-  document.getElementById('missBarFill').style.width = (maxMiss > 0 ? (q.missCount/maxMiss)*100 : 0) + '%';
-  document.getElementById('missBarCount').textContent = q.missCount + '回';
+  document.getElementById('missBarCount').textContent = q.missCount > 0 ? `まちがい ${q.missCount}回` : '';
   document.getElementById('answerImagesWrap').classList.remove('visible');
   document.getElementById('answerBtn').style.display = 'flex';
   document.getElementById('resultButtons').style.display = 'none';
