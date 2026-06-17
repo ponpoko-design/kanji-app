@@ -1559,7 +1559,7 @@ function showToast(msg) {
   const toast = document.createElement('div');
   toast.id = 'toastMsg';
   toast.textContent = msg;
-  toast.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0d3d7a;color:#fff;font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;padding:10px 24px;border-radius:999px;z-index:9999;white-space:nowrap;pointer-events:none;opacity:1;transition:opacity 0.4s;`;
+  toast.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;font-family:'Zen Maru Gothic',serif;font-size:15px;font-weight:700;padding:14px 28px;border-radius:16px;z-index:9999;white-space:nowrap;pointer-events:none;opacity:1;transition:opacity 0.4s;text-align:center;`;
   document.body.appendChild(toast);
   setTimeout(() => { toast.style.opacity = '0'; }, 1800);
   setTimeout(() => { toast.remove(); }, 2200);
@@ -3279,6 +3279,9 @@ function updateDojoPageUI() {
 function dojoPageNext() {
   const v = document.querySelector('input[name="dojoPageMode"]:checked')?.value;
   if (!v) return;
+  // 次の画面に進む前にトグル状態を保存
+  const toggleEl = document.getElementById('recordToggleInput');
+  window._pendingDoNotRecord = toggleEl ? !toggleEl.checked : false;
   const ZMG = "'Zen Maru Gothic',serif";
   const area = document.getElementById('dojoSelectArea');
 
@@ -3519,7 +3522,14 @@ function dojoStartPool(pool, generator) {
   window._sessionLocked = true;
   window._lastPoolGenerator = generator || null;
   // 記録するかどうかのフラグを保存（セッション中維持）
-  window._doNotRecord = !(document.getElementById('recordToggleInput')?.checked ?? true); // 同じ設定で再生成できる関数を保存
+  // トグルの値：dojoPageNextで保存したpendingを優先、なければDOMから取得
+  const toggleEl = document.getElementById('recordToggleInput');
+  if (window._pendingDoNotRecord !== undefined) {
+    window._doNotRecord = window._pendingDoNotRecord;
+    window._pendingDoNotRecord = undefined;
+  } else {
+    window._doNotRecord = toggleEl ? !toggleEl.checked : false;
+  } // 同じ設定で再生成できる関数を保存
   document.getElementById('questionArea').style.display = 'flex';
   document.getElementById('questionArea').style.flexDirection = 'column';
   document.getElementById('completeScreen').classList.remove('visible');
@@ -3885,7 +3895,6 @@ function showComplete(answeredCount) {
   // 成績に応じたランダムメッセージ
   let msg = '';
   if (window._isQuit) {
-    // 途中でやめた場合の専用メッセージ
     const quitMsgs = [
       'またチャレンジしてね！',
       'また来てね！',
@@ -3893,59 +3902,60 @@ function showComplete(answeredCount) {
       '後で再チャレンジだ！'
     ];
     msg = quitMsgs[Math.floor(Math.random() * quitMsgs.length)];
-    window._isQuit = false; // フラグリセット
+    window._isQuit = false;
   } else if (total === 0) {
     msg = 'また今度ね！';
   } else if (correct === total) {
     const perfect = [
       '君って天才？🎉',
-      '完璧じゃないか！すごすぎる！🌟',
+      '完璧じゃないか！\nすごすぎる！🌟',
       '全問正解！もしかして神？✨',
-      '全部合ってた！航大、天才かも！🎊',
-      'パーフェクト！先生よりできるんじゃない？🏆'
+      '全部合ってた！\n航大、天才かも！🎊',
+      'パーフェクト！\n先生よりできるんじゃない？🏆'
     ];
     msg = perfect[Math.floor(Math.random() * perfect.length)];
   } else if (total > 0 && correct === 0) {
     const zero = [
-      'チャレンジしただけで100点！🌟',
-      '始めることが一番大事！次も来てね！✨',
-      'トライしただけエラい！次は頑張ろう！👊'
+      'チャレンジしただけで\n100点！🌟',
+      '始めることが一番大事！\n次も来てね！✨',
+      'トライしただけエラい！\n次は頑張ろう！👊'
     ];
     msg = zero[Math.floor(Math.random() * zero.length)];
   } else {
     const pct = correct / total;
     if (pct >= 0.8) {
       const good = [
-        'すごい！もう少しで満点！👏',
-        'よくできた！この調子でいこう！🌈',
-        'ほぼ完璧！次は全問正解いけるよ！⭐',
-        'めちゃくちゃいい感じ！続けよう！🎵',
-        'もうちょっとで天才になれる！🚀'
+        'すごい！\nもう少しで満点！👏',
+        'よくできた！\nこの調子でいこう！🌈',
+        'ほぼ完璧！\n次は全問正解いけるよ！⭐',
+        'めちゃくちゃいい感じ！\n続けよう！🎵',
+        'もうちょっとで\n天才になれる！🚀'
       ];
       msg = good[Math.floor(Math.random() * good.length)];
     } else if (pct >= 0.5) {
       const mid = [
-        '半分以上できた！いい調子！📚',
-        'なかなかやるじゃん！もう一回！🎯',
-        '惜しい！また練習したら絶対伸びる！✏️',
-        'どんどん上手くなってるよ！😊',
-        'いいペース！続けることが大事！🌱'
+        '半分以上できた！\nいい調子！📚',
+        'なかなかやるじゃん！\nもう一回！🎯',
+        '惜しい！また練習したら\n絶対できるようになる！✏️',
+        'どんどん出来てるよ！😊',
+        'いいペース！\n続けることが大事！🌱'
       ];
       msg = mid[Math.floor(Math.random() * mid.length)];
     } else {
       const low = [
-        '伸びしろMAX！これからが楽しみ！🚀',
-        'まだまだこれから！トライしただけエラい！💪',
-        '間違えたところが次の正解になる！✨',
-        '難しかったね！でも続けたら必ずできるようになる！🔥',
-        '今日やった分だけ賢くなってるよ！📖',
-        'ゼロなんてない！全部経験値！⭐'
+        '伸びしろMAX！\nこれからが楽しみ！🚀',
+        'まだまだこれから！\nトライしただけエラい！💪',
+        '間違えたところが\n次の正解になる！✨',
+        '難しかったね！\nでも続けたらできるようになる！🔥',
+        '今日やった分だけ\n賢くなってるよ！📖',
+        'ゼロなんてない！\n全部経験値！⭐'
       ];
       msg = low[Math.floor(Math.random() * low.length)];
     }
   }
   document.getElementById('completeSub').textContent = `${total}問のうち、${correct}問正解だったよ！`;
-  document.getElementById('completeTitle').textContent = msg;
+  // 改行を<br>に変換して表示
+  document.getElementById('completeTitle').innerHTML = msg.replace(/\n/g, '<br>');
   setTimeout(() => {
     const bar = document.getElementById('donutBar');
     if (bar) bar.style.strokeDashoffset = offset;
