@@ -636,6 +636,31 @@ rt {
   font-family: 'Zen Maru Gothic', serif;
 }
 .btn-change-mode:active { background: rgba(255,255,255,0.15); }
+/* ===== 記録トグル ===== */
+.toggle-switch {
+  position: relative; width: 50px; height: 28px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #ccc; border-radius: 999px; transition: background 0.2s;
+}
+.toggle-slider:before {
+  content: ''; position: absolute;
+  width: 22px; height: 22px; left: 3px; top: 3px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-switch input:checked + .toggle-slider { background: #3B82F6; }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); }
+.no-record-banner {
+  display: none; background: #FFF8E7;
+  border: 1.5px solid #f0c040; border-radius: 10px;
+  padding: 10px 14px; font-size: 13px; color: #a06000; font-weight: 700;
+  align-items: center; gap: 8px;
+}
+.no-record-banner.visible { display: flex; }
+
 .menu-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.6); z-index:800;
@@ -3193,9 +3218,10 @@ function initPractice() {
 // 道場スタート画面を表示
 function showDojoStart() {
   const data = loadPracticeData();
+  window._doNotRecord = false; // セッション終了でフラグリセット
   document.getElementById('questionArea').style.display = 'none';
   document.getElementById('completeScreen').classList.remove('visible');
-  document.getElementById('dojoSelectArea').style.display = 'none'; // 選択画面を隠す
+  document.getElementById('dojoSelectArea').style.display = 'none';
   document.getElementById('dojoStart').classList.add('visible');
   // データなしのときはボタンを変える
   const btn = document.getElementById('dojoStartBtn');
@@ -3250,8 +3276,27 @@ function openDojoSelectInPage() {
         <input type="date" id="dsp_dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
       </div>
       ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}
+      <!-- 記録トグル -->
+      <hr style="border:none;border-top:1px solid #f0f4f8;margin:8px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:32px;height:32px;background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div>
+            <div id="recordToggleText" style="font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">結果を記録する</div>
+            <div id="recordToggleSub" style="font-size:11px;color:#999;font-family:${ZMG};">missCount・正答率などに反映</div>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="recordToggleInput" checked onchange="onRecordToggleChange()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="no-record-banner" id="noRecordBanner">⚠️ この練習の結果は記録されません</div>
+
       <!-- 下部ボタン：戻る（左）＋次へ（右） -->
-      <div style="display:flex;gap:10px;margin-top:16px;">
+      <div style="display:flex;gap:10px;margin-top:8px;">
         <button onclick="closeDojoSelectInPage()" style="flex:1;padding:15px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
         <button onclick="dojoPageNext()" style="flex:2;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
       </div>
@@ -3510,13 +3555,39 @@ function dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo) {
   dojoStartPool(pool, generator);
 }
 
+// 記録トグルの状態変更
+function onRecordToggleChange() {
+  const on = document.getElementById('recordToggleInput')?.checked;
+  const text = document.getElementById('recordToggleText');
+  const sub = document.getElementById('recordToggleSub');
+  const banner = document.getElementById('noRecordBanner');
+  if (!text) return;
+  if (on) {
+    text.textContent = '結果を記録する';
+    text.style.color = '#1a2a3a';
+    sub.textContent = 'missCount・正答率などに反映';
+    sub.style.color = '#999';
+    sub.style.fontWeight = '400';
+    banner?.classList.remove('visible');
+  } else {
+    text.textContent = '結果を記録しない';
+    text.style.color = '#999';
+    sub.textContent = '確認・テスト用';
+    sub.style.color = '#f0a040';
+    sub.style.fontWeight = '700';
+    banner?.classList.add('visible');
+  }
+}
+
 function dojoStartPool(pool, generator) {
   document.getElementById('dojoStart').classList.remove('visible');
   document.getElementById('dojoSelectArea').style.display = 'none';
   session = pool;
   current = 0; correctCount = 0;
   window._sessionLocked = true;
-  window._lastPoolGenerator = generator || null; // 同じ設定で再生成できる関数を保存
+  window._lastPoolGenerator = generator || null;
+  // 記録するかどうかのフラグを保存（セッション中維持）
+  window._doNotRecord = !(document.getElementById('recordToggleInput')?.checked ?? true); // 同じ設定で再生成できる関数を保存
   document.getElementById('questionArea').style.display = 'flex';
   document.getElementById('questionArea').style.flexDirection = 'column';
   document.getElementById('completeScreen').classList.remove('visible');
@@ -3807,6 +3878,16 @@ function toggleAnswer() {
 
 function recordResult(correct) {
   if (correct) correctCount++;
+
+  // 記録しないモードのときはデータ更新をスキップ
+  if (window._doNotRecord) {
+    document.getElementById('answerImagesWrap').classList.remove('visible');
+    document.getElementById('resultButtons').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'none';
+    setTimeout(() => nextQuestion(), 300);
+    return;
+  }
+
   const today = new Date().toISOString().split('T')[0];
   const data = loadPracticeData();
   const q = session[current];
