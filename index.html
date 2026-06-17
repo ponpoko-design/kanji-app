@@ -349,7 +349,7 @@ rt {
 }
 #qMeta {
   flex-shrink: 0;
-  padding: 8px 8px 6px;
+  padding: 5px 8px 4px;
   border-bottom: 1px solid #f0f4f8;
 }
 #qVerticalWrap {
@@ -388,7 +388,7 @@ rt {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  height: 68px;
+  height: 70px;
   align-items: stretch;
 }
 #practiceMainBtns {
@@ -586,7 +586,7 @@ rt {
   background: linear-gradient(160deg, #0d3d7a 0%, #1a6fc4 60%, #2ec4e8 100%);
   align-items:center; justify-content:center;
   flex-direction:column; gap:16px;
-  text-align:center; padding:40px;
+  text-align:center; padding:40px 16px;
 }
 .complete-screen.visible { display:flex; }
 .complete-title { font-size:27px; font-weight:700; color:#fff; font-family:'Zen Maru Gothic',serif; text-shadow:0 2px 8px rgba(0,0,0,0.2); }
@@ -1205,9 +1205,9 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
             <div id="qMeta">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;min-width:0;">
                 <div style="min-width:0;overflow:hidden;">
-                  <div id="qId" style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;line-height:1.4;white-space:pre-line;"></div>
+                  <div id="qId" style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;line-height:1.25;white-space:pre-line;"></div>
                   <div style="margin-top:2px;">
-                    <span id="missBarCount" style="font-size:10px;color:#FF4D4D;font-weight:700;font-family:'Zen Maru Gothic',serif;"></span>
+                    <span id="missBarCount" style="font-size:10px;color:#FF4D4D;font-weight:700;font-family:'Zen Maru Gothic',serif;white-space:nowrap;"></span>
                   </div>
                 </div>
                 <button id="btnQuit" onclick="quitPractice()" style="flex-shrink:0;background:rgba(0,0,0,0.10);border:none;border-radius:999px;padding:4px 8px;color:#666;font-size:11px;font-family:'Zen Maru Gothic',serif;cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap;">
