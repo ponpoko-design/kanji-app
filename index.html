@@ -1464,6 +1464,8 @@ function saveStats(stats) {
   if (window.firestoreStatsSave) window.firestoreStatsSave(stats);
 }
 function recordDailyActivity(questionsAnswered) {
+  // 開発者モード（記録しない）のときはスキップ
+  if (window._doNotRecord) return;
   const today = getTodayJST();
   const stats = loadStats();
   if (!stats.daily) stats.daily = {};
@@ -2424,16 +2426,6 @@ function deleteResultData() {
           <div style="font-size:15px;font-weight:700;color:#1a2a3a;">リセット ＞ 今日の結果のみ</div>
         </button>
 
-        <!-- 単元ごと：青ボーダー、タップでアクティブ -->
-        <button onclick="execResetByUnit(this)"
-          onmousedown="this.style.background='#EFF6FF';this.style.borderColor='#1a6fc4'"
-          ontouchstart="this.style.background='#EFF6FF';this.style.borderColor='#1a6fc4'"
-          onmouseup="this.style.background='#fff';this.style.borderColor='#1a6fc4'"
-          ontouchend="this.style.background='#fff';this.style.borderColor='#1a6fc4'"
-          style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-family:${ZMG};transition:background 0.15s;">
-          <div style="font-size:15px;font-weight:700;color:#1a2a3a;">リセット ＞ 単元ごとの結果</div>
-        </button>
-
         <!-- 全部：注意アイコン付き、グレーボーダー -->
         <button onclick="execResetAll(this)"
           onmousedown="this.style.background='#fff0f0'"
@@ -2545,56 +2537,6 @@ function execResetToday(btn) {
 }
 
 // 単元ごとリセット
-function execResetByUnit(btn) {
-  const data = loadPracticeData();
-  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-  if (!units.length) { showToast('問題がありません'); return; }
-  const parentOv = btn.closest('[style*=fixed]');
-  const ZMG = "'Zen Maru Gothic',serif";
-  const unitOpts = units.map(u => {
-    const count = data.filter(q => q.unit === u).length;
-    return `<label style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f0f4f8;cursor:pointer;"><input type="checkbox" value="${u}" style="width:18px;height:18px;cursor:pointer;accent-color:#1a6fc4;"><span style="font-size:15px;font-family:${ZMG};">単元 ${u}</span><span style="font-size:12px;color:#999;font-family:${ZMG};margin-left:auto;">${count}問</span></label>`;
-  }).join('');
-  parentOv.innerHTML = `
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="padding:18px 20px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;"><div style="font-size:17px;font-weight:700;font-family:${ZMG};">単元を選んでリセット</div></div>
-      <div style="overflow-y:auto;flex:1;">${unitOpts}</div>
-      <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
-        <button onclick="confirmResetUnits(this)" style="flex:2;padding:12px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
-      </div>
-    </div>`;
-}
-
-function confirmResetUnits(btn) {
-  const checked = [...btn.closest('[style*=fixed]').querySelectorAll('input:checked')];
-  if (!checked.length) { showToast('単元を選んでください'); return; }
-  const pw = prompt('パスワードを入力してください');
-  if (pw !== '1223') { showToast('パスワードが違います'); return; }
-  const unitSet = new Set(checked.map(cb => parseInt(cb.value)));
-  const data = loadPracticeData();
-  const parentOv = btn.closest('[style*=fixed]');
-  const lines = [...unitSet].sort((a,b)=>a-b).map(u => {
-    const count = data.filter(q => q.unit === u).length;
-    return `単元 ${u}（${count}問）`;
-  });
-  showConfirmModal(
-    `${unitSet.size}単元の結果をリセットします`,
-    lines,
-    'リセットする',
-    () => {
-      const reset = data.map(q =>
-        unitSet.has(q.unit) ? { ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined, dailyMiss: {}, dailyTotal: {}, dailyCharMiss: {} } : q
-      );
-      savePracticeData(reset);
-      parentOv.remove();
-      showToast(`${unitSet.size}単元の結果をリセットしました`);
-      if (typeof renderStatsPage === 'function') renderStatsPage();
-      initPractice();
-    }
-  );
-}
-
 // 全部リセット
 function execResetAll(btn) {
   const pw = prompt('パスワードを入力してください');
@@ -3284,8 +3226,7 @@ function openDojoSelectInPage() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
           <div>
-            <div id="recordToggleText" style="font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">結果を記録する</div>
-            <div id="recordToggleSub" style="font-size:11px;color:#999;font-family:${ZMG};">missCount・正答率などに反映</div>
+            <div id="recordToggleText" style="font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">普段は、ONでいいよ</div>
           </div>
         </div>
         <label class="toggle-switch">
@@ -3293,8 +3234,6 @@ function openDojoSelectInPage() {
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div class="no-record-banner" id="noRecordBanner">⚠️ この練習の結果は記録されません</div>
-
       <!-- 下部ボタン：戻る（左）＋次へ（右） -->
       <div style="display:flex;gap:10px;margin-top:8px;">
         <button onclick="closeDojoSelectInPage()" style="flex:1;padding:15px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
@@ -3559,23 +3498,16 @@ function dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo) {
 function onRecordToggleChange() {
   const on = document.getElementById('recordToggleInput')?.checked;
   const text = document.getElementById('recordToggleText');
-  const sub = document.getElementById('recordToggleSub');
   const banner = document.getElementById('noRecordBanner');
   if (!text) return;
   if (on) {
-    text.textContent = '結果を記録する';
+    text.textContent = '普段は、ONでいいよ';
     text.style.color = '#1a2a3a';
-    sub.textContent = 'missCount・正答率などに反映';
-    sub.style.color = '#999';
-    sub.style.fontWeight = '400';
     banner?.classList.remove('visible');
   } else {
-    text.textContent = '結果を記録しない';
-    text.style.color = '#999';
-    sub.textContent = '確認・テスト用';
-    sub.style.color = '#f0a040';
-    sub.style.fontWeight = '700';
-    banner?.classList.add('visible');
+    text.textContent = '開発者モード';
+    text.style.color = '#C62828';
+    banner?.classList.remove('visible');
   }
 }
 
