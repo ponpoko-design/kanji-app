@@ -2642,7 +2642,21 @@ function showQuestionList() {
       </div>
       <div id="qListRows" style="overflow-y:auto;flex:1;">${buildList('','','')}</div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
-        <button onclick="execDeleteFromList(this)" style="width:100%;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">選択した問題を削除</button>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <button onclick="execDeleteFromList(this)" style="flex:1;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">選択した問題を削除</button>
+          <button id="btnMoveUnit" onclick="toggleMoveUnitPanel()" style="flex:1;background:#fff;color:#1A1A1A;border:2px solid #1A1A1A;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">単元を変更 ▼</button>
+        </div>
+        <div id="moveUnitPanel" style="display:none;background:#f8f9fa;border-radius:12px;padding:12px 14px;margin-top:4px;">
+          <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:8px;">選択した問題の移動先：</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <select id="moveGrade" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
+            <input id="moveUnit" type="number" min="1" placeholder="単元番号" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="toggleMoveUnitPanel()" style="flex:1;background:#e8eaed;color:#444;border:none;border-radius:8px;padding:9px;font-size:13px;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+            <button onclick="execMoveUnit()" style="flex:1;background:#2c3e7a;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;">変更する</button>
+          </div>
+        </div>
       </div>
     </div>`;
   window._qListData = data;
@@ -2709,6 +2723,50 @@ function execDeleteFromList(btn) {
       savePracticeData(newData);
       document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
       showToast(`${idxSet.size}問を削除しました`);
+      if (typeof renderStatsPage === 'function') renderStatsPage();
+      initPractice();
+    }
+  );
+}
+
+function toggleMoveUnitPanel() {
+  const panel = document.getElementById('moveUnitPanel');
+  const btn = document.getElementById('btnMoveUnit');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? '単元を変更 ▼' : '単元を変更 ▲';
+}
+
+function execMoveUnit() {
+  const checked = [...document.getElementById('qListRows').querySelectorAll('input:checked')];
+  if (!checked.length) { showToast('問題を選択してください'); return; }
+  const gradeEl = document.getElementById('moveGrade');
+  const unitEl = document.getElementById('moveUnit');
+  const newGrade = gradeEl ? parseInt(gradeEl.value) : null;
+  const newUnit = unitEl ? parseInt(unitEl.value) : null;
+  if (!newGrade) { showToast('学年を選択してください'); return; }
+  if (!newUnit || isNaN(newUnit) || newUnit < 1) { showToast('単元番号を入力してください'); return; }
+  const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
+  const data = loadPracticeData();
+  const targets = data.filter((_, i) => idxSet.has(i));
+  const lines = targets.map(q => {
+    const grade = q.grade ? `${q.grade}年` : '?年';
+    const unit = q.unit ? ` 単元${q.unit}` : '';
+    return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
+  });
+  showConfirmModal(
+    `${targets.length}問を ${newGrade}年 単元${newUnit} に移動します`,
+    lines,
+    '変更する',
+    () => {
+      const newData = data.map((q, i) => {
+        if (!idxSet.has(i)) return q;
+        return { ...q, grade: newGrade, unit: newUnit };
+      });
+      savePracticeData(newData);
+      document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
+      showToast(`${idxSet.size}問の単元を変更しました`);
       if (typeof renderStatsPage === 'function') renderStatsPage();
       initPractice();
     }
