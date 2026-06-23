@@ -3254,7 +3254,10 @@ function initPractice() {
 // 道場スタート画面を表示
 function showDojoStart() {
   const data = loadPracticeData();
-  window._doNotRecord = false; // セッション終了でフラグリセット
+  window._doNotRecord = false;
+  window._answerTiming = 'perQ'; // デフォルトに戻す
+  window._bulkPhase = null;
+  window._bulkResults = [];
   document.getElementById('questionArea').style.display = 'none';
   document.getElementById('completeScreen').classList.remove('visible');
   document.getElementById('dojoSelectArea').style.display = 'none';
@@ -3405,22 +3408,128 @@ function dojoPageNext() {
 function dojoPageShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
   const ZMG = "'Zen Maru Gothic',serif";
   const area = document.getElementById('dojoSelectArea');
+  // 現在選択中の問題数（未選択はnull）
+  window._pendingCount = null;
+  window._pendingMode = mode;
+  window._pendingUnitFrom = unitFrom || '';
+  window._pendingUnitTo = unitTo || '';
+  window._pendingDateFrom = dateFrom || '';
+  window._pendingDateTo = dateTo || '';
+
   area.innerHTML = `
-    <div style="padding:16px;max-width:480px;margin:0 auto;">
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <button onclick="dojoPageNext()" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">問題数を選ぶ</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="countBtnGrid">
         ${[5,10,15,20].map(n => `
-        <button onclick="dojoStartSession('${mode}',${n},'${unitFrom||''}','${unitTo||''}','${dateFrom||''}','${dateTo||''}')"
-          style="padding:20px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:24px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;">
+        <button id="countBtn_${n}" onclick="selectCount(${n})"
+          style="padding:20px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:24px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;transition:background 0.15s,color 0.15s;">
           ${n}問
         </button>`).join('')}
       </div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+        <button id="countNextBtn" onclick="dojoPageShowAnswerTiming()"
+          style="padding:14px 32px;background:#e0e8f0;color:#aaa;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:default;transition:background 0.15s,color 0.15s;"
+          disabled>次へ →</button>
+      </div>
     </div>`;
+}
+
+function selectCount(n) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  window._pendingCount = n;
+  // ボタンの見た目を更新
+  [5,10,15,20].forEach(v => {
+    const btn = document.getElementById('countBtn_' + v);
+    if (!btn) return;
+    if (v === n) {
+      btn.style.background = '#1a6fc4';
+      btn.style.color = '#fff';
+      btn.style.border = '1.5px solid #1a6fc4';
+    } else {
+      btn.style.background = '#fff';
+      btn.style.color = '#1a3060';
+      btn.style.border = '1.5px solid #1a6fc4';
+    }
+  });
+  // 次へボタンを有効化
+  const nextBtn = document.getElementById('countNextBtn');
+  if (nextBtn) {
+    nextBtn.disabled = false;
+    nextBtn.style.background = '#3B82F6';
+    nextBtn.style.color = '#fff';
+    nextBtn.style.cursor = 'pointer';
+  }
+}
+
+function dojoPageShowAnswerTiming() {
+  if (!window._pendingCount) return;
+  const ZMG = "'Zen Maru Gothic',serif";
+  const area = document.getElementById('dojoSelectArea');
+  // 現在の答えタイミング選択（デフォルト：一問毎）
+  window._pendingAnswerTiming = window._pendingAnswerTiming || 'perQ';
+
+  area.innerHTML = `
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button onclick="dojoPageShowCount('${window._pendingMode}','${window._pendingUnitFrom}','${window._pendingUnitTo}','${window._pendingDateFrom}','${window._pendingDateTo}')" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">答えを出すタイミングは？</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button id="timingBtn_perQ" onclick="selectAnswerTiming('perQ')"
+          style="padding:20px 16px;background:#1a6fc4;border:1.5px solid #1a6fc4;border-radius:12px;font-size:15px;font-weight:700;font-family:${ZMG};color:#fff;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">
+          一問毎に出す<br><span style="font-size:12px;font-weight:400;opacity:0.85;">（問題1 → 1の答え → 問題2 → 2の答え…）</span>
+        </button>
+        <button id="timingBtn_bulk" onclick="selectAnswerTiming('bulk')"
+          style="padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">
+          まとめて出す<br><span style="font-size:12px;font-weight:400;opacity:0.7;">（問題まとめて → 回答まとめて）</span>
+        </button>
+      </div>
+      <div style="margin-top:20px;">
+        <button id="timingStartBtn" onclick="startFromTimingSelect()"
+          style="width:100%;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">
+          はじめる →
+        </button>
+      </div>
+    </div>`;
+}
+
+function selectAnswerTiming(timing) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  window._pendingAnswerTiming = timing;
+  ['perQ', 'bulk'].forEach(v => {
+    const btn = document.getElementById('timingBtn_' + v);
+    if (!btn) return;
+    if (v === timing) {
+      btn.style.background = '#1a6fc4';
+      btn.style.color = '#fff';
+      btn.style.border = '1.5px solid #1a6fc4';
+      btn.querySelectorAll('span').forEach(s => s.style.opacity = '0.85');
+    } else {
+      btn.style.background = '#fff';
+      btn.style.color = '#1a3060';
+      btn.style.border = '1.5px solid #1a6fc4';
+      btn.querySelectorAll('span').forEach(s => s.style.opacity = '0.7');
+    }
+  });
+}
+
+function startFromTimingSelect() {
+  const count = window._pendingCount;
+  const mode = window._pendingMode;
+  const unitFrom = window._pendingUnitFrom;
+  const unitTo = window._pendingUnitTo;
+  const dateFrom = window._pendingDateFrom;
+  const dateTo = window._pendingDateTo;
+  const timing = window._pendingAnswerTiming || 'perQ';
+  window._answerTiming = timing;
+  dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo);
 }
 
 // スタートカード内の出題選択UIを描画
@@ -3615,18 +3724,29 @@ function dojoStartPool(pool, generator) {
   current = 0; correctCount = 0;
   window._sessionLocked = true;
   window._lastPoolGenerator = generator || null;
+  // 答えタイミングを確定（startFromTimingSelectで設定済みの値を使う）
+  // まとめてモードの場合：phase = 'question'（問題フェーズ）or 'answer'（答えフェーズ）
+  if (window._answerTiming === 'bulk') {
+    window._bulkPhase = 'question'; // 問題フェーズからスタート
+    window._bulkResults = []; // {correct: bool} を後で記録
+  } else {
+    window._bulkPhase = null;
+    window._bulkResults = [];
+  }
   // 記録するかどうかのフラグを保存（セッション中維持）
-  // トグルの値：dojoPageNextで保存したpendingを優先、なければDOMから取得
   const toggleEl = document.getElementById('recordToggleInput');
   if (window._pendingDoNotRecord !== undefined) {
     window._doNotRecord = window._pendingDoNotRecord;
     window._pendingDoNotRecord = undefined;
   } else {
     window._doNotRecord = toggleEl ? !toggleEl.checked : false;
-  } // 同じ設定で再生成できる関数を保存
+  }
   document.getElementById('questionArea').style.display = 'flex';
   document.getElementById('questionArea').style.flexDirection = 'column';
   document.getElementById('completeScreen').classList.remove('visible');
+  // 進捗表示をリセット（前セッションの残りを消す）
+  const oldProg = document.getElementById('qProgress');
+  if (oldProg) oldProg.remove();
   loadQuestion(0);
   setTimeout(fixLayout, 10);
 }
@@ -3770,15 +3890,46 @@ function loadQuestion(i) {
   answerShown = false;
   const maxMiss = Math.max(...session.map(x => x.missCount));
   document.getElementById('qId').textContent = q.grade ? `${q.grade}年\n単元${q.unit}` : `${q.id}番`;
+
+  // Y/X 進捗表示
+  let progressEl = document.getElementById('qProgress');
+  if (!progressEl) {
+    progressEl = document.createElement('span');
+    progressEl.id = 'qProgress';
+    progressEl.style.cssText = 'font-size:13px;font-weight:700;color:#1A1A1A;font-family:\'Zen Maru Gothic\',serif;white-space:nowrap;margin-left:auto;';
+    const metaRow = document.getElementById('qMeta').querySelector('div');
+    if (metaRow) metaRow.appendChild(progressEl);
+  }
+  progressEl.textContent = `${i + 1}/${session.length}`;
+
   const qt = document.getElementById('qText');
   qt.innerHTML = '';
   qt.appendChild(buildQ(q.question, q.underline, q.ruby));
   buildAnswerImages(q);
   document.getElementById('missBarCount').textContent = q.missCount > 0 ? `まちがい ${q.missCount}回` : '';
   document.getElementById('answerImagesWrap').classList.remove('visible');
-  document.getElementById('answerBtn').style.display = 'flex';
-  document.getElementById('resultButtons').style.display = 'none';
-  document.getElementById('btnNext').style.display = 'none';
+
+  // まとめてモードの問題フェーズ
+  if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
+    const isLast = (i === session.length - 1);
+    document.getElementById('answerBtn').style.display = 'flex';
+    document.getElementById('answerBtn').style.background = isLast ? '#f0c040' : '#1a6fc4';
+    document.getElementById('answerBtn').style.color = isLast ? '#1a3060' : '#fff';
+    document.getElementById('answerBtn').innerHTML = isLast
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg> 次の問題へ';
+    document.getElementById('resultButtons').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'none';
+  } else {
+    // 通常モード（一問毎 / 答えフェーズ）
+    document.getElementById('answerBtn').style.display = 'flex';
+    document.getElementById('answerBtn').style.background = '#f0c040';
+    document.getElementById('answerBtn').style.color = '#1a3060';
+    document.getElementById('answerBtn').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る';
+    document.getElementById('resultButtons').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'none';
+  }
+
   setTimeout(() => {
     const inner = document.getElementById('qVerticalInner');
     const text = document.getElementById('qText');
@@ -3903,11 +4054,38 @@ function saveEditModal(btn) {
 }
 
 function toggleAnswer() {
+  // まとめてモードの問題フェーズ：「次の問題へ」or「答えを見る（最後）」として機能
+  if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
+    const isLast = (current === session.length - 1);
+    if (isLast) {
+      // 最後の問題で「答えを見る」→ 答えフェーズへ切り替え
+      window._bulkPhase = 'answer';
+      current = 0;
+      loadQuestion(0);
+    } else {
+      // まだ問題が続く → 次の問題へ
+      current++;
+      loadQuestion(current);
+    }
+    return;
+  }
+
   if (answerShown) return;
   answerShown = true;
   document.getElementById('answerImagesWrap').classList.add('visible');
   document.getElementById('answerBtn').style.display = 'none';
   document.getElementById('resultButtons').style.display = 'flex';
+}
+
+function nextQuestion() {
+  current++;
+  if (window._answerTiming === 'bulk' && window._bulkPhase === 'answer') {
+    if (current >= session.length) showComplete();
+    else loadQuestion(current);
+  } else {
+    if (current >= session.length) showComplete();
+    else loadQuestion(current);
+  }
 }
 
 function recordResult(correct) {
@@ -3937,14 +4115,12 @@ function recordResult(correct) {
     item.lastTestedAt = today;
     item.totalCount = (item.totalCount || 0) + 1;
     if (correct) item.correctCount = (item.correctCount || 0) + 1;
-    // 日別記録（今日の削除時に使う）
     if (!item.dailyTotal) item.dailyTotal = {};
     item.dailyTotal[today] = (item.dailyTotal[today] || 0) + 1;
     if (!correct) {
       item.missCount++;
       if (!item.charMiss) item.charMiss = {};
       q.answerKanji.forEach(k => { item.charMiss[k] = (item.charMiss[k] || 0) + 1; });
-      // 日別間違い記録
       if (!item.dailyMiss) item.dailyMiss = {};
       item.dailyMiss[today] = (item.dailyMiss[today] || 0) + 1;
       if (!item.dailyCharMiss) item.dailyCharMiss = {};
@@ -3960,12 +4136,6 @@ function recordResult(correct) {
   document.getElementById('resultButtons').style.display = 'none';
   document.getElementById('btnNext').style.display = 'none';
   setTimeout(() => nextQuestion(), 300);
-}
-
-function nextQuestion() {
-  current++;
-  if (current >= session.length) showComplete();
-  else loadQuestion(current);
 }
 
 // 途中でやめる
@@ -4059,6 +4229,11 @@ function restartPractice() {
   // ドーナツをリセット
   const bar = document.getElementById('donutBar');
   if (bar) { bar.style.transition='none'; bar.style.strokeDashoffset='452'; setTimeout(()=>{ bar.style.transition='stroke-dashoffset 1s ease'; }, 50); }
+  // まとめてモードのフェーズをリセット
+  if (window._answerTiming === 'bulk') {
+    window._bulkPhase = 'question';
+    window._bulkResults = [];
+  }
   // 同じ設定で再スタート（_lastPoolGeneratorが保存されていれば使う）
   if (window._lastPoolGenerator) {
     const pool = window._lastPoolGenerator();
