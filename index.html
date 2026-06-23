@@ -1173,8 +1173,8 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       }
     }).catch(tryDismiss);
   }
-  // タイムアウト：最大3秒待ってフォントが来なくても先に進む
-  setTimeout(tryDismiss, 3000);
+  // タイムアウト：最大2秒待ってフォントが来なくても先に進む
+  setTimeout(tryDismiss, 2000);
 }
 </script>
 
