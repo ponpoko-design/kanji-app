@@ -627,7 +627,7 @@ rt {
   border: 1.5px solid rgba(255,255,255,0.5);
   border-radius: 999px;
   padding: 12px 36px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: rgba(255,255,255,0.8);
   cursor: pointer;
@@ -1131,6 +1131,10 @@ rt {
   <button onclick="checkPassword()" style="background:#f0c040;color:#000000;border:none;border-radius:14px;padding:12px 36px;font-size:20px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">入る</button>
   <div id="pwError" style="color:#ffcccc;font-size:14px;font-family:'Zen Maru Gothic',serif;min-height:20px;"></div>
 </div>
+
+<!-- フォント読み込み待機オーバーレイ -->
+<div id="fontLoadingOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:linear-gradient(135deg,#0d3d7a 0%,#1a6fc4 50%,#2ec4e8 100%);transition:opacity 0.5s ease;opacity:1;pointer-events:all;"></div>
+
 <script>
 function checkPassword() {
   if (document.getElementById('pwInput').value === 'BU_tensai12230727') {
@@ -1142,7 +1146,36 @@ function checkPassword() {
   }
 }
 document.getElementById('pwInput').addEventListener('keydown',e=>{ if(e.key==='Enter')checkPassword(); });
-if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('passwordScreen').style.display='none';
+
+if (localStorage.getItem('kanji_auth')==='ok') {
+  document.getElementById('passwordScreen').style.display='none';
+  // 認証済みの場合：フォント読み込み待機オーバーレイを表示
+  const overlay = document.getElementById('fontLoadingOverlay');
+  overlay.style.display = 'block';
+  function dismissOverlay() {
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 500);
+  }
+  // FONTPLUSの読み込み完了を検知
+  let dismissed = false;
+  function tryDismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    dismissOverlay();
+  }
+  // document.fontsで教科書体の読み込みを待つ
+  if (document.fonts) {
+    document.fonts.load('1em "I-OTF-G教科書Pro L"').then(function(fonts) {
+      if (fonts.length > 0) {
+        tryDismiss();
+      } else {
+        // フォントが見つからない場合はタイムアウトで対応
+      }
+    }).catch(tryDismiss);
+  }
+  // タイムアウト：最大3秒待ってフォントが来なくても先に進む
+  setTimeout(tryDismiss, 3000);
+}
 </script>
 
 <div class="layout">
@@ -1289,7 +1322,7 @@ if (localStorage.getItem('kanji_auth')==='ok') document.getElementById('password
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>もう一度やる
           </button>
           <button class="btn-change-mode" onclick="changeMode()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>問題の設定を変える
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>問題を変える
           </button>
         </div>
       </div>
