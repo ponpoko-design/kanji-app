@@ -3430,6 +3430,9 @@ function dojoPageShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
   window._pendingUnitTo = unitTo || '';
   window._pendingDateFrom = dateFrom || '';
   window._pendingDateTo = dateTo || '';
+  // タイミング選択をデフォルト（一問毎）にリセット
+  window._pendingAnswerTiming = 'perQ';
+  window._answerTiming = 'perQ';
 
   const countBtns = [5,10,15,20].map(n =>
     '<button id="countBtn_' + n + '" onclick="selectCount(' + n + ')"' +
@@ -3549,6 +3552,7 @@ function startFromTimingSelect() {
   const dateTo = window._pendingDateTo;
   const timing = window._pendingAnswerTiming || 'perQ';
   window._answerTiming = timing;
+  window._bulkPhase = (timing === 'bulk') ? 'question' : null;
   dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo);
 }
 
