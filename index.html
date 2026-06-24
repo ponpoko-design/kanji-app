@@ -42,6 +42,7 @@
     try {
       const snap = await getDoc(DATA_DOC);
       if (snap.exists()) {
+        if (isFirestoreStale(snap)) return; // リセット後は古いデータを無視
         const data = snap.data().questions || [];
         localStorage.setItem('kanji_practice_data', JSON.stringify(data));
       }
@@ -60,14 +61,20 @@
 
   let _localSaving = false;
   window._setLocalSaving = (v) => { _localSaving = v; };
+
+  function isFirestoreStale(snap) {
+    const resetTs = localStorage.getItem('kanji_reset_ts');
+    if (!resetTs) return false;
+    const firestoreTs = snap.data().updatedAt;
+    // updatedAtがリセット時刻より古い、またはない場合は古いデータと判断
+    if (!firestoreTs) return true;
+    return firestoreTs < resetTs;
+  }
+
   onSnapshot(DATA_DOC, (snap) => {
     if (snap.exists()) {
-      // _localSaving中（自分の保存直後）はFirestoreからの上書きを完全無視
       if (_localSaving) return;
-      // リセット後にFirestoreの古いデータが戻るのを防ぐ
-      const resetTs = localStorage.getItem('kanji_reset_ts');
-      const firestoreTs = snap.data().updatedAt;
-      if (resetTs && firestoreTs && firestoreTs < resetTs) return;
+      if (isFirestoreStale(snap)) return;
       const data = snap.data().questions || [];
       localStorage.setItem('kanji_practice_data', JSON.stringify(data));
       if (!document.getElementById('page-practice').classList.contains('active')) {
@@ -2593,7 +2600,9 @@ function execResetAll(btn) {
     'リセットする',
     () => {
       const reset = data.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined, dailyMiss: {}, dailyTotal: {}, dailyCharMiss: {} }));
-      localStorage.setItem('kanji_reset_ts', new Date().toISOString());
+      // リセット時刻を先に記録してからFirestoreに保存
+      const resetTs = new Date().toISOString();
+      localStorage.setItem('kanji_reset_ts', resetTs);
       savePracticeData(reset);
       saveStats({});
       parentOv.remove();
