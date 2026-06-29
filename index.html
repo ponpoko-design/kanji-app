@@ -4137,11 +4137,12 @@ function saveEditModal(btn) {
     if (k && y) ruby[k] = y;
   });
   const data = loadPracticeData();
-  const item = data.find(d => d.id === q.id);
-  if (item) {
-    item.question = question; item.underline = underline; item.answerKanji = answerKanji;
-    item.answerText = kana; item.type = type;
-    item.ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
+  const dataIndex = q._dataIndex !== undefined ? q._dataIndex : data.findIndex(d => d.id === q.id);
+  if (dataIndex !== -1 && data[dataIndex]) {
+    data[dataIndex].question = question; data[dataIndex].underline = underline;
+    data[dataIndex].answerKanji = answerKanji; data[dataIndex].answerText = kana;
+    data[dataIndex].type = type;
+    data[dataIndex].ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
     savePracticeData(data);
   }
   session[current].question = question; session[current].underline = underline;
