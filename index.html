@@ -1437,7 +1437,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       </div>
       <div class="rakuraku-step" id="step-ind-2">
         <div class="rakuraku-step-circle">2</div>
-        <div class="rakuraku-step-label">×番号<br>確認</div>
+        <div class="rakuraku-step-label">まちがい<br>確認</div>
       </div>
       <div class="rakuraku-step" id="step-ind-3">
         <div class="rakuraku-step-circle">3</div>
@@ -1641,10 +1641,10 @@ const RAKURAKU_SYSTEM_PROMPT = `今から日本語の漢字問題をOCRします
 - 日本語の縦書き
 - 右から左の列順で読む
 - 私が画像を送ったら、まずOCRはしない
-- 最初に「×が付いている問題番号だけ」を認識して報告する
+- 最初に「×または✓（チェックマーク）が付いている問題番号だけ」を認識して報告する（日本の採点では✓はまちがいを意味する）
 - OCRは私が「OK」と言った後に行う
 【OCRルール】
-- ×が付いている問題のみOCRする
+- ×または✓が付いている問題のみOCRする
 - 問題番号は出力しない
 - 印刷されている文字をそのままOCRする
 - 勝手な補完、推測、修正、意訳をしない
@@ -1670,7 +1670,7 @@ const RAKURAKU_SYSTEM_PROMPT = `今から日本語の漢字問題をOCRします
 - コードブロックの外に説明文を書かない
 【作業手順】
 1. 画像を受け取る
-2. ×が付いている問題番号だけ報告する
+2. ×または✓が付いている問題番号だけ報告する
 3. 私がOKと言う
 4. 指定問題のみOCRする
 5. OCR結果を必ずコードブロックで出力する
@@ -1681,6 +1681,53 @@ const RAKURAKU_SYSTEM_PROMPT = `今から日本語の漢字問題をOCRします
 - コードブロックを使わずに出力すること
 - カタカナの語句に<u>タグをつけ忘れること`;
 
+const RAKURAKU_SYSTEM_PROMPT_HIRA = `今から日本語の漢字問題をOCRします。
+【基本ルール】
+- 日本語の縦書き
+- 右から左の列順で読む
+- 私が画像を送ったら、まずOCRはしない
+- 最初に「×または✓（チェックマーク）が付いている問題番号だけ」を認識して報告する（日本の採点では✓はまちがいを意味する）
+- OCRは私が「OK」と言った後に行う
+【テスト形式】
+- このテストは「四角＋右側にひらがな」形式
+- 問題は「四角（解答欄）の右側に縦書きされたひらがな」＋「その下の漢字まじりの文章」で構成される
+- 四角の右側のひらがなが、書き取るべき語句（問題部分）
+【OCRルール】
+- ×または✓が付いている問題のみOCRする
+- 問題番号は出力しない
+- 印刷されている文字をそのままOCRする
+- 勝手な補完、推測、修正、意訳をしない
+- 漢字を読み仮名に変換しない
+- ひらがなを漢字に変換しない（最重要：「せいかく」→「正確」は絶対NG）
+- 読めない場合は推測せず、その箇所を示して確認を求める
+- 手書き回答（四角の中の文字）は無視
+- 赤字は無視
+- 採点記号は無視
+【傍線（下線タグ）のルール】
+- 四角の右側に縦書きされたひらがなのみ<u>タグで囲む
+- 例：<u>せいかく</u>な時間。
+- 例：<u>げんいん</u>と結果。
+- ひらがな部分は必ず<u>タグで囲む
+- それ以外の語句には<u>タグをつけない
+【出力ルール】
+- OCR結果のみ出力
+- 解説しない
+- 読み方を書かない
+- 問題番号を書かない
+- 必ずコードブロック（\`\`\`）で出力する（これは絶対に守ること）
+- コードブロックの外に説明文を書かない
+【作業手順】
+1. 画像を受け取る
+2. ×または✓が付いている問題番号だけ報告する
+3. 私がOKと言う
+4. 指定問題のみOCRする
+5. OCR結果を必ずコードブロックで出力する
+【絶対にやってはいけないこと】
+- ひらがなを漢字に変換すること（「せいかく」→「正確」はNG）
+- 文章を補完・推測・書き換えすること
+- コードブロックを使わずに出力すること
+- ひらがなの語句に<u>タグをつけ忘れること`;
+
 function openRakuraku() {
   // 状態リセット
   rakuraku.step = 1;
@@ -1690,6 +1737,7 @@ function openRakuraku() {
   rakuraku.chatHistory = [];
   rakuraku.ocrResults = [];
   rakuraku.answerResults = [];
+  rakuraku.testType = null; // 'kata'=カタカナ+線, 'hira'=四角+ひらがな
 
   updateRakurakuStepIndicator(1);
   renderRakurakuStep1();
@@ -1716,9 +1764,20 @@ function renderRakurakuStep1() {
   if (!rakuraku.photos) rakuraku.photos = [];
   const body = document.getElementById('rakurakuBody');
   body.innerHTML = `
-    <p style="font-family:'Zen Maru Gothic',serif;font-size:13px;color:#666;margin-bottom:12px;line-height:1.7;">
+    <p style="font-family:'Zen Maru Gothic',serif;font-size:13px;color:#666;margin-bottom:10px;line-height:1.7;">
       テストの写真を追加してください。<br>カメラで1枚ずつ撮影してもOKです。
     </p>
+    <p style="font-family:'Zen Maru Gothic',serif;font-size:13px;font-weight:700;color:#1a3060;margin-bottom:6px;">
+      テストの種類を選んでください
+    </p>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="typeBtn-kata" onclick="selectTestType('kata')" style="flex:1;padding:10px 6px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:'Zen Maru Gothic',serif;font-size:12px;font-weight:700;color:#555;cursor:pointer;line-height:1.5;">
+        カタカナ＋線<br><span style="font-size:10px;font-weight:400;color:#888;">「タモツ。」など</span>
+      </button>
+      <button id="typeBtn-hira" onclick="selectTestType('hira')" style="flex:1;padding:10px 6px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:'Zen Maru Gothic',serif;font-size:12px;font-weight:700;color:#555;cursor:pointer;line-height:1.5;">
+        四角＋ひらがな<br><span style="font-size:10px;font-weight:400;color:#888;">「せいかく」など</span>
+      </button>
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <div class="photo-upload-area" style="flex:1;padding:14px 8px;" onclick="document.getElementById('photoFileInput').click()">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -1733,7 +1792,7 @@ function renderRakurakuStep1() {
     <input type="file" id="photoCameraInput" accept="image/*" capture="camera" style="display:none" onchange="onPhotosSelected(event)">
     <div class="photo-preview-grid" id="photoPreviewGrid"></div>
     <button class="rakuraku-btn-primary" id="step1NextBtn" onclick="goToStep2()" disabled>
-      この写真で×番号を確認する →
+      まちがい番号を確認する →
     </button>
   `;
   // すでに写真があれば表示を復元
@@ -1753,7 +1812,21 @@ function onPhotosSelected(e) {
   renderPhotoGrid();
 }
 
-function renderPhotoGrid() {
+function selectTestType(type) {
+  rakuraku.testType = type;
+  const btnKata = document.getElementById('typeBtn-kata');
+  const btnHira = document.getElementById('typeBtn-hira');
+  if (!btnKata || !btnHira) return;
+  const activeStyle = 'flex:1;padding:10px 6px;border-radius:12px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:\'Zen Maru Gothic\',serif;font-size:12px;font-weight:700;color:#1a3060;cursor:pointer;line-height:1.5;';
+  const inactiveStyle = 'flex:1;padding:10px 6px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:\'Zen Maru Gothic\',serif;font-size:12px;font-weight:700;color:#555;cursor:pointer;line-height:1.5;';
+  btnKata.style.cssText = type === 'kata' ? activeStyle : inactiveStyle;
+  btnHira.style.cssText = type === 'hira' ? activeStyle : inactiveStyle;
+  // 写真が入っていたらボタンも活性化
+  const nextBtn = document.getElementById('step1NextBtn');
+  if (nextBtn) nextBtn.disabled = (rakuraku.photos || []).length === 0;
+}
+
+
   const grid = document.getElementById('photoPreviewGrid');
   if (!grid) return;
   grid.innerHTML = '';
@@ -1821,6 +1894,10 @@ function renderPhotoGrid() {
 async function goToStep2() {
   if (!getOpenAIKey()) {
     showToast('ChatGPT APIキーを設定してください（設定メニュー）');
+    return;
+  }
+  if (!rakuraku.testType) {
+    showToast('テストの種類を選んでください');
     return;
   }
   const body = document.getElementById('rakurakuBody');
@@ -1942,7 +2019,7 @@ function addChatBubble(role, text) {
 async function sendToGPTWithImages() {
   // 画像つき最初のメッセージを構築
   const content = [
-    { type: 'text', text: '以下の漢字テストの写真です。まず、×が付いている問題番号だけを教えてください。OCRはまだしないでください。' }
+    { type: 'text', text: '以下の漢字テストの写真です。まず、×または✓（チェックマーク）が付いている問題番号だけを教えてください。日本の採点では✓はまちがいを意味します。OCRはまだしないでください。' }
   ];
   // Canvas圧縮後はJPEGになるのでmimetypeをimage/jpegに固定
   rakuraku.photosBase64.forEach((b64) => {
@@ -2034,7 +2111,7 @@ async function callOpenAI(messages) {
         model: 'gpt-4o',
         max_tokens: 2000,
         messages: [
-          { role: 'system', content: RAKURAKU_SYSTEM_PROMPT },
+          { role: 'system', content: rakuraku.testType === 'hira' ? RAKURAKU_SYSTEM_PROMPT_HIRA : RAKURAKU_SYSTEM_PROMPT },
           ...messages
         ]
       })
