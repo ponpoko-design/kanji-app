@@ -63,12 +63,14 @@
   window._setLocalSaving = (v) => { _localSaving = v; };
 
   function isFirestoreStale(snap) {
-    const resetTs = localStorage.getItem('kanji_reset_ts');
-    if (!resetTs) return false;
     const firestoreTs = snap.data().updatedAt;
-    // updatedAtがリセット時刻より古い、またはない場合は古いデータと判断
-    if (!firestoreTs) return true;
-    return firestoreTs < resetTs;
+    // リセット時刻より古いFirestoreデータは無視
+    const resetTs = localStorage.getItem('kanji_reset_ts');
+    if (resetTs && (!firestoreTs || firestoreTs < resetTs)) return true;
+    // 最終保存時刻より古いFirestoreデータは無視（リロード直後の上書き防止）
+    const saveTs = localStorage.getItem('kanji_save_ts');
+    if (saveTs && (!firestoreTs || firestoreTs < saveTs)) return true;
+    return false;
   }
 
   onSnapshot(DATA_DOC, (snap) => {
@@ -3334,6 +3336,8 @@ function savePracticeData(data) {
   setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 5000);
   const cleaned = cleanupDailyData(data);
   localStorage.setItem('kanji_practice_data', JSON.stringify(cleaned));
+  // 保存タイムスタンプを記録（リロード後にFirestoreの古いデータで上書きされないようにする）
+  localStorage.setItem('kanji_save_ts', new Date().toISOString());
   if (window.firestoreSave) window.firestoreSave(cleaned);
 }
 
