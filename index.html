@@ -4161,6 +4161,8 @@ function saveEditModal(btn) {
     window._editFromListPrevSession = undefined;
     window._editFromListPrevCurrent = undefined;
     showToast('保存しました');
+    // 既存の問題一覧overlayを閉じてから開き直す（最新データで再描画するため）
+    document.querySelectorAll('[style*="fixed"][style*="z-index:900"]').forEach(el => el.remove());
     showQuestionList();
   } else {
     loadQuestion(current);
