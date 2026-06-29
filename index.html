@@ -2498,7 +2498,7 @@ function showTextInputScreen() {
           style="flex:1;min-height:160px;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:'Zen Maru Gothic',serif;outline:none;resize:none;line-height:1.8;"></textarea>
       </div>
       <div style="padding:16px;border-top:1px solid #f0f4f8;display:flex;gap:10px;flex-shrink:0;">
-        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
+        <button onclick="document.getElementById('editModalOverlay').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">キャンセル</button>
         <button onclick="submitQuestionText(this)" style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">答えを調べる</button>
       </div>
     </div>`;
@@ -4072,6 +4072,7 @@ function openEditModal() {
   const q = session[current];
   if (!q) return;
   const overlay = document.createElement('div');
+  overlay.id = 'editModalOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
   const ZMG = "'Zen Maru Gothic',serif";
   const inp = `width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};`;
@@ -4153,7 +4154,7 @@ function saveEditModal(btn) {
   session[current].answerKanji = answerKanji; session[current].answerText = kana;
   session[current].type = type;
   session[current].ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
-  btn.closest('[style*="fixed"]').remove();
+  const editOverlay = document.getElementById('editModalOverlay'); if (editOverlay) editOverlay.remove();
   if (window._editFromListDataIndex !== undefined) {
     session = window._editFromListPrevSession || session;
     current = window._editFromListPrevCurrent || 0;
