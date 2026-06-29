@@ -2440,7 +2440,11 @@ ${inputText}
   }
   const data = await res.json();
   const text = data.content?.[0]?.text || '';
-  const clean = text.replace(/```json|```/g, '').trim();
+  const stripped = text.replace(/```json|```/g, '').trim();
+  const start = stripped.indexOf('[');
+  const end = stripped.lastIndexOf(']');
+  if (start === -1 || end === -1) throw new Error('JSONが見つかりませんでした');
+  const clean = stripped.slice(start, end + 1);
   return JSON.parse(clean);
 }
 
