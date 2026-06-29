@@ -1826,7 +1826,7 @@ function selectTestType(type) {
   if (nextBtn) nextBtn.disabled = (rakuraku.photos || []).length === 0;
 }
 
-
+function renderPhotoGrid() {
   const grid = document.getElementById('photoPreviewGrid');
   if (!grid) return;
   grid.innerHTML = '';
