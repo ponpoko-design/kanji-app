@@ -2443,13 +2443,19 @@ ${inputText}
   const data = await res.json();
   const text = data.content?.[0]?.text || '';
   console.log('Claude raw response:', text);
-  const stripped = text.replace(/```json|```/g, '').trim();
-  const start = stripped.lastIndexOf('[');
-  const end = stripped.lastIndexOf(']');
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error('JSONが見つかりませんでした。レスポンス: ' + text.slice(0, 200));
+  // ```json...``` ブロックを優先して抽出、なければ [ ] で抜き出す
+  let clean = '';
+  const codeBlockMatch = text.match(/```json\s*([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    clean = codeBlockMatch[1].trim();
+  } else {
+    const start = text.indexOf('[');
+    const end = text.lastIndexOf(']');
+    if (start === -1 || end === -1 || end <= start) {
+      throw new Error('JSONが見つかりませんでした。レスポンス: ' + text.slice(0, 200));
+    }
+    clean = text.slice(start, end + 1);
   }
-  const clean = stripped.slice(start, end + 1);
   return JSON.parse(clean);
 }
 
