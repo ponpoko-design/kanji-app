@@ -3924,7 +3924,7 @@ function buildQ(question, underline, ruby) {
 
 function buildAnswerImages(q) {
   const wrap = document.getElementById('answerImagesWrap');
-  wrap.innerHTML = '';
+  wrap.innerHTML = ''; wrap.style.pointerEvents = 'none';
   const kanjiList = q.answerKanji || [];
   const kanaChars = q.answerText ? [...q.answerText].filter(ch => ch.trim() !== '') : [];
   const total = kanjiList.length + kanaChars.length;
@@ -3952,10 +3952,10 @@ function buildAnswerImages(q) {
           const ph = document.createElement('div');
           ph.className = 'no-image-box';
           ph.textContent = kanji;
-          ph.onclick = () => openPopup(kanji, false);
+          ph.onclick = () => { if (!answerShown) return; openPopup(kanji, false); };
           box.appendChild(ph);
         };
-        img.onclick = () => openPopup(kanji, true);
+        img.onclick = () => { if (!answerShown) return; openPopup(kanji, true); };
         box.appendChild(img);
         wrap.appendChild(box);
       });
@@ -4028,7 +4028,7 @@ function loadQuestion(i) {
   // まとめてモードの答えフェーズ：最初から答えを表示してあってた/まちがえたを出す
   if (window._answerTiming === 'bulk' && window._bulkPhase === 'answer') {
     answerShown = true;
-    document.getElementById('answerImagesWrap').classList.add('visible');
+    const aiw = document.getElementById('answerImagesWrap'); aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
     document.getElementById('answerBtn').style.display = 'none';
     document.getElementById('resultButtons').style.display = 'flex';
     document.getElementById('btnNext').style.display = 'none';
