@@ -1819,6 +1819,20 @@ function onPhotosSelected(e) {
   renderPhotoGrid();
 }
 
+function filterUnitTo(fromId, toId) {
+  const fromSel = document.getElementById(fromId);
+  const toSel = document.getElementById(toId);
+  if (!fromSel || !toSel) return;
+  const fromVal = parseInt(fromSel.value);
+  const currentTo = parseInt(toSel.value);
+  // toの全optionを取得してfromVal以上のものだけ残す
+  const allOpts = [...fromSel.options].map(o => parseInt(o.value));
+  toSel.innerHTML = allOpts
+    .filter(u => u >= fromVal)
+    .map(u => `<option value="${u}"${u === Math.max(fromVal, currentTo) ? ' selected' : ''}>${u}</option>`)
+    .join('');
+}
+
 function selectTestType(type) {
   rakuraku.testType = type;
   const btnKata = document.getElementById('typeBtn-kata');
@@ -2950,7 +2964,7 @@ function showShutsudaiSelect() {
         ${radioItem('radioUnit','unit',false,'単元で、範囲を指定する')}
         <div id="unitRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:13px;font-family:${ZMG};">単元</span>
-          <select id="unitFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+          <select id="unitFrom" onchange="filterUnitTo('unitFrom','unitTo')" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
           <span style="font-size:13px;font-family:${ZMG};">〜</span>
           <select id="unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
         </div>
@@ -3419,7 +3433,7 @@ function openDojoSelectInPage() {
       ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
       <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
         <span style="font-size:13px;font-family:${ZMG};">単元</span>
-        <select id="dsp_unitFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+        <select id="dsp_unitFrom" onchange="filterUnitTo('dsp_unitFrom','dsp_unitTo')" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
         <span style="font-size:13px;font-family:${ZMG};">〜</span>
         <select id="dsp_unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
       </div>
@@ -3678,7 +3692,7 @@ function renderDojoStartCard() {
     ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
     <div id="ds_unitRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:13px;font-family:${ZMG};">単元</span>
-      <select id="ds_unitFrom" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
+      <select id="ds_unitFrom" onchange="filterUnitTo('ds_unitFrom','ds_unitTo')" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
       <span style="font-size:13px;font-family:${ZMG};">〜</span>
       <select id="ds_unitTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
     </div>
