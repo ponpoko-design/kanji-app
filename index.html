@@ -2426,11 +2426,11 @@ ${inputText}
 
 【絶対に守るルール】
 ・questionは入力テキストの文字をそのまま使う。カタカナを漢字に絶対変換しない。文章を書き換えない。
-・<u>タグを取り除いた文章をそのままquestionに入れる（文字は一切変えない）
-・<u>タグ内の文字をそのままunderlineに入れる（文字は一切変えない）
-・<u>タグ内がカタカナ→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
-・<u>タグ内がひらがな→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
-・<u>タグ内が漢字→type:"よみがなを書く"、answerKanji:[]、answerTextに正解のひらがな
+・<u>タグがある場合：タグを取り除いた文章をquestionに、タグ内の文字をunderlineに入れる（文字は一切変えない）
+・<u>タグがない場合：文中に連続するカタカナ語句があれば、それを下線部（underline）として扱う。questionはそのままの文字列を使う
+・underlineがカタカナ→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
+・underlineがひらがな→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
+・underlineが漢字→type:"よみがなを書く"、answerKanji:[]、answerTextに正解のひらがな
 ・noは1から順番に振る
 ・JSONのみ出力してください`
       }]
