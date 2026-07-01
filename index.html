@@ -1819,6 +1819,13 @@ function onPhotosSelected(e) {
   renderPhotoGrid();
 }
 
+function getActiveUnitRangeType() {
+  // switchUnitRangeTypeで設定したフラグを優先
+  if (window._activeUnitRangeType) return window._activeUnitRangeType;
+  // フラグがない場合（デフォルト）は単元
+  return 'tan';
+}
+
 function switchUnitRangeType(type, fromId, toId, btnTanId, btnGakId) {
   // ボタンのハイライト
   const active = "flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:'Zen Maru Gothic',serif;font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;";
@@ -1839,6 +1846,7 @@ function switchUnitRangeType(type, fromId, toId, btnTanId, btnGakId) {
   filterUnitTo(fromId, toId);
   // unitTypeを記憶（rangeData絞り込みに使う）
   window['_unitRangeType_' + fromId] = type;
+  window._activeUnitRangeType = type;
 }
 
 function filterUnitTo(fromId, toId) {
@@ -3048,7 +3056,7 @@ function updateShutsudaiUI() {
   const v = document.querySelector('input[name="shutsudai"]:checked').value;
   const ur = document.getElementById('unitRange');
   const dr = document.getElementById('dateRange');
-  if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
+  if (ur) { ur.style.display = v === 'unit' ? 'flex' : 'none'; if (v === 'unit') window._activeUnitRangeType = 'tan'; }
   if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
   ['radioMiss','radioRandom','radioUnit','radioDate','radioEbbinghaus'].forEach(id => {
     const el = document.getElementById(id);
@@ -3166,7 +3174,7 @@ function applyShutsudaiUnit(method, unitFrom, unitTo, count, btn) {
   const data = loadPracticeData();
   const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
   const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
-  const uRangeType = window['_unitRangeType_' + (document.getElementById('unitFrom') ? 'unitFrom' : document.getElementById('dsp_unitFrom') ? 'dsp_unitFrom' : 'ds_unitFrom')] || 'tan';
+  const uRangeType = getActiveUnitRangeType();
   const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
   if (!rangeData.length) { alert('該当する問題がありません'); return; }
 
@@ -3600,7 +3608,7 @@ function updateDojoPageUI() {
   const v = document.querySelector('input[name="dojoPageMode"]:checked')?.value;
   const ur = document.getElementById('dsp_unitRange');
   const dr = document.getElementById('dsp_dateRange');
-  if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
+  if (ur) { ur.style.display = v === 'unit' ? 'flex' : 'none'; if (v === 'unit') window._activeUnitRangeType = 'tan'; }
   if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
   ['miss','random','unit','date','ebbinghaus'].forEach(id => {
     const el = document.getElementById('dsp_' + id);
@@ -3831,7 +3839,7 @@ function updateDojoModeUI() {
   const v = document.querySelector('input[name="dojoMode"]:checked')?.value;
   const ur = document.getElementById('ds_unitRange');
   const dr = document.getElementById('ds_dateRange');
-  if (ur) ur.style.display = v === 'unit' ? 'flex' : 'none';
+  if (ur) { ur.style.display = v === 'unit' ? 'flex' : 'none'; if (v === 'unit') window._activeUnitRangeType = 'tan'; }
   if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
   ['miss','random','unit','date','ebbinghaus'].forEach(id => {
     const el = document.getElementById('ds_' + id);
@@ -3913,7 +3921,7 @@ function dojoStartUnit(method, unitFrom, unitTo, count) {
     const data = loadPracticeData();
     const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
     const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
-    const uRangeType = window['_unitRangeType_' + (document.getElementById('unitFrom') ? 'unitFrom' : document.getElementById('dsp_unitFrom') ? 'dsp_unitFrom' : 'ds_unitFrom')] || 'tan';
+    const uRangeType = getActiveUnitRangeType();
   const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
     if (!rangeData.length) return [];
     if (method === 'all') return rangeData;
