@@ -2764,13 +2764,20 @@ function showQuestionList() {
   const ZMG = "'Zen Maru Gothic',serif";
   const grades = [...new Set(data.map(q => q.grade).filter(Boolean))].sort((a,b)=>a-b);
   const gradeOpts = `<option value="">全学年</option>` + grades.map(g => `<option value="${g}">${g}年</option>`).join('');
-  function buildUnitOpts(gradeFilter) {
-    const units = [...new Set(data.filter(q => !gradeFilter || q.grade == gradeFilter).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-    return `<option value="">全単元</option>` + units.map(u => `<option value="${u}">${u}</option>`).join('');
+  function buildUnitOpts(gradeFilter, unitTypeFilter) {
+    const units = [...new Set(data.filter(q => {
+      if (gradeFilter && q.grade != gradeFilter) return false;
+      if (unitTypeFilter === 'tan' && q.unitType === 'gak') return false;
+      if (unitTypeFilter === 'gak' && q.unitType !== 'gak') return false;
+      return true;
+    }).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+    return `<option value="">全番号</option>` + units.map(u => `<option value="${u}">${u}</option>`).join('');
   }
-  function buildList(gradeFilter, unitFilter, keyword) {
+  function buildList(gradeFilter, unitTypeFilter, unitFilter, keyword) {
     const filtered = data.map((q,i) => ({...q, _listIdx: i})).filter(q => {
       if (gradeFilter && String(q.grade) !== String(gradeFilter)) return false;
+      if (unitTypeFilter === 'tan' && q.unitType === 'gak') return false;
+      if (unitTypeFilter === 'gak' && q.unitType !== 'gak') return false;
       if (unitFilter && String(q.unit) !== String(unitFilter)) return false;
       if (keyword) {
         const kw = keyword;
@@ -2784,8 +2791,8 @@ function showQuestionList() {
     if (!filtered.length) return `<div style="padding:24px;text-align:center;color:#999;font-family:${ZMG};">該当する問題がありません</div>`;
     const groups = {};
     filtered.forEach(q => {
-      const key = `${q.grade||'?'}_${q.unit||'?'}`;
-      if (!groups[key]) groups[key] = { grade: q.grade, unit: q.unit, items: [] };
+      const key = `${q.grade||'?'}_${q.unitType||'tan'}_${q.unit||'?'}`;
+      if (!groups[key]) groups[key] = { grade: q.grade, unit: q.unit, unitType: q.unitType||'tan', items: [] };
       groups[key].items.push(q);
     });
     const hasFilter = gradeFilter || unitFilter || keyword;
@@ -2802,7 +2809,7 @@ function showQuestionList() {
         <div>
           <div onclick="toggleQGroup('${groupId}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8f9fa;border-bottom:1px solid #e0e4ea;cursor:pointer;user-select:none;">
             <span id="${groupId}_arrow" style="font-size:12px;color:#666;transition:transform 0.2s;display:inline-block;transform:${isOpen?'rotate(90deg)':'rotate(0deg)'};">▶</span>
-            <span style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:${ZMG};">${g.grade||'?'}年 単元${g.unit||'?'}</span>
+            <span style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:${ZMG};">${g.grade||'?'}年 ${g.unitType==='gak'?'学校':'単元'}${g.unit||'?'}</span>
             <span style="font-size:12px;color:#999;font-family:${ZMG};">${g.items.length}問</span>
           </div>
           <div id="${groupId}" style="display:${isOpen?'block':'none'};">${rows}</div>
@@ -2818,9 +2825,14 @@ function showQuestionList() {
         </button>
       </div>
       <div style="padding:10px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;gap:8px;">
-          <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
-          <select id="qFilterUnit" onchange="refreshQList()" style="flex:1;padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts('')}</select>
+        <div style="display:flex;gap:6px;">
+          <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
+          <select id="qFilterUnitType" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+            <option value="">全種別</option>
+            <option value="tan">単元</option>
+            <option value="gak">学校</option>
+          </select>
+          <select id="qFilterUnit" onchange="refreshQList()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts('','')}</select>
         </div>
         <input id="qFilterKeyword" type="text" placeholder="問題文・漢字で検索" oninput="refreshQList()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
       </div>
@@ -2828,7 +2840,7 @@ function showQuestionList() {
         <button onclick="document.getElementById('qListRows').querySelectorAll('input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-family:${ZMG};cursor:pointer;">全選択</button>
         <button onclick="document.getElementById('qListRows').querySelectorAll('input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-family:${ZMG};cursor:pointer;">全解除</button>
       </div>
-      <div id="qListRows" style="overflow-y:auto;flex:1;">${buildList('','','')}</div>
+      <div id="qListRows" style="overflow-y:auto;flex:1;">${buildList('','','','')}</div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <button onclick="execDeleteFromList(this)" style="flex:1;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">選択した問題を削除</button>
@@ -2868,17 +2880,23 @@ function toggleQGroup(id) {
   if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 function updateQListUnits() {
-  const grade = document.getElementById('qFilterGrade').value;
+  const grade = document.getElementById('qFilterGrade')?.value || '';
+  const unitType = document.getElementById('qFilterUnitType')?.value || '';
   const unitSel = document.getElementById('qFilterUnit');
-  if (unitSel && window._qListBuildUnitOpts) unitSel.innerHTML = window._qListBuildUnitOpts(grade);
+  if (unitSel && window._qListBuildUnitOpts) unitSel.innerHTML = window._qListBuildUnitOpts(grade, unitType);
   refreshQList();
 }
 function refreshQList() {
   const grade = document.getElementById('qFilterGrade')?.value || '';
+  const unitType = document.getElementById('qFilterUnitType')?.value || '';
   const unit = document.getElementById('qFilterUnit')?.value || '';
   const keyword = document.getElementById('qFilterKeyword')?.value || '';
   const rows = document.getElementById('qListRows');
-  if (rows && window._qListBuild) rows.innerHTML = window._qListBuild(grade, unit, keyword);
+  const count = document.getElementById('qListCount');
+  if (rows && window._qListBuild) {
+    const html = window._qListBuild(grade, unitType, unit, keyword);
+    rows.innerHTML = html;
+  }
 }
 function openEditFromList(dataIndex) {
   const data = loadPracticeData();
