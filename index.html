@@ -1819,6 +1819,28 @@ function onPhotosSelected(e) {
   renderPhotoGrid();
 }
 
+function switchUnitRangeType(type, fromId, toId, btnTanId, btnGakId) {
+  // ボタンのハイライト
+  const active = "flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:'Zen Maru Gothic',serif;font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;";
+  const inactive = "flex:1;padding:6px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:'Zen Maru Gothic',serif;font-size:13px;font-weight:700;color:#555;cursor:pointer;";
+  const btnTan = document.getElementById(btnTanId);
+  const btnGak = document.getElementById(btnGakId);
+  if (btnTan) btnTan.style.cssText = type === 'tan' ? active : inactive;
+  if (btnGak) btnGak.style.cssText = type === 'gak' ? active : inactive;
+  // セレクトボックスを該当unitTypeのデータで更新
+  const data = loadPracticeData();
+  const units = [...new Set(data.filter(q => type === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const opts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+  const fromSel = document.getElementById(fromId);
+  const toSel = document.getElementById(toId);
+  if (fromSel) fromSel.innerHTML = opts;
+  if (toSel) toSel.innerHTML = opts;
+  // fromを選択したらtoを絞り込む
+  filterUnitTo(fromId, toId);
+  // unitTypeを記憶（rangeData絞り込みに使う）
+  window['_unitRangeType_' + fromId] = type;
+}
+
 function filterUnitTo(fromId, toId) {
   const fromSel = document.getElementById(fromId);
   const toSel = document.getElementById(toId);
@@ -1831,6 +1853,12 @@ function filterUnitTo(fromId, toId) {
     .filter(u => u >= fromVal)
     .map(u => `<option value="${u}"${u === Math.max(fromVal, currentTo) ? ' selected' : ''}>${u}</option>`)
     .join('');
+}
+
+function getUnitLabel(q) {
+  if (!q.unit) return '';
+  const prefix = q.unitType === 'gak' ? '学校' : '単元';
+  return prefix + q.unit;
 }
 
 function selectTestType(type) {
@@ -2761,7 +2789,7 @@ function showQuestionList() {
       groups[key].items.push(q);
     });
     const hasFilter = gradeFilter || unitFilter || keyword;
-    return Object.values(groups).sort((a,b) => (a.grade||0)-(b.grade||0) || (a.unit||0)-(b.unit||0)).map(g => {
+    return Object.values(groups).sort((a,b) => (a.grade||0)-(b.grade||0) || (a.unitType||'tan').localeCompare(b.unitType||'tan') || (a.unit||0)-(b.unit||0)).map(g => {
       const isOpen = hasFilter || Object.keys(groups).length === 1;
       const groupId = `qgroup_${g.grade}_${g.unit}`;
       const rows = g.items.map(q => `
@@ -2810,7 +2838,11 @@ function showQuestionList() {
           <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:8px;">選択した問題の移動先：</div>
           <div style="display:flex;gap:8px;margin-bottom:10px;">
             <select id="moveGrade" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
-            <input id="moveUnit" type="number" min="1" placeholder="単元番号" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+            <select id="moveUnitType" style="padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+              <option value="tan">単元</option>
+              <option value="gak">学校</option>
+            </select>
+            <input id="moveUnit" type="number" min="1" placeholder="番号" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
           </div>
           <div style="display:flex;gap:8px;">
             <button onclick="toggleMoveUnitPanel()" style="flex:1;background:#e8eaed;color:#444;border:none;border-radius:8px;padding:9px;font-size:13px;font-family:${ZMG};cursor:pointer;">キャンセル</button>
@@ -2871,7 +2903,7 @@ function execDeleteFromList(btn) {
   const targets = data.filter((_, i) => idxSet.has(i));
   const lines = targets.map(q => {
     const grade = q.grade ? `${q.grade}年` : '?年';
-    const unit = q.unit ? ` 単元${q.unit}` : '';
+    const unit = q.unit ? ` ${getUnitLabel(q)}` : '';
     return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
   });
   showConfirmModal(
@@ -2905,6 +2937,7 @@ function execMoveUnit() {
   const unitEl = document.getElementById('moveUnit');
   const newGrade = gradeEl ? parseInt(gradeEl.value) : null;
   const newUnit = unitEl ? parseInt(unitEl.value) : null;
+  const newUnitType = document.getElementById('moveUnitType')?.value || 'tan';
   if (!newGrade) { showToast('学年を選択してください'); return; }
   if (!newUnit || isNaN(newUnit) || newUnit < 1) { showToast('単元番号を入力してください'); return; }
   const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
@@ -2912,21 +2945,21 @@ function execMoveUnit() {
   const targets = data.filter((_, i) => idxSet.has(i));
   const lines = targets.map(q => {
     const grade = q.grade ? `${q.grade}年` : '?年';
-    const unit = q.unit ? ` 単元${q.unit}` : '';
+    const unit = q.unit ? ` ${getUnitLabel(q)}` : '';
     return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
   });
   showConfirmModal(
-    `${targets.length}問を ${newGrade}年 単元${newUnit} に移動します`,
+    `${targets.length}問を ${newGrade}年 ${newUnitType === 'gak' ? '学校' : '単元'}${newUnit} に移動します`,
     lines,
     '変更する',
     () => {
       const newData = data.map((q, i) => {
         if (!idxSet.has(i)) return q;
-        return { ...q, grade: newGrade, unit: newUnit };
+        return { ...q, grade: newGrade, unit: newUnit, unitType: newUnitType || q.unitType || 'tan' };
       });
       savePracticeData(newData);
       document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
-      showToast(`${idxSet.size}問の単元を変更しました`);
+      showToast(`${idxSet.size}問の種別・単元を変更しました`);
       if (typeof renderStatsPage === 'function') renderStatsPage();
       initPractice();
     }
@@ -2940,8 +2973,10 @@ function showShutsudaiSelect() {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
   const ZMG = "'Zen Maru Gothic',serif";
-  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-  const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+  const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitsGak = [...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
+  const unitOptsGak = unitsGak.map(u => `<option value="${u}">${u}</option>`).join('');
 
   function radioItem(id, value, checked, label) {
     return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;" id="${id}">
@@ -2962,11 +2997,18 @@ function showShutsudaiSelect() {
         ${radioItem('radioMiss','miss',true,'間違いが多い順')}
         ${radioItem('radioRandom','random',false,'ランダム')}
         ${radioItem('radioUnit','unit',false,'単元で、範囲を指定する')}
-        <div id="unitRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-size:13px;font-family:${ZMG};">単元</span>
-          <select id="unitFrom" onchange="filterUnitTo('unitFrom','unitTo')" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
-          <span style="font-size:13px;font-family:${ZMG};">〜</span>
-          <select id="unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+        <div id="unitRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:6px;">
+            <button id="uTypeBtnTan" onclick="switchUnitRangeType('tan','unitFrom','unitTo','uTypeBtnTan','uTypeBtnGak')"
+              style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+            <button id="uTypeBtnGak" onclick="switchUnitRangeType('gak','unitFrom','unitTo','uTypeBtnTan','uTypeBtnGak')"
+              style="flex:1;padding:6px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:13px;font-weight:700;color:#555;cursor:pointer;">学校</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <select id="unitFrom" onchange="filterUnitTo('unitFrom','unitTo')" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+            <span style="font-size:13px;font-family:${ZMG};">〜</span>
+            <select id="unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+          </div>
         </div>
         ${radioItem('radioDate','date',false,'登録日範囲指定')}
         <div id="dateRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -3106,7 +3148,8 @@ function applyShutsudaiUnit(method, unitFrom, unitTo, count, btn) {
   const data = loadPracticeData();
   const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
   const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
-  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
+  const uRangeType = window['_unitRangeType_' + (document.getElementById('unitFrom') ? 'unitFrom' : document.getElementById('dsp_unitFrom') ? 'dsp_unitFrom' : 'ds_unitFrom')] || 'tan';
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
   if (!rangeData.length) { alert('該当する問題がありません'); return; }
 
   let pool = [];
@@ -3224,7 +3267,7 @@ function menuShowData() {
     const max = Math.max(...sorted.map(q => q.missCount), 1);
     return sorted.map(q => {
       const grade = q.grade ? `${q.grade}年` : '−';
-      const unit = q.unit ? `${q.unit}` : '−';
+      const unit = q.unit ? getUnitLabel(q) : '−';
       const answer = (q.answerKanji||[]).join('') + (q.answerText||'') || '−';
       const pct = (q.missCount / max) * 100;
       return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td><td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
@@ -3309,15 +3352,56 @@ function confirmSaveQuestions(btn) {
   const questions = JSON.parse(btn.dataset.questions);
   const grade = parseInt(btn.dataset.grade);
   btn.closest('[style*=fixed]').remove();
-  const unitStr = prompt('単元番号を入力してください（例：16）');
-  if (!unitStr) return;
-  const unit = parseInt(unitStr);
+  // 種別・番号入力モーダル
+  const ZMG = "'Zen Maru Gothic',serif";
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;display:flex;align-items:center;justify-content:center;padding:16px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:380px;padding:24px;display:flex;flex-direction:column;gap:16px;">
+      <div style="font-size:17px;font-weight:700;font-family:${ZMG};">種別と番号を入力</div>
+      <div style="display:flex;gap:8px;">
+        <button id="unitTypeBtnTan" onclick="selectUnitTypeBtn('tan')"
+          style="flex:1;padding:10px;border-radius:12px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:14px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+        <button id="unitTypeBtnGak" onclick="selectUnitTypeBtn('gak')"
+          style="flex:1;padding:10px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:14px;font-weight:700;color:#555;cursor:pointer;">学校</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="unitTypeLabel" style="font-size:14px;font-family:${ZMG};color:#666;white-space:nowrap;">単元</span>
+        <input id="unitNumberInput" type="number" min="1" placeholder="番号（例：16）"
+          style="flex:1;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:${ZMG};outline:none;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#eee;color:#666;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+        <button onclick="doSaveWithUnitType(this)" data-questions='${JSON.stringify(questions)}' data-grade="${grade}"
+          style="flex:2;padding:12px;background:#f0c040;color:#1a3060;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">✓ 保存する</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  window._unitTypeSel = 'tan'; // デフォルト：単元
+}
+
+function selectUnitTypeBtn(type) {
+  window._unitTypeSel = type;
+  const active = "flex:1;padding:10px;border-radius:12px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;color:#1a3060;cursor:pointer;";
+  const inactive = "flex:1;padding:10px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;color:#555;cursor:pointer;";
+  document.getElementById('unitTypeBtnTan').style.cssText = type === 'tan' ? active : inactive;
+  document.getElementById('unitTypeBtnGak').style.cssText = type === 'gak' ? active : inactive;
+  document.getElementById('unitTypeLabel').textContent = type === 'tan' ? '単元' : '学校';
+}
+
+function doSaveWithUnitType(btn) {
+  const questions = JSON.parse(btn.dataset.questions);
+  const grade = parseInt(btn.dataset.grade);
+  const unitNum = parseInt(document.getElementById('unitNumberInput').value);
+  if (isNaN(unitNum) || unitNum < 1) { showToast('番号を入力してください'); return; }
+  const unitType = window._unitTypeSel || 'tan'; // 'tan'=単元, 'gak'=学校
+  btn.closest('[style*=fixed]').remove();
   const today = new Date().toISOString().split('T')[0];
   const existing = loadPracticeData();
   const newItems = questions.map((q, i) => ({
     id: q.no,
     _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
-    grade, unit,
+    grade, unit: unitNum, unitType,
     registeredAt: today,
     type: q.type,
     question: q.question,
@@ -3331,7 +3415,7 @@ function confirmSaveQuestions(btn) {
   }));
   const updated = [...existing, ...newItems];
   savePracticeData(updated);
-  alert(`✅ ${newItems.length}問を保存しました！`);
+  showToast(`✅ ${newItems.length}問を保存しました！`);
   switchTab('practice', document.querySelectorAll('.tab')[1]);
   setTimeout(() => initPractice(), 100);
 }
@@ -3414,8 +3498,10 @@ function openDojoSelect() { openDojoSelectInPage(); }
 function openDojoSelectInPage() {
   const data = loadPracticeData();
   const ZMG = "'Zen Maru Gothic',serif";
-  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-  const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+  const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitsGak = [...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
+  const unitOptsGak = unitsGak.map(u => `<option value="${u}">${u}</option>`).join('');
 
   function radioItem(id, value, checked, label) {
     return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;margin-bottom:8px;background:#fff;" id="dsp_${id}">
@@ -3431,11 +3517,18 @@ function openDojoSelectInPage() {
       ${radioItem('miss','miss',true,'間違いが多い順')}
       ${radioItem('random','random',false,'ランダム')}
       ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
-      <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:13px;font-family:${ZMG};">単元</span>
-        <select id="dsp_unitFrom" onchange="filterUnitTo('dsp_unitFrom','dsp_unitTo')" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
-        <span style="font-size:13px;font-family:${ZMG};">〜</span>
-        <select id="dsp_unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+      <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:6px;">
+          <button id="dsp_uTypeBtnTan" onclick="switchUnitRangeType('tan','dsp_unitFrom','dsp_unitTo','dsp_uTypeBtnTan','dsp_uTypeBtnGak')"
+            style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+          <button id="dsp_uTypeBtnGak" onclick="switchUnitRangeType('gak','dsp_unitFrom','dsp_unitTo','dsp_uTypeBtnTan','dsp_uTypeBtnGak')"
+            style="flex:1;padding:6px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:13px;font-weight:700;color:#555;cursor:pointer;">学校</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <select id="dsp_unitFrom" onchange="filterUnitTo('dsp_unitFrom','dsp_unitTo')" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+          <span style="font-size:13px;font-family:${ZMG};">〜</span>
+          <select id="dsp_unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
+        </div>
       </div>
       ${radioItem('date','date',false,'登録日範囲指定')}
       <div id="dsp_dateRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -3675,8 +3768,10 @@ function renderDojoStartCard() {
   const data = loadPracticeData();
   const card = document.getElementById('dojoStartCard');
   const ZMG = "'Zen Maru Gothic',serif";
-  const units = [...new Set(data.map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-  const unitOpts = units.map(u => `<option value="${u}">${u}</option>`).join('');
+  const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitsGak = [...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
+  const unitOptsGak = unitsGak.map(u => `<option value="${u}">${u}</option>`).join('');
 
   function radioItem(id, value, checked, label) {
     return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid #e0e4ea;border-radius:10px;cursor:pointer;margin-bottom:8px;" id="ds_${id}">
@@ -3690,11 +3785,18 @@ function renderDojoStartCard() {
     ${radioItem('miss','miss',true,'間違いが多い順')}
     ${radioItem('random','random',false,'ランダム')}
     ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
-    <div id="ds_unitRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span style="font-size:13px;font-family:${ZMG};">単元</span>
-      <select id="ds_unitFrom" onchange="filterUnitTo('ds_unitFrom','ds_unitTo')" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
-      <span style="font-size:13px;font-family:${ZMG};">〜</span>
-      <select id="ds_unitTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
+    <div id="ds_unitRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:6px;">
+        <button id="ds_uTypeBtnTan" onclick="switchUnitRangeType('tan','ds_unitFrom','ds_unitTo','ds_uTypeBtnTan','ds_uTypeBtnGak')"
+          style="flex:1;padding:5px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+        <button id="ds_uTypeBtnGak" onclick="switchUnitRangeType('gak','ds_unitFrom','ds_unitTo','ds_uTypeBtnTan','ds_uTypeBtnGak')"
+          style="flex:1;padding:5px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:13px;font-weight:700;color:#555;cursor:pointer;">学校</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <select id="ds_unitFrom" onchange="filterUnitTo('ds_unitFrom','ds_unitTo')" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
+        <span style="font-size:13px;font-family:${ZMG};">〜</span>
+        <select id="ds_unitTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
+      </div>
     </div>
     ${radioItem('date','date',false,'登録日範囲指定')}
     <div id="ds_dateRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -3793,7 +3895,8 @@ function dojoStartUnit(method, unitFrom, unitTo, count) {
     const data = loadPracticeData();
     const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
     const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
-    const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi);
+    const uRangeType = window['_unitRangeType_' + (document.getElementById('unitFrom') ? 'unitFrom' : document.getElementById('dsp_unitFrom') ? 'dsp_unitFrom' : 'ds_unitFrom')] || 'tan';
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
     if (!rangeData.length) return [];
     if (method === 'all') return rangeData;
     if (method === 'unitMiss') return [...rangeData].sort((a,b)=>b.missCount-a.missCount).slice(0,count);
@@ -4024,7 +4127,7 @@ function loadQuestion(i) {
   const q = session[i];
   answerShown = false;
   const maxMiss = Math.max(...session.map(x => x.missCount));
-  document.getElementById('qId').textContent = q.grade ? `${q.grade}年\n単元${q.unit}` : `${q.id}番`;
+  document.getElementById('qId').textContent = q.grade ? `${q.grade}年\n${getUnitLabel(q)}` : `${q.id}番`;
 
   // Y/X 進捗表示（左下固定）
   const progressEl = document.getElementById('qProgress');
@@ -4422,7 +4525,7 @@ function renderStatsPage() {
   if (!el) return;
 
   // 現在の選択状態を取得（なければデフォルト）
-  const period = window._statsPeriod || 'month';
+  const period = window._statsPeriod || 'week';
   const now = new Date();
   const jstNow = new Date(now.getTime() + 9*60*60*1000);
   const curYear = window._statsYear !== undefined ? window._statsYear : jstNow.getFullYear();
