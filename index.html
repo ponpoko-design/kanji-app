@@ -4291,12 +4291,12 @@ function loadQuestion(i) {
     const btnW = document.getElementById('btnWrong');
     const btnFwd = document.getElementById('btnBulkForward');
     if (answered) {
-      btnC.disabled = true; btnC.style.opacity = '0.4'; btnC.style.cursor = 'default';
-      btnW.disabled = true; btnW.style.opacity = '0.4'; btnW.style.cursor = 'default';
+      btnC.disabled = true; btnC.style.opacity = '0.4'; btnC.style.cursor = 'default'; btnC.style.fontSize = '11px';
+      btnW.disabled = true; btnW.style.opacity = '0.4'; btnW.style.cursor = 'default'; btnW.style.fontSize = '11px';
       if (btnFwd) btnFwd.style.display = 'flex';
     } else {
-      btnC.disabled = false; btnC.style.opacity = '1'; btnC.style.cursor = 'pointer';
-      btnW.disabled = false; btnW.style.opacity = '1'; btnW.style.cursor = 'pointer';
+      btnC.disabled = false; btnC.style.opacity = '1'; btnC.style.cursor = 'pointer'; btnC.style.fontSize = '';
+      btnW.disabled = false; btnW.style.opacity = '1'; btnW.style.cursor = 'pointer'; btnW.style.fontSize = '';
       if (btnFwd) btnFwd.style.display = 'none';
     }
   } else if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
