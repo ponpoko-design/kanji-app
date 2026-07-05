@@ -474,7 +474,6 @@ rt {
 }
 #btnBulkBackResult:active { background: #c8cdd5; }
 #resultButtons {
-  gap: 8px;
   display: none;
   flex: 1;
   gap: 10px;
@@ -1313,18 +1312,23 @@ if (localStorage.getItem('kanji_auth')==='ok') {
 
         <div id="practiceBottom">
           <div id="practiceMainBtns">
-            <div id="bulkBtnRow" style="display:none;width:100%;gap:8px;">
-              <button id="answerBtn" onclick="toggleAnswer()" style="flex:3;">
+            <!-- 通常モード：答えを見る -->
+            <div id="rowSingle" style="display:flex;width:100%;">
+              <button id="answerBtnSingle" onclick="toggleAnswer()" style="flex:1;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                答えを見る
+              </button>
+            </div>
+            <!-- まとめてモード問題フェーズ：◀次の問題へ ＋ 戻る▶ -->
+            <div id="rowBulkQ" style="display:none;width:100%;gap:8px;">
+              <button id="answerBtnBulkQ" onclick="toggleAnswer()" style="flex:3;background:#1a6fc4;color:#fff;">
                 ◀ 次の問題へ
               </button>
-              <button id="btnBulkBack" onclick="bulkGoBack()" style="flex:1;display:none;">
+              <button id="btnBulkBackQ" onclick="bulkGoBack()" style="flex:1;">
                 戻る ▶
               </button>
             </div>
-            <button id="answerBtnSingle" onclick="toggleAnswer()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              答えを見る
-            </button>
+            <!-- 答えフェーズ：あってた ＋ まちがえた ＋ 戻る▶ -->
             <div id="resultButtons" style="display:none;width:100%;gap:8px;">
               <button id="btnCorrect" onclick="recordResult(true)" style="flex:1.5;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1334,7 +1338,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 まちがえた
               </button>
-              <button id="btnBulkBackResult" onclick="bulkGoBack()" style="display:none;flex:1;">
+              <button id="btnBulkBackResult" onclick="bulkGoBack()" style="flex:1;">
                 戻る ▶
               </button>
             </div>
@@ -1912,6 +1916,14 @@ function filterUnitTo(fromId, toId) {
     .filter(u => u >= fromVal)
     .map(u => `<option value="${u}"${u === Math.max(fromVal, currentTo) ? ' selected' : ''}>${u}</option>`)
     .join('');
+}
+
+// ボタン行の表示切り替えヘルパー
+function showBtnRow(rowId) {
+  ['rowSingle','rowBulkQ','resultButtons'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (id === rowId) ? 'flex' : 'none';
+  });
 }
 
 function getUnitLabel(q) {
@@ -4219,48 +4231,31 @@ function loadQuestion(i) {
   buildAnswerImages(q);
   document.getElementById('missBarCount').textContent = q.missCount > 0 ? `まちがい ${q.missCount}回` : '';
 
-  // まとめてモードの答えフェーズ：最初から答えを表示してあってた/まちがえたを出す
   if (window._answerTiming === 'bulk' && window._bulkPhase === 'answer') {
+    // まとめてモード答えフェーズ：答えを即表示
     answerShown = true;
-    const aiw = document.getElementById('answerImagesWrap'); aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
-    document.getElementById('answerBtn').style.display = 'none';
-    document.getElementById('resultButtons').style.display = 'flex';
-  document.getElementById('resultButtons').style.gap = '8px';
-  // まとめてモード答えフェーズで、最初の問題以外は戻るボタン表示
-  const backResultBtn = document.getElementById('btnBulkBackResult');
-  if (backResultBtn) {
-    const showBack = window._answerTiming === 'bulk' && window._bulkPhase === 'answer' && current > 0;
-    backResultBtn.style.display = showBack ? 'flex' : 'none';
-  }
+    const aiw = document.getElementById('answerImagesWrap');
+    aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
+    showBtnRow('resultButtons');
+    document.getElementById('btnBulkBackResult').style.display = i > 0 ? 'flex' : 'none';
     document.getElementById('btnNext').style.display = 'none';
-  // まとめてモードの問題フェーズ
   } else if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
+    // まとめてモード問題フェーズ
     document.getElementById('answerImagesWrap').classList.remove('visible');
+    showBtnRow('rowBulkQ');
     const isLast = (i === session.length - 1);
-    // まとめてモード：bulkBtnRowを使う
-    document.getElementById('bulkBtnRow').style.display = 'flex';
-    document.getElementById('answerBtnSingle').style.display = 'none';
-    const ansBtn = document.getElementById('answerBtn');
+    const ansBtn = document.getElementById('answerBtnBulkQ');
     ansBtn.style.background = isLast ? '#f0c040' : '#1a6fc4';
     ansBtn.style.color = isLast ? '#1a3060' : '#fff';
     ansBtn.innerHTML = isLast
       ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る'
       : '◀ 次の問題へ';
-    // 戻るボタン：最初の問題のときは非表示
-    const backBtn = document.getElementById('btnBulkBack');
-    backBtn.style.display = i > 0 ? 'flex' : 'none';
-    document.getElementById('resultButtons').style.display = 'none';
+    document.getElementById('btnBulkBackQ').style.display = i > 0 ? 'flex' : 'none';
     document.getElementById('btnNext').style.display = 'none';
   } else {
     // 通常モード
     document.getElementById('answerImagesWrap').classList.remove('visible');
-    document.getElementById('bulkBtnRow').style.display = 'none';
-    const aBtn = document.getElementById('answerBtnSingle');
-    aBtn.style.display = 'flex';
-    aBtn.style.background = '#f0c040';
-    aBtn.style.color = '#1a3060';
-    aBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る';
-    document.getElementById('resultButtons').style.display = 'none';
+    showBtnRow('rowSingle');
     document.getElementById('btnNext').style.display = 'none';
   }
 
@@ -4392,16 +4387,14 @@ function saveEditModal(btn) {
 }
 
 function toggleAnswer() {
-  // まとめてモードの問題フェーズ：「次の問題へ」or「答えを見る（最後）」として機能
+  // まとめてモードの問題フェーズ
   if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
     const isLast = (current === session.length - 1);
     if (isLast) {
-      // 最後の問題で「答えを見る」→ 答えフェーズへ切り替え
       window._bulkPhase = 'answer';
       current = 0;
       loadQuestion(0);
     } else {
-      // まだ問題が続く → 次の問題へ
       current++;
       loadQuestion(current);
     }
@@ -4411,17 +4404,9 @@ function toggleAnswer() {
   if (answerShown) return;
   answerShown = true;
   const aiw = document.getElementById('answerImagesWrap');
-  aiw.classList.add('visible');
-  aiw.style.pointerEvents = 'auto';
-  document.getElementById('answerBtnSingle').style.display = 'none';
-  document.getElementById('resultButtons').style.display = 'flex';
-  document.getElementById('resultButtons').style.gap = '8px';
-  // まとめてモード答えフェーズで、最初の問題以外は戻るボタン表示
-  const backResultBtn = document.getElementById('btnBulkBackResult');
-  if (backResultBtn) {
-    const showBack = window._answerTiming === 'bulk' && window._bulkPhase === 'answer' && current > 0;
-    backResultBtn.style.display = showBack ? 'flex' : 'none';
-  }
+  aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
+  showBtnRow('resultButtons');
+  document.getElementById('btnBulkBackResult').style.display = 'none';
 }
 
 function bulkGoBack() {
@@ -4434,13 +4419,9 @@ function bulkGoBack() {
     setTimeout(() => {
       answerShown = true;
       const aiw = document.getElementById('answerImagesWrap');
-      aiw.classList.add('visible');
-      aiw.style.pointerEvents = 'auto';
-      document.getElementById('answerBtnSingle').style.display = 'none';
-      document.getElementById('resultButtons').style.display = 'flex';
-      document.getElementById('resultButtons').style.gap = '8px';
-      const backResultBtn = document.getElementById('btnBulkBackResult');
-      if (backResultBtn) backResultBtn.style.display = current > 0 ? 'flex' : 'none';
+      aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
+      showBtnRow('resultButtons');
+      document.getElementById('btnBulkBackResult').style.display = current > 0 ? 'flex' : 'none';
     }, 50);
   } else {
     // 問題フェーズで戻る
