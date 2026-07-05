@@ -425,7 +425,7 @@ rt {
   order: 1;
 }
 #btnQuit:active { background: #333; }
-#answerBtn {
+#answerBtn, #answerBtnSingle {
   flex: 1;
   background: #f0c040; color: #1a3060;
   font-size: 16px; font-weight: 700;
@@ -433,7 +433,29 @@ rt {
   font-family: 'Zen Maru Gothic',serif;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-#answerBtn:active { background: #d4a820; }
+#answerBtn:active, #answerBtnSingle:active { background: #d4a820; }
+#bulkBtnRow {
+  display: none;
+  width: 100%;
+  gap: 8px;
+}
+#btnBulkBack {
+  flex: 1;
+  padding: 14px 10px;
+  border: none;
+  border-radius: 999px;
+  background: #e0e4ea;
+  color: #1a3060;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+#btnBulkBack:active { background: #c8cdd5; }
 #resultButtons {
   display: none;
   flex: 1;
@@ -1131,7 +1153,7 @@ rt {
   .tab { font-size:12px; padding:8px 0; }
 }
 </style>
-<script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?ZJD2U0NatP4%3D&box=YslPt9QJakY%3D&aa=1&ab=1"></script>
+<script src="https://webfont.fontplus.jp/accessor/script/fontplus.js?KXzscaaeJDE%3D&box=bvfvATn10oE%3D&pm=1&aa=1&ab=1"></script>
 </head>
 <body>
 <div style="position:absolute;visibility:hidden;pointer-events:none;font-family:'I-OTF-G教科書Pro L';">あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんぁぃぅぇぉっゃゅょがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ</div>
@@ -1273,7 +1295,16 @@ if (localStorage.getItem('kanji_auth')==='ok') {
 
         <div id="practiceBottom">
           <div id="practiceMainBtns">
-            <button id="answerBtn" onclick="toggleAnswer()">
+            <div id="bulkBtnRow" style="display:none;width:100%;gap:8px;">
+              <button id="answerBtn" onclick="toggleAnswer()" style="flex:2;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                答えを見る
+              </button>
+              <button id="btnBulkBack" onclick="bulkGoBack()" style="flex:1;display:none;">
+                戻る ▶
+              </button>
+            </div>
+            <button id="answerBtnSingle" onclick="toggleAnswer()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               答えを見る
             </button>
@@ -4179,21 +4210,29 @@ function loadQuestion(i) {
   } else if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
     document.getElementById('answerImagesWrap').classList.remove('visible');
     const isLast = (i === session.length - 1);
-    document.getElementById('answerBtn').style.display = 'flex';
-    document.getElementById('answerBtn').style.background = isLast ? '#f0c040' : '#1a6fc4';
-    document.getElementById('answerBtn').style.color = isLast ? '#1a3060' : '#fff';
-    document.getElementById('answerBtn').innerHTML = isLast
+    // まとめてモード：bulkBtnRowを使う
+    document.getElementById('bulkBtnRow').style.display = 'flex';
+    document.getElementById('answerBtnSingle').style.display = 'none';
+    const ansBtn = document.getElementById('answerBtn');
+    ansBtn.style.background = isLast ? '#f0c040' : '#1a6fc4';
+    ansBtn.style.color = isLast ? '#1a3060' : '#fff';
+    ansBtn.innerHTML = isLast
       ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg> 次の問題へ';
+      : '◀ 次の問題へ';
+    // 戻るボタン：最初の問題のときは非表示
+    const backBtn = document.getElementById('btnBulkBack');
+    backBtn.style.display = i > 0 ? 'flex' : 'none';
     document.getElementById('resultButtons').style.display = 'none';
     document.getElementById('btnNext').style.display = 'none';
   } else {
     // 通常モード
     document.getElementById('answerImagesWrap').classList.remove('visible');
-    document.getElementById('answerBtn').style.display = 'flex';
-    document.getElementById('answerBtn').style.background = '#f0c040';
-    document.getElementById('answerBtn').style.color = '#1a3060';
-    document.getElementById('answerBtn').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る';
+    document.getElementById('bulkBtnRow').style.display = 'none';
+    const aBtn = document.getElementById('answerBtnSingle');
+    aBtn.style.display = 'flex';
+    aBtn.style.background = '#f0c040';
+    aBtn.style.color = '#1a3060';
+    aBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> 答えを見る';
     document.getElementById('resultButtons').style.display = 'none';
     document.getElementById('btnNext').style.display = 'none';
   }
@@ -4344,9 +4383,17 @@ function toggleAnswer() {
 
   if (answerShown) return;
   answerShown = true;
-  document.getElementById('answerImagesWrap').classList.add('visible');
-  document.getElementById('answerBtn').style.display = 'none';
+  const aiw = document.getElementById('answerImagesWrap');
+  aiw.classList.add('visible');
+  aiw.style.pointerEvents = 'auto';
+  document.getElementById('answerBtnSingle').style.display = 'none';
   document.getElementById('resultButtons').style.display = 'flex';
+}
+
+function bulkGoBack() {
+  if (current <= 0) return;
+  current--;
+  loadQuestion(current);
 }
 
 function nextQuestion() {
