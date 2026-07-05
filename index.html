@@ -480,6 +480,16 @@ rt {
   align-items: center; justify-content: center; gap: 4px;
 }
 #btnBulkBackQ:active { background: #c8cdd5; }
+#btnBulkForward {
+  flex: 1;
+  padding: 14px 8px;
+  border: none; border-radius: 999px; cursor: pointer;
+  background: #1a6fc4; color: #fff;
+  font-size: 14px; font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  align-items: center; justify-content: center; gap: 4px;
+}
+#btnBulkForward:active { background: #155a9e; }
 #btnBulkBackResult {
   flex: 1;
   padding: 14px 8px;
@@ -1353,6 +1363,9 @@ if (localStorage.getItem('kanji_auth')==='ok') {
             </div>
             <!-- 答えフェーズ：あってた ＋ まちがえた ＋ 戻る▶ -->
             <div id="resultButtons" style="display:none;width:100%;gap:8px;">
+              <button id="btnBulkForward" onclick="bulkGoForward()" style="flex:1;display:none;">
+                ◀ 進む
+              </button>
               <button id="btnCorrect" onclick="recordResult(true)" style="flex:1.5;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 あってた
@@ -4276,12 +4289,15 @@ function loadQuestion(i) {
     const answered = window._bulkAnswered && window._bulkAnswered[i];
     const btnC = document.getElementById('btnCorrect');
     const btnW = document.getElementById('btnWrong');
+    const btnFwd = document.getElementById('btnBulkForward');
     if (answered) {
       btnC.disabled = true; btnC.style.opacity = '0.4'; btnC.style.cursor = 'default';
       btnW.disabled = true; btnW.style.opacity = '0.4'; btnW.style.cursor = 'default';
+      if (btnFwd) btnFwd.style.display = 'flex';
     } else {
       btnC.disabled = false; btnC.style.opacity = '1'; btnC.style.cursor = 'pointer';
       btnW.disabled = false; btnW.style.opacity = '1'; btnW.style.cursor = 'pointer';
+      if (btnFwd) btnFwd.style.display = 'none';
     }
   } else if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
     // まとめてモード問題フェーズ
@@ -4453,6 +4469,17 @@ function toggleAnswer() {
   document.getElementById('btnBulkBackResult').style.display = 'none';
 }
 
+function bulkGoForward() {
+  // 回答済み問題から次へ進む
+  const next = current + 1;
+  if (next >= session.length) {
+    showComplete();
+  } else {
+    current = next;
+    loadQuestion(current);
+  }
+}
+
 function bulkGoBack() {
   if (current <= 0) return;
   current--;
@@ -4490,11 +4517,12 @@ function recordResult(correct) {
   // まとめてモードなら回答済みフラグを立てる
   if (window._answerTiming === 'bulk' && window._bulkAnswered) {
     window._bulkAnswered[current] = true;
-    // ボタンをグレーアウト
     const btnC = document.getElementById('btnCorrect');
     const btnW = document.getElementById('btnWrong');
     btnC.disabled = true; btnC.style.opacity = '0.4'; btnC.style.cursor = 'default';
     btnW.disabled = true; btnW.style.opacity = '0.4'; btnW.style.cursor = 'default';
+    const btnFwd = document.getElementById('btnBulkForward');
+    if (btnFwd) btnFwd.style.display = 'none'; // 回答直後は進むボタン不要
   }
 
   if (correct) correctCount++;
