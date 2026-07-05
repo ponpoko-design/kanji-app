@@ -431,13 +431,20 @@ rt {
   font-size: 16px; font-weight: 700;
   border: none; border-radius: 999px; cursor: pointer;
   font-family: 'Zen Maru Gothic',serif;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  align-items: center; justify-content: center; gap: 8px;
 }
 #answerBtn:active, #answerBtnSingle:active { background: #d4a820; }
 #bulkBtnRow {
   display: none;
   width: 100%;
   gap: 8px;
+}
+#rowBulkQ {
+  width: 100%;
+  gap: 8px;
+}
+#rowSingle {
+  width: 100%;
 }
 #btnBulkBack {
   flex: 1;
@@ -456,6 +463,23 @@ rt {
   gap: 4px;
 }
 #btnBulkBack:active { background: #c8cdd5; }
+#answerBtnBulkQ {
+  padding: 14px 10px;
+  border: none; border-radius: 999px; cursor: pointer;
+  font-size: 16px; font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  align-items: center; justify-content: center; gap: 8px;
+}
+#btnBulkBackQ {
+  flex: 1;
+  padding: 14px 8px;
+  border: none; border-radius: 999px; cursor: pointer;
+  background: #e0e4ea; color: #1a3060;
+  font-size: 14px; font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  align-items: center; justify-content: center; gap: 4px;
+}
+#btnBulkBackQ:active { background: #c8cdd5; }
 #btnBulkBackResult {
   flex: 1;
   padding: 14px 8px;
@@ -467,7 +491,6 @@ rt {
   font-weight: 700;
   font-family: 'Zen Maru Gothic', serif;
   cursor: pointer;
-  display: none;
   align-items: center;
   justify-content: center;
   gap: 4px;
@@ -475,8 +498,8 @@ rt {
 #btnBulkBackResult:active { background: #c8cdd5; }
 #resultButtons {
   display: none;
-  flex: 1;
-  gap: 10px;
+  width: 100%;
+  gap: 8px;
 }
 #resultButtons.visible { display: flex; }
 #btnCorrect {
@@ -1922,8 +1945,16 @@ function filterUnitTo(fromId, toId) {
 function showBtnRow(rowId) {
   ['rowSingle','rowBulkQ','resultButtons'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = (id === rowId) ? 'flex' : 'none';
+    if (!el) return;
+    if (id === rowId) {
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+    }
   });
+  // btnNextも必ず非表示
+  const btnNext = document.getElementById('btnNext');
+  if (btnNext) btnNext.style.display = 'none';
 }
 
 function getUnitLabel(q) {
