@@ -4088,11 +4088,13 @@ function dojoStartPool(pool, generator) {
   // 答えタイミングを確定（startFromTimingSelectで設定済みの値を使う）
   // まとめてモードの場合：phase = 'question'（問題フェーズ）or 'answer'（答えフェーズ）
   if (window._answerTiming === 'bulk') {
-    window._bulkPhase = 'question'; // 問題フェーズからスタート
-    window._bulkResults = []; // {correct: bool} を後で記録
+    window._bulkPhase = 'question';
+    window._bulkResults = [];
+    window._bulkAnswered = new Array(pool.length).fill(false); // 各問題の回答済みフラグ
   } else {
     window._bulkPhase = null;
     window._bulkResults = [];
+    window._bulkAnswered = [];
   }
   // 記録するかどうかのフラグを保存（セッション中維持）
   const toggleEl = document.getElementById('recordToggleInput');
@@ -4270,6 +4272,17 @@ function loadQuestion(i) {
     showBtnRow('resultButtons');
     document.getElementById('btnBulkBackResult').style.display = i > 0 ? 'flex' : 'none';
     document.getElementById('btnNext').style.display = 'none';
+    // 回答済みならボタンをグレーアウトして押せなくする
+    const answered = window._bulkAnswered && window._bulkAnswered[i];
+    const btnC = document.getElementById('btnCorrect');
+    const btnW = document.getElementById('btnWrong');
+    if (answered) {
+      btnC.disabled = true; btnC.style.opacity = '0.4'; btnC.style.cursor = 'default';
+      btnW.disabled = true; btnW.style.opacity = '0.4'; btnW.style.cursor = 'default';
+    } else {
+      btnC.disabled = false; btnC.style.opacity = '1'; btnC.style.cursor = 'pointer';
+      btnW.disabled = false; btnW.style.opacity = '1'; btnW.style.cursor = 'pointer';
+    }
   } else if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
     // まとめてモード問題フェーズ
     document.getElementById('answerImagesWrap').classList.remove('visible');
@@ -4472,6 +4485,18 @@ function nextQuestion() {
 }
 
 function recordResult(correct) {
+  // まとめてモードで既に回答済みなら無視
+  if (window._answerTiming === 'bulk' && window._bulkAnswered && window._bulkAnswered[current]) return;
+  // まとめてモードなら回答済みフラグを立てる
+  if (window._answerTiming === 'bulk' && window._bulkAnswered) {
+    window._bulkAnswered[current] = true;
+    // ボタンをグレーアウト
+    const btnC = document.getElementById('btnCorrect');
+    const btnW = document.getElementById('btnWrong');
+    btnC.disabled = true; btnC.style.opacity = '0.4'; btnC.style.cursor = 'default';
+    btnW.disabled = true; btnW.style.opacity = '0.4'; btnW.style.cursor = 'default';
+  }
+
   if (correct) correctCount++;
 
   // 記録しないモードのときはデータ更新をスキップ
