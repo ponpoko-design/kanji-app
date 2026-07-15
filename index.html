@@ -21,6 +21,7 @@
   const db = getFirestore(app);
   const DATA_DOC = doc(db, 'kanji', 'practiceData');
   const STATS_DOC = doc(db, 'kanji', 'stats');
+  const SHAKAI_DOC = doc(db, 'kanji', 'shakaiChiriData');
 
   async function saveStatsToFirestore(stats) {
     try {
@@ -191,9 +192,57 @@
   window.showBackupHistory = showBackupHistory;
   window.restoreBackup = restoreBackup;
 
+  // ===== 社会（地理など）データの同期 =====
+  function isLocalNewerGeneric(snap, localTsKey) {
+    const localTs = localStorage.getItem(localTsKey);
+    if (!localTs) return false;
+    const firestoreTs = snap.data().updatedAt;
+    if (!firestoreTs || localTs > firestoreTs) return true;
+    return false;
+  }
+
+  async function loadShakaiFromFirestore() {
+    try {
+      const snap = await getDoc(SHAKAI_DOC);
+      if (snap.exists()) {
+        if (isLocalNewerGeneric(snap, 'shakai_chiri_local_updated_ts')) {
+          const localData = JSON.parse(localStorage.getItem('shakai_chiri_data') || '[]');
+          if (localData.length) saveShakaiToFirestore(localData);
+          return;
+        }
+        const data = snap.data().questions || [];
+        if (data.length) localStorage.setItem('shakai_chiri_data', JSON.stringify(data));
+      }
+    } catch(e) { console.log('社会データFirestore読み込みエラー:', e); }
+  }
+
+  async function saveShakaiToFirestore(data) {
+    try {
+      await setDoc(SHAKAI_DOC, { questions: data, updatedAt: new Date().toISOString() });
+    } catch(e) { console.log('社会データFirestore保存エラー:', e); }
+  }
+
+  let _shakaiLocalSaving = false;
+  window._setShakaiLocalSaving = (v) => { _shakaiLocalSaving = v; };
+
+  onSnapshot(SHAKAI_DOC, (snap) => {
+    if (snap.exists()) {
+      if (_shakaiLocalSaving) return;
+      if (isLocalNewerGeneric(snap, 'shakai_chiri_local_updated_ts')) return;
+      const data = snap.data().questions || [];
+      if (data.length) localStorage.setItem('shakai_chiri_data', JSON.stringify(data));
+    }
+  });
+
+  window.firestoreShakaiSave = saveShakaiToFirestore;
+  window.firestoreShakaiLoad = loadShakaiFromFirestore;
+
   loadStatsFromFirestore();
   loadFromFirestore().then(() => {
     console.log('Firestore初期読み込み完了');
+  });
+  loadShakaiFromFirestore().then(() => {
+    console.log('社会データFirestore初期読み込み完了');
   });
 </script>
 <title>漢字アプリ</title>
@@ -1444,6 +1493,8 @@ if (localStorage.getItem('kanji_auth')==='ok') {
                 <span id="qText"></span>
               </div>
               <span id="qProgress" style="position:absolute;bottom:6px;left:8px;font-size:13px;font-weight:700;color:#1A1A1A;font-family:'Zen Maru Gothic',serif;white-space:nowrap;display:none;"></span>
+              <span id="qPrefLabel" style="display:none;position:absolute;bottom:28px;left:8px;font-size:14px;font-weight:700;color:#1a3060;font-family:'Zen Maru Gothic',serif;writing-mode:vertical-rl;white-space:nowrap;line-height:1.3;"></span>
+              <button id="qMachigaiBtn" onclick="openMachigaiPopup()" style="display:none;position:absolute;bottom:4px;right:8px;background:#fff3f3;border:1.5px solid #FF4D4D;color:#C62828;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">よくある間違い</button>
             </div>
           </div>
         </div>
@@ -1496,7 +1547,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
         <div class="dojo-start-icon">⛩️</div>
         <div class="dojo-start-title">目指せ漢字の達人！</div>
         <div class="dojo-start-sub">今日も練習をはじめよう</div>
-        <button class="dojo-start-btn" id="dojoStartBtn" onclick="openDojoSelectInPage()">
+        <button class="dojo-start-btn" id="dojoStartBtn" onclick="openSubjectSelectInPage()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           問題を選ぶ
         </button>
@@ -3133,6 +3184,10 @@ function showQuestionList(initialFilter) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
+      <div style="display:flex;gap:0;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="flex:1;text-align:center;padding:10px;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a6fc4;border-bottom:3px solid #1a6fc4;">国語</div>
+        <div onclick="document.getElementById('qListOverlay').remove();showShakaiQuestionList();" style="flex:1;text-align:center;padding:10px;font-size:14px;font-weight:700;font-family:${ZMG};color:#999;cursor:pointer;border-bottom:3px solid transparent;">社会</div>
+      </div>
       <div style="padding:10px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:6px;">
           <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${qFilterGradeOpts}</select>
@@ -3207,6 +3262,146 @@ function refreshQList() {
     rows.innerHTML = html;
   }
 }
+// ===== 社会（地理）問題一覧 =====
+function showShakaiQuestionList(initialFilter) {
+  const data = loadShakaiData();
+  const filter = initialFilter || {};
+  const existing = document.getElementById('shakaiListOverlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'shakaiListOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const ZMG = "'Zen Maru Gothic',serif";
+
+  function buildList(gyouFilter, keyword) {
+    const filtered = data.map((q,i) => ({...q, _listIdx: i})).filter(q => {
+      if (gyouFilter && getKanaGyou(q.kana) !== gyouFilter) return false;
+      if (keyword) {
+        const kw = keyword;
+        if (!(q.correct||'').includes(kw) && !(q.reading||'').includes(kw) && !(q.prefecture||'').includes(kw)) return false;
+      }
+      return true;
+    });
+    if (!filtered.length) return `<div style="padding:24px;text-align:center;color:#999;font-family:${ZMG};">該当する問題がありません</div>`;
+    const groups = {};
+    filtered.forEach(q => {
+      const g = getKanaGyou(q.kana);
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(q);
+    });
+    const hasFilter = gyouFilter || keyword;
+    return SHAKAI_GYOU_LIST.filter(g => groups[g]).map(g => {
+      const items = groups[g];
+      const isOpen = hasFilter || SHAKAI_GYOU_LIST.filter(x=>groups[x]).length === 1;
+      const groupId = `sgroup_${g}`;
+      const rows = items.map(q => `
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 12px 9px 32px;border-bottom:1px solid #f0f4f8;">
+          <span style="font-size:15px;font-family:${ZMG};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${q.correct||''}<span style="color:#999;font-size:12px;margin-left:6px;">${q.reading||''}${q.prefecture?'／'+q.prefecture:''}</span></span>
+          <button onclick="openShakaiEditModal(${q._listIdx})" style="flex-shrink:0;padding:5px 10px;background:#f0f4f8;border:none;border-radius:6px;font-size:12px;font-family:${ZMG};cursor:pointer;">編集</button>
+        </div>`).join('');
+      return `
+        <div>
+          <div onclick="toggleQGroup('${groupId}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8f9fa;border-bottom:1px solid #e0e4ea;cursor:pointer;user-select:none;">
+            <span id="${groupId}_arrow" style="font-size:12px;color:#666;transition:transform 0.2s;display:inline-block;transform:${isOpen?'rotate(90deg)':'rotate(0deg)'};">▶</span>
+            <span style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:${ZMG};">${g}</span>
+            <span style="font-size:12px;color:#999;font-family:${ZMG};">${items.length}問</span>
+          </div>
+          <div id="${groupId}" style="display:${isOpen?'block':'none'};">${rows}</div>
+        </div>`;
+    }).join('');
+  }
+
+  const gyouOpts = `<option value="">全グループ</option>` + SHAKAI_GYOU_LIST.map(g => `<option value="${g}" ${filter.gyou===g?'selected':''}>${g}</option>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">問題文一覧 <span style="font-size:13px;color:#999;font-weight:400;">${data.length}問</span></div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;gap:0;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div onclick="document.getElementById('shakaiListOverlay').remove();showQuestionList();" style="flex:1;text-align:center;padding:10px;font-size:14px;font-weight:700;font-family:${ZMG};color:#999;cursor:pointer;border-bottom:3px solid transparent;">国語</div>
+        <div style="flex:1;text-align:center;padding:10px;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a6fc4;border-bottom:3px solid #1a6fc4;">社会</div>
+      </div>
+      <div style="padding:10px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
+        <select id="sFilterGyou" onchange="refreshShakaiList()" style="width:100%;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gyouOpts}</select>
+        <input id="sFilterKeyword" type="text" value="${(filter.keyword||'').replace(/"/g,'&quot;')}" placeholder="正解の言葉・読み・都道府県で検索" oninput="refreshShakaiList()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+      </div>
+      <div id="shakaiListRows" style="overflow-y:auto;flex:1;">${buildList(filter.gyou||'', filter.keyword||'')}</div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  window._shakaiListBuild = buildList;
+}
+
+function refreshShakaiList() {
+  const gyou = document.getElementById('sFilterGyou')?.value || '';
+  const keyword = document.getElementById('sFilterKeyword')?.value || '';
+  const rowsEl = document.getElementById('shakaiListRows');
+  if (rowsEl && window._shakaiListBuild) rowsEl.innerHTML = window._shakaiListBuild(gyou, keyword);
+}
+
+function openShakaiEditModal(dataIndex) {
+  const data = loadShakaiData();
+  const q = data[dataIndex];
+  if (!q) return;
+  const ZMG = "'Zen Maru Gothic',serif";
+  const inp = `width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};`;
+  const lbl = `font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;`;
+  const esc = (s) => (s||'').toString().replace(/"/g,'&quot;');
+  const overlay = document.createElement('div');
+  overlay.id = 'shakaiEditModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:${ZMG};">問題を編集（社会）</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
+        <div style="display:flex;gap:8px;">
+          <div style="width:80px;"><label style="${lbl}">kana</label><input id="sEditKana" type="text" maxlength="1" value="${esc(q.kana)}" style="${inp}"></div>
+          <div style="flex:1;"><label style="${lbl}">正解（correct）</label><input id="sEditCorrect" type="text" value="${esc(q.correct)}" style="${inp}"></div>
+        </div>
+        <div><label style="${lbl}">読み（reading）</label><input id="sEditReading" type="text" value="${esc(q.reading)}" style="${inp}"></div>
+        <div><label style="${lbl}">都道府県（prefecture）</label><input id="sEditPrefecture" type="text" value="${esc(q.prefecture)}" style="${inp}"></div>
+        <div><label style="${lbl}">よくある間違い（wrong_text）</label><input id="sEditWrongText" type="text" value="${esc(q.wrongText)}" style="${inp}"></div>
+        <div><label style="${lbl}">補足（note）</label><input id="sEditNote" type="text" value="${esc(q.note)}" style="${inp}"></div>
+        <div><label style="${lbl}">参照URL（source_url）</label><input id="sEditSourceUrl" type="text" value="${esc(q.sourceUrl)}" style="${inp}"></div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid #f0f4f8;display:flex;gap:8px;flex-shrink:0;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:12px;background:#f5f5f5;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
+        <button onclick="saveShakaiEditModal(${dataIndex})" style="flex:1;padding:12px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">保存</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function saveShakaiEditModal(dataIndex) {
+  const data = loadShakaiData();
+  const q = data[dataIndex];
+  if (!q) return;
+  q.kana = document.getElementById('sEditKana').value.trim();
+  q.correct = document.getElementById('sEditCorrect').value.trim();
+  q.reading = document.getElementById('sEditReading').value.trim();
+  q.prefecture = document.getElementById('sEditPrefecture').value.trim();
+  q.wrongText = document.getElementById('sEditWrongText').value.trim();
+  q.note = document.getElementById('sEditNote').value.trim();
+  q.sourceUrl = document.getElementById('sEditSourceUrl').value.trim();
+  saveShakaiData(data);
+  const editOverlay = document.getElementById('shakaiEditModalOverlay');
+  if (editOverlay) editOverlay.remove();
+  showToast('保存しました');
+  const gyou = document.getElementById('sFilterGyou')?.value || '';
+  const keyword = document.getElementById('sFilterKeyword')?.value || '';
+  const existing = document.getElementById('shakaiListOverlay');
+  if (existing) existing.remove();
+  showShakaiQuestionList({ gyou, keyword });
+}
+
 function openEditFromList(dataIndex) {
   const data = loadPracticeData();
   const q = data[dataIndex];
@@ -3757,6 +3952,44 @@ function doSaveWithUnitType(btn) {
 }
 
 // ===== れんしゅうデータ管理 =====
+// ===== 社会（地理）データ =====
+const SEED_SHAKAI_CHIRI_DATA = [{"id":"chiri_geo_1","_uid":"chiri_geo_1","subject":"社会","category":"地理","kana":"お","correct":"牡鹿半島","reading":"おしかはんとう","prefecture":"宮城県","wrongText":"男×鹿半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%89%A1%E9%B9%BF%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_2","_uid":"chiri_geo_2","subject":"社会","category":"地理","kana":"お","correct":"渡島半島","reading":"おしまはんとう","prefecture":"北海道","wrongText":"度×島半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B8%A1%E5%B3%B6%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_3","_uid":"chiri_geo_3","subject":"社会","category":"地理","kana":"お","correct":"温室効果ガス","reading":"おんしつこうかガス","prefecture":"","wrongText":"温室効×果ガス","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B8%A9%E5%AE%A4%E5%8A%B9%E6%9E%9C%E3%82%AC%E3%82%B9","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_4","_uid":"chiri_geo_4","subject":"社会","category":"地理","kana":"お","correct":"御嶽山","reading":"おんたけさん","prefecture":"長野県・岐阜県","wrongText":"御［W001］×山／［W002］×","wrongImages":[{"id":"W001","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W001.png"},{"id":"W002","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W002.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%BE%A1%E5%B6%BD%E5%B1%B1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_5","_uid":"chiri_geo_5","subject":"社会","category":"地理","kana":"か","correct":"偕楽園","reading":"かいらくえん","prefecture":"茨城県","wrongText":"階×楽園","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%81%95%E6%A5%BD%E5%9C%92","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_6","_uid":"chiri_geo_6","subject":"社会","category":"地理","kana":"か","correct":"火砕流","reading":"かさいりゅう","prefecture":"","wrongText":"火災×流","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%81%AB%E7%A0%95%E6%B5%81","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_7","_uid":"chiri_geo_7","subject":"社会","category":"地理","kana":"か","correct":"鹿嶋市(茨城県)","reading":"かしまし","prefecture":"茨城県","wrongText":"鹿島×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%B9%BF%E5%B6%8B%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_8","_uid":"chiri_geo_8","subject":"社会","category":"地理","kana":"か","correct":"鹿島臨海工業地域","reading":"かしまりんかいこうぎょうちいき","prefecture":"茨城県","wrongText":"鹿嶋×臨海工業地域","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%B9%BF%E5%B3%B6%E8%87%A8%E6%B5%B7%E5%B7%A5%E6%A5%AD%E5%9C%B0%E5%9F%9F","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_9","_uid":"chiri_geo_9","subject":"社会","category":"地理","kana":"か","correct":"過疎","reading":"かそ","prefecture":"","wrongText":"過［W003］×","wrongImages":[{"id":"W003","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W003.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%81%8E%E7%96%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_10","_uid":"chiri_geo_10","subject":"社会","category":"地理","kana":"か","correct":"合掌造り","reading":"がっしょうづくり","prefecture":"","wrongText":"合［W004］×造り／合［W005］×造り","wrongImages":[{"id":"W004","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W004.png"},{"id":"W005","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W005.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%90%88%E6%8E%8C%E9%80%A0%E3%82%8A","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_11","_uid":"chiri_geo_11","subject":"社会","category":"地理","kana":"か","correct":"環境問題","reading":"かんきょうもんだい","prefecture":"","wrongText":"［W006］×境問題","wrongImages":[{"id":"W006","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W006.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%92%B0%E5%A2%83%E5%95%8F%E9%A1%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_12","_uid":"chiri_geo_12","subject":"社会","category":"地理","kana":"か","correct":"間伐","reading":"かんばつ","prefecture":"","wrongText":"間代×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%96%93%E4%BC%90","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_13","_uid":"chiri_geo_13","subject":"社会","category":"地理","kana":"か","correct":"関門海峡","reading":"かんもんかいきょう","prefecture":"山口県・福岡県","wrongText":"間×門海峡","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%96%A2%E9%96%80%E6%B5%B7%E5%B3%A1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_14","_uid":"chiri_geo_14","subject":"社会","category":"地理","kana":"き","correct":"紀伊山地","reading":"きいさんち","prefecture":"三重県・奈良県・和歌山県","wrongText":"紀井×山地／記×伊山地","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%B4%80%E4%BC%8A%E5%B1%B1%E5%9C%B0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_15","_uid":"chiri_geo_15","subject":"社会","category":"地理","kana":"き","correct":"紀の川","reading":"きのかわ","prefecture":"奈良県・和歌山県","wrongText":"記×の川","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%B4%80%E3%81%AE%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_16","_uid":"chiri_geo_16","subject":"社会","category":"地理","kana":"き","correct":"距離","reading":"きょり","prefecture":"","wrongText":"［W007］×離","wrongImages":[{"id":"W007","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W007.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%B7%9D%E9%9B%A2","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_17","_uid":"chiri_geo_17","subject":"社会","category":"地理","kana":"き","correct":"近郊農業","reading":"きんこうのうぎょう","prefecture":"","wrongText":"近［W008］×農業","wrongImages":[{"id":"W008","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W008.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BF%91%E9%83%8A%E8%BE%B2%E6%A5%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_18","_uid":"chiri_geo_18","subject":"社会","category":"地理","kana":"く","correct":"釧路市","reading":"くしろし","prefecture":"北海道","wrongText":"訓×路市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%87%A7%E8%B7%AF%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_19","_uid":"chiri_geo_19","subject":"社会","category":"地理","kana":"く","correct":"国東半島","reading":"くにさきはんとう","prefecture":"大分県","wrongText":"国先×半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%9B%BD%E6%9D%B1%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_20","_uid":"chiri_geo_20","subject":"社会","category":"地理","kana":"く","correct":"球磨川","reading":"くまがわ","prefecture":"熊本県","wrongText":"球［W009］×川／熊×川","wrongImages":[{"id":"W009","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W009.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%90%83%E7%A3%A8%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_21","_uid":"chiri_geo_21","subject":"社会","category":"地理","kana":"く","correct":"熊本県","reading":"くまもとけん","prefecture":"","wrongText":"熊×本県／能×本県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%86%8A%E6%9C%AC%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_22","_uid":"chiri_geo_22","subject":"社会","category":"地理","kana":"く","correct":"倉敷市","reading":"くらしきし","prefecture":"岡山県","wrongText":"倉［W010］×市／［W011］×／蔵×敷市","wrongImages":[{"id":"W010","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W010.png"},{"id":"W011","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W011.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%80%89%E6%95%B7%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_23","_uid":"chiri_geo_23","subject":"社会","category":"地理","kana":"く","correct":"群馬県","reading":"ぐんまけん","prefecture":"","wrongText":"郡×馬県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%BE%A4%E9%A6%AC%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_24","_uid":"chiri_geo_24","subject":"社会","category":"地理","kana":"け","correct":"警察署","reading":"けいさつしょ","prefecture":"","wrongText":"警察所×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%AD%A6%E5%AF%9F%E7%BD%B2","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_25","_uid":"chiri_geo_25","subject":"社会","category":"地理","kana":"け","correct":"経度","reading":"けいど","prefecture":"","wrongText":"径×度","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%B5%8C%E5%BA%A6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_26","_uid":"chiri_geo_26","subject":"社会","category":"地理","kana":"け","correct":"減反政策","reading":"げんたんせいさく","prefecture":"","wrongText":"減田×政策","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B8%9B%E5%8F%8D%E6%94%BF%E7%AD%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_27","_uid":"chiri_geo_27","subject":"社会","category":"地理","kana":"こ","correct":"高知県","reading":"こうちけん","prefecture":"","wrongText":"高地×県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%AB%98%E7%9F%A5%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_28","_uid":"chiri_geo_28","subject":"社会","category":"地理","kana":"こ","correct":"甲府市","reading":"こうふし","prefecture":"山梨県","wrongText":"甲付×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%94%B2%E5%BA%9C%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_29","_uid":"chiri_geo_29","subject":"社会","category":"地理","kana":"こ","correct":"高齢化","reading":"こうれいか","prefecture":"","wrongText":"高令×化","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%AB%98%E9%BD%A2%E5%8C%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_30","_uid":"chiri_geo_30","subject":"社会","category":"地理","kana":"こ","correct":"高冷地農業","reading":"こうれいちのうぎょう","prefecture":"","wrongText":"高齢×地農業","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%AB%98%E5%86%B7%E5%9C%B0%E8%BE%B2%E6%A5%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_31","_uid":"chiri_geo_31","subject":"社会","category":"地理","kana":"こ","correct":"郡山盆地","reading":"こおりやまぼんち","prefecture":"福島県","wrongText":"群×山盆地","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%83%A1%E5%B1%B1%E7%9B%86%E5%9C%B0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_32","_uid":"chiri_geo_32","subject":"社会","category":"地理","kana":"こ","correct":"国連教育科学文化機関","reading":"こくれんきょういくかがくぶんかきかん","prefecture":"","wrongText":"国連教育化×学文化機関","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%9B%BD%E9%9A%9B%E9%80%A3%E5%90%88%E6%95%99%E8%82%B2%E7%A7%91%E5%AD%A6%E6%96%87%E5%8C%96%E6%A9%9F%E9%96%A2","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_33","_uid":"chiri_geo_33","subject":"社会","category":"地理","kana":"こ","correct":"児島湾","reading":"こじまわん","prefecture":"岡山県","wrongText":"小×島湾／児嶋×湾","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%85%90%E5%B3%B6%E6%B9%BE","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_34","_uid":"chiri_geo_34","subject":"社会","category":"地理","kana":"こ","correct":"根釧台地","reading":"こんせんだいち","prefecture":"北海道","wrongText":"根訓×台地","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%A0%B9%E9%87%A7%E5%8F%B0%E5%9C%B0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_35","_uid":"chiri_geo_35","subject":"社会","category":"地理","kana":"さ","correct":"埼玉県","reading":"さいたまけん","prefecture":"","wrongText":"崎×玉県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%9F%BC%E7%8E%89%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_36","_uid":"chiri_geo_36","subject":"社会","category":"地理","kana":"さ","correct":"栽培漁業","reading":"さいばいぎょぎょう","prefecture":"","wrongText":"［W012］×［W013］×漁業","wrongImages":[{"id":"W012","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W012.png"},{"id":"W013","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W013.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%A0%BD%E5%9F%B9%E6%BC%81%E6%A5%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_37","_uid":"chiri_geo_37","subject":"社会","category":"地理","kana":"さ","correct":"堺市(大阪府)","reading":"さかいし","prefecture":"大阪府","wrongText":"境×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A0%BA%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_38","_uid":"chiri_geo_38","subject":"社会","category":"地理","kana":"さ","correct":"境港市(鳥取県)","reading":"さかいみなとし","prefecture":"鳥取県","wrongText":"堺×港市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A2%83%E6%B8%AF%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_39","_uid":"chiri_geo_39","subject":"社会","category":"地理","kana":"さ","correct":"相模原市","reading":"さがみはらし","prefecture":"神奈川県","wrongText":"相撲×原市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9B%B8%E6%A8%A1%E5%8E%9F%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_40","_uid":"chiri_geo_40","subject":"社会","category":"地理","kana":"さ","correct":"佐世保市","reading":"させぼし","prefecture":"長崎県","wrongText":"左×世保市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BD%90%E4%B8%96%E4%BF%9D%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_41","_uid":"chiri_geo_41","subject":"社会","category":"地理","kana":"さ","correct":"佐田岬半島","reading":"さだみさきはんとう","prefecture":"愛媛県","wrongText":"左×多×岬半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BD%90%E7%94%B0%E5%B2%AC%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_42","_uid":"chiri_geo_42","subject":"社会","category":"地理","kana":"さ","correct":"佐渡島","reading":"さどがしま","prefecture":"新潟県","wrongText":"左×度×島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BD%90%E6%B8%A1%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_43","_uid":"chiri_geo_43","subject":"社会","category":"地理","kana":"さ","correct":"札幌市","reading":"さっぽろし","prefecture":"北海道","wrongText":"礼×幌市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%9C%AD%E5%B9%8C%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_44","_uid":"chiri_geo_44","subject":"社会","category":"地理","kana":"さ","correct":"讃岐平野","reading":"さぬきへいや","prefecture":"香川県","wrongText":"賛×岐平野","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%AE%83%E5%B2%90%E5%B9%B3%E9%87%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_45","_uid":"chiri_geo_45","subject":"社会","category":"地理","kana":"さ","correct":"鯖江市","reading":"さばえし","prefecture":"福井県","wrongText":"［W014］×江市","wrongImages":[{"id":"W014","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W014.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%AF%96%E6%B1%9F%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_46","_uid":"chiri_geo_46","subject":"社会","category":"地理","kana":"さ","correct":"山陰地方","reading":"さんいんちほう","prefecture":"鳥取県・島根県","wrongText":"山蔭×地方","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%B1%B1%E9%99%B0%E5%9C%B0%E6%96%B9","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_47","_uid":"chiri_geo_47","subject":"社会","category":"地理","kana":"し","correct":"滋賀県","reading":"しがけん","prefecture":"","wrongText":"［W015］×賀県","wrongImages":[{"id":"W015","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W015.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%BB%8B%E8%B3%80%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_48","_uid":"chiri_geo_48","subject":"社会","category":"地理","kana":"し","correct":"色丹島","reading":"しこたんとう","prefecture":"北海道","wrongText":"色［W016］×島","wrongImages":[{"id":"W016","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W016.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%89%B2%E4%B8%B9%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_49","_uid":"chiri_geo_49","subject":"社会","category":"地理","kana":"し","correct":"信濃川","reading":"しなのがわ","prefecture":"長野県・新潟県","wrongText":"信野×川／信農×川","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BF%A1%E6%BF%83%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_50","_uid":"chiri_geo_50","subject":"社会","category":"地理","kana":"し","correct":"志摩半島","reading":"しまはんとう","prefecture":"三重県","wrongText":"志磨×半島／島×半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%BF%97%E6%91%A9%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_51","_uid":"chiri_geo_51","subject":"社会","category":"地理","kana":"し","correct":"消防署","reading":"しょうぼうしょ","prefecture":"","wrongText":"消防所×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B6%88%E9%98%B2%E7%BD%B2","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_52","_uid":"chiri_geo_52","subject":"社会","category":"地理","kana":"し","correct":"白川郷","reading":"しらかわごう","prefecture":"岐阜県","wrongText":"白川［W017］×","wrongImages":[{"id":"W017","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W017.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%99%BD%E5%B7%9D%E9%83%B7","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_53","_uid":"chiri_geo_53","subject":"社会","category":"地理","kana":"し","correct":"宍道湖","reading":"しんじこ","prefecture":"島根県","wrongText":"［W018］×道湖","wrongImages":[{"id":"W018","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W018.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AE%8D%E9%81%93%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_54","_uid":"chiri_geo_54","subject":"社会","category":"地理","kana":"す","correct":"水郷地帯","reading":"すいごうちたい","prefecture":"茨城県・千葉県","wrongText":"水［W019］×地帯","wrongImages":[{"id":"W019","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W019.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B0%B4%E9%83%B7%E5%9C%B0%E5%B8%AF","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_55","_uid":"chiri_geo_55","subject":"社会","category":"地理","kana":"す","correct":"隅田川","reading":"すみだがわ","prefecture":"東京都","wrongText":"［W020］×田川／［W021］×田川／［W022］×田川","wrongImages":[{"id":"W020","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W020.png"},{"id":"W021","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W021.png"},{"id":"W022","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W022.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%9A%85%E7%94%B0%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_56","_uid":"chiri_geo_56","subject":"社会","category":"地理","kana":"す","correct":"墨田区","reading":"すみだく","prefecture":"東京都","wrongText":"［W023］×田区","wrongImages":[{"id":"W023","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W023.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A2%A8%E7%94%B0%E5%8C%BA","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_57","_uid":"chiri_geo_57","subject":"社会","category":"地理","kana":"す","correct":"駿河湾","reading":"するがわん","prefecture":"静岡県","wrongText":"［W024］×河湾","wrongImages":[{"id":"W024","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W024.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%A7%BF%E6%B2%B3%E6%B9%BE","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_58","_uid":"chiri_geo_58","subject":"社会","category":"地理","kana":"す","correct":"諏訪湖","reading":"すわこ","prefecture":"長野県","wrongText":"訪諏×湖","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%AB%8F%E8%A8%AA%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_59","_uid":"chiri_geo_59","subject":"社会","category":"地理","kana":"せ","correct":"青函トンネル","reading":"せいかんトンネル","prefecture":"北海道・青森県","wrongText":"青［W025］×トンネル／［W026］×","wrongImages":[{"id":"W025","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W025.png"},{"id":"W026","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W026.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%9D%92%E5%87%BD%E3%83%88%E3%83%B3%E3%83%8D%E3%83%AB","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_60","_uid":"chiri_geo_60","subject":"社会","category":"地理","kana":"せ","correct":"正距方位図法","reading":"せいきょほういずほう","prefecture":"","wrongText":"正［W027］×方位図法","wrongImages":[{"id":"W027","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W027.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%AD%A3%E8%B7%9D%E6%96%B9%E4%BD%8D%E5%9B%B3%E6%B3%95","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_61","_uid":"chiri_geo_61","subject":"社会","category":"地理","kana":"せ","correct":"製紙・パルプ","reading":"せいし・パルプ","prefecture":"","wrongText":"製糸×・パルプ","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%A3%BD%E7%B4%99%E3%83%BB%E3%83%91%E3%83%AB%E3%83%97","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_62","_uid":"chiri_geo_62","subject":"社会","category":"地理","kana":"せ","correct":"石油化学工業","reading":"せきゆかがくこうぎょう","prefecture":"","wrongText":"石油科×学工業","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9F%B3%E6%B2%B9%E5%8C%96%E5%AD%A6%E5%B7%A5%E6%A5%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_63","_uid":"chiri_geo_63","subject":"社会","category":"地理","kana":"せ","correct":"瀬田川","reading":"せたがわ","prefecture":"滋賀県","wrongText":"世×田川／［W028］×","wrongImages":[{"id":"W028","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W028.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%80%AC%E7%94%B0%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_64","_uid":"chiri_geo_64","subject":"社会","category":"地理","kana":"せ","correct":"石灰石","reading":"せっかいせき","prefecture":"","wrongText":"石炭×石","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9F%B3%E7%81%B0%E7%9F%B3","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_65","_uid":"chiri_geo_65","subject":"社会","category":"地理","kana":"せ","correct":"瀬戸内海","reading":"せとないかい","prefecture":"大阪府・兵庫県・岡山県・広島県・山口県・徳島県・香川県・愛媛県・福岡県・大分県","wrongText":"［W029］×戸内海","wrongImages":[{"id":"W029","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W029.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%80%AC%E6%88%B8%E5%86%85%E6%B5%B7","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_66","_uid":"chiri_geo_66","subject":"社会","category":"地理","kana":"せ","correct":"尖閣諸島","reading":"せんかくしょとう","prefecture":"沖縄県","wrongText":"先×［W030］×諸島／尖［W031］×諸島","wrongImages":[{"id":"W030","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W030.png"},{"id":"W031","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W031.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%B0%96%E9%96%A3%E8%AB%B8%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_67","_uid":"chiri_geo_67","subject":"社会","category":"地理","kana":"せ","correct":"扇状地","reading":"せんじょうち","prefecture":"","wrongText":"戦×場×地","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%89%87%E7%8A%B6%E5%9C%B0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_68","_uid":"chiri_geo_68","subject":"社会","category":"地理","kana":"せ","correct":"千代川","reading":"せんだいがわ","prefecture":"鳥取県","wrongText":"仙×台×川／千大×川","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%8D%83%E4%BB%A3%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_69","_uid":"chiri_geo_69","subject":"社会","category":"地理","kana":"せ","correct":"仙台市","reading":"せんだいし","prefecture":"宮城県","wrongText":"千×代×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BB%99%E5%8F%B0%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_70","_uid":"chiri_geo_70","subject":"社会","category":"地理","kana":"そ","correct":"騒音","reading":"そうおん","prefecture":"","wrongText":"［W032］×音","wrongImages":[{"id":"W032","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W032.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%A8%92%E9%9F%B3","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_71","_uid":"chiri_geo_71","subject":"社会","category":"地理","kana":"そ","correct":"促成栽培","reading":"そくせいさいばい","prefecture":"","wrongText":"促成［W033］×［W034］×","wrongImages":[{"id":"W033","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W033.png"},{"id":"W034","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W034.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BF%83%E6%88%90%E6%A0%BD%E5%9F%B9","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_72","_uid":"chiri_geo_72","subject":"社会","category":"地理","kana":"た","correct":"大西洋","reading":"たいせいよう","prefecture":"","wrongText":"太×西洋","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%A7%E8%A5%BF%E6%B4%8B","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_73","_uid":"chiri_geo_73","subject":"社会","category":"地理","kana":"た","correct":"太平洋","reading":"たいへいよう","prefecture":"","wrongText":"大×平洋","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%AA%E5%B9%B3%E6%B4%8B","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_74","_uid":"chiri_geo_74","subject":"社会","category":"地理","kana":"た","correct":"種子島","reading":"たねがしま","prefecture":"鹿児島県","wrongText":"種ヶ×島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%A8%AE%E5%AD%90%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_75","_uid":"chiri_geo_75","subject":"社会","category":"地理","kana":"た","correct":"多摩川","reading":"たまがわ","prefecture":"山梨県・東京都・神奈川県","wrongText":"多磨×川／玉×川","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%9A%E6%91%A9%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_76","_uid":"chiri_geo_76","subject":"社会","category":"地理","kana":"た","correct":"多様化","reading":"たようか","prefecture":"","wrongText":"多用×化","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%9A%E6%A7%98%E5%8C%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_77","_uid":"chiri_geo_77","subject":"社会","category":"地理","kana":"た","correct":"丹後半島","reading":"たんごはんとう","prefecture":"京都府","wrongText":"［W035］×後半島／［W036］×","wrongImages":[{"id":"W035","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W035.png"},{"id":"W036","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W036.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%B8%B9%E5%BE%8C%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_78","_uid":"chiri_geo_78","subject":"社会","category":"地理","kana":"ち","correct":"筑後川","reading":"ちくごがわ","prefecture":"熊本県・大分県・福岡県・佐賀県","wrongText":"築×後川","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%AD%91%E5%BE%8C%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_79","_uid":"chiri_geo_79","subject":"社会","category":"地理","kana":"ち","correct":"知多半島","reading":"ちたはんとう","prefecture":"愛知県","wrongText":"知田×半島／知太×半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9F%A5%E5%A4%9A%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_80","_uid":"chiri_geo_80","subject":"社会","category":"地理","kana":"ち","correct":"秩父市","reading":"ちちぶし","prefecture":"埼玉県","wrongText":"［W037］×父市","wrongImages":[{"id":"W037","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W037.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%A7%A9%E7%88%B6%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_81","_uid":"chiri_geo_81","subject":"社会","category":"地理","kana":"ち","correct":"中華人民共和国","reading":"ちゅうかじんみんきょうわこく","prefecture":"","wrongText":"中［W038］×人民共和国","wrongImages":[{"id":"W038","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W038.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%B8%AD%E8%8F%AF%E4%BA%BA%E6%B0%91%E5%85%B1%E5%92%8C%E5%9B%BD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_82","_uid":"chiri_geo_82","subject":"社会","category":"地理","kana":"ち","correct":"中禅寺湖","reading":"ちゅうぜんじこ","prefecture":"栃木県","wrongText":"中［W039］×寺湖／中前×寺湖／中善×寺湖","wrongImages":[{"id":"W039","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W039.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%B8%AD%E7%A6%85%E5%AF%BA%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_83","_uid":"chiri_geo_83","subject":"社会","category":"地理","kana":"ち","correct":"銚子港","reading":"ちょうしこう","prefecture":"千葉県","wrongText":"誂×子港／桃×／挑×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%8A%9A%E5%AD%90%E6%B8%AF","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_84","_uid":"chiri_geo_84","subject":"社会","category":"地理","kana":"ち","correct":"千代田区","reading":"ちよだく","prefecture":"東京都","wrongText":"千世×田区","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%8D%83%E4%BB%A3%E7%94%B0%E5%8C%BA","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_85","_uid":"chiri_geo_85","subject":"社会","category":"地理","kana":"つ","correct":"築地","reading":"つきじ","prefecture":"東京都","wrongText":"［W040］×地","wrongImages":[{"id":"W040","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W040.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%AF%89%E5%9C%B0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_86","_uid":"chiri_geo_86","subject":"社会","category":"地理","kana":"つ","correct":"筑紫平野","reading":"つくしへいや","prefecture":"福岡県・佐賀県","wrongText":"［W041］×紫平野","wrongImages":[{"id":"W041","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W041.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%AD%91%E7%B4%AB%E5%B9%B3%E9%87%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_87","_uid":"chiri_geo_87","subject":"社会","category":"地理","kana":"つ","correct":"対馬","reading":"つしま","prefecture":"長崎県","wrongText":"対島×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AF%BE%E9%A6%AC","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_88","_uid":"chiri_geo_88","subject":"社会","category":"地理","kana":"つ","correct":"嬬恋村","reading":"つまごいむら","prefecture":"群馬県","wrongText":"妻×恋村","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AC%AC%E6%81%8B%E6%9D%91","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_89","_uid":"chiri_geo_89","subject":"社会","category":"地理","kana":"て","correct":"鉄鋼業","reading":"てっこうぎょう","prefecture":"","wrongText":"鉄鉱×業","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%89%84%E9%8B%BC%E6%A5%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_90","_uid":"chiri_geo_90","subject":"社会","category":"地理","kana":"て","correct":"鉄鉱石","reading":"てっこうせき","prefecture":"","wrongText":"鉄鋼×石","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%89%84%E9%89%B1%E7%9F%B3","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_91","_uid":"chiri_geo_91","subject":"社会","category":"地理","kana":"と","correct":"鳥取県","reading":"とっとりけん","prefecture":"","wrongText":"取鳥×県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%B3%A5%E5%8F%96%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_92","_uid":"chiri_geo_92","subject":"社会","category":"地理","kana":"と","correct":"苫小牧市","reading":"とまこまいし","prefecture":"北海道","wrongText":"［W042］×小［W043］×市","wrongImages":[{"id":"W042","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W042.png"},{"id":"W043","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W043.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%8B%AB%E5%B0%8F%E7%89%A7%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_93","_uid":"chiri_geo_93","subject":"社会","category":"地理","kana":"と","correct":"富岡製糸場","reading":"とみおかせいしじょう","prefecture":"群馬県","wrongText":"富岡製紙×場","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AF%8C%E5%B2%A1%E8%A3%BD%E7%B3%B8%E5%A0%B4","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_94","_uid":"chiri_geo_94","subject":"社会","category":"地理","kana":"と","correct":"豊洲","reading":"とよす","prefecture":"東京都","wrongText":"豊州×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%B1%8A%E6%B4%B2","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_95","_uid":"chiri_geo_95","subject":"社会","category":"地理","kana":"と","correct":"十和田湖","reading":"とわだこ","prefecture":"青森県・秋田県","wrongText":"戸×輪×田湖／斗×和田湖","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%8D%81%E5%92%8C%E7%94%B0%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_96","_uid":"chiri_geo_96","subject":"社会","category":"地理","kana":"な","correct":"那覇市","reading":"なはし","prefecture":"沖縄県","wrongText":"奈×波×市／邦×覇市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%82%A3%E8%A6%87%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_97","_uid":"chiri_geo_97","subject":"社会","category":"地理","kana":"な","correct":"鳴門海峡","reading":"なるとかいきょう","prefecture":"兵庫県・徳島県","wrongText":"鳴戸×海峡","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%B3%B4%E9%96%80%E6%B5%B7%E5%B3%A1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_98","_uid":"chiri_geo_98","subject":"社会","category":"地理","kana":"に","correct":"新潟県","reading":"にいがたけん","prefecture":"","wrongText":"新［W044］×県／［W045］×／［W046］×","wrongImages":[{"id":"W044","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W044.png"},{"id":"W045","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W045.png"},{"id":"W046","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W046.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%96%B0%E6%BD%9F%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_99","_uid":"chiri_geo_99","subject":"社会","category":"地理","kana":"の","correct":"濃尾平野","reading":"のうびへいや","prefecture":"愛知県・岐阜県","wrongText":"農×美×平野","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%BF%83%E5%B0%BE%E5%B9%B3%E9%87%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_100","_uid":"chiri_geo_100","subject":"社会","category":"地理","kana":"の","correct":"能登半島","reading":"のとはんとう","prefecture":"石川県","wrongText":"熊×戸×半島／熊×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%83%BD%E7%99%BB%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_101","_uid":"chiri_geo_101","subject":"社会","category":"地理","kana":"は","correct":"排他的経済水域","reading":"はいたてきけいざいすいいき","prefecture":"","wrongText":"排×他的経済水域","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%8E%92%E4%BB%96%E7%9A%84%E7%B5%8C%E6%B8%88%E6%B0%B4%E5%9F%9F","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_102","_uid":"chiri_geo_102","subject":"社会","category":"地理","kana":"は","correct":"博多駅","reading":"はかたえき","prefecture":"福岡県","wrongText":"［W047］×田×駅","wrongImages":[{"id":"W047","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W047.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%8D%9A%E5%A4%9A%E9%A7%85","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_103","_uid":"chiri_geo_103","subject":"社会","category":"地理","kana":"は","correct":"函館市","reading":"はこだてし","prefecture":"北海道","wrongText":"［W048］×館市／［W049］×","wrongImages":[{"id":"W048","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W048.png"},{"id":"W049","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W049.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%87%BD%E9%A4%A8%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_104","_uid":"chiri_geo_104","subject":"社会","category":"地理","kana":"は","correct":"八郎潟","reading":"はちろうがた","prefecture":"秋田県","wrongText":"八朗×［W050］×／［W051］×／［W052］×","wrongImages":[{"id":"W050","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W050.png"},{"id":"W051","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W051.png"},{"id":"W052","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W052.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%85%AB%E9%83%8E%E6%BD%9F","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_105","_uid":"chiri_geo_105","subject":"社会","category":"地理","kana":"は","correct":"播磨平野","reading":"はりまへいや","prefecture":"兵庫県","wrongText":"播摩×平野","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%92%AD%E7%A3%A8%E5%B9%B3%E9%87%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_106","_uid":"chiri_geo_106","subject":"社会","category":"地理","kana":"ひ","correct":"飛騨山脈","reading":"ひださんみゃく","prefecture":"富山県・岐阜県・長野県","wrongText":"飛［W053］×山脈","wrongImages":[{"id":"W053","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W053.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%A3%9B%E9%A8%A8%E5%B1%B1%E8%84%88","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_107","_uid":"chiri_geo_107","subject":"社会","category":"地理","kana":"ひ","correct":"琵琶湖","reading":"びわこ","prefecture":"滋賀県","wrongText":"琵琶×湖／琵［W054］×湖","wrongImages":[{"id":"W054","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W054.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%90%B5%E7%90%B6%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_108","_uid":"chiri_geo_108","subject":"社会","category":"地理","kana":"ふ","correct":"富士山","reading":"ふじさん","prefecture":"山梨県・静岡県","wrongText":"［W055］×士山","wrongImages":[{"id":"W055","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W055.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AF%8C%E5%A3%AB%E5%B1%B1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_109","_uid":"chiri_geo_109","subject":"社会","category":"地理","kana":"ふ","correct":"普天間","reading":"ふてんま","prefecture":"沖縄県","wrongText":"［W056］×天間","wrongImages":[{"id":"W056","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W056.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%99%AE%E5%A4%A9%E9%96%93","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_110","_uid":"chiri_geo_110","subject":"社会","category":"地理","kana":"へ","correct":"辺野古","reading":"へのこ","prefecture":"沖縄県","wrongText":"辺野子×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BE%BA%E9%87%8E%E5%8F%A4","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_111","_uid":"chiri_geo_111","subject":"社会","category":"地理","kana":"ほ","correct":"貿易摩擦","reading":"ぼうえきまさつ","prefecture":"","wrongText":"貿易摩［W057］×／［W058］×／［W059］×／［W060］×","wrongImages":[{"id":"W057","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W057.png"},{"id":"W058","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W058.png"},{"id":"W059","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W059.png"},{"id":"W060","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W060.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%B2%BF%E6%98%93%E6%91%A9%E6%93%A6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_112","_uid":"chiri_geo_112","subject":"社会","category":"地理","kana":"ほ","correct":"房総半島","reading":"ぼうそうはんとう","prefecture":"千葉県","wrongText":"戻×総半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%88%BF%E7%B7%8F%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_113","_uid":"chiri_geo_113","subject":"社会","category":"地理","kana":"ま","correct":"松阪牛","reading":"まつさかうし","prefecture":"三重県","wrongText":"松坂×牛","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%9D%BE%E9%98%AA%E7%89%9B","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_114","_uid":"chiri_geo_114","subject":"社会","category":"地理","kana":"ま","correct":"満濃池","reading":"まんのういけ","prefecture":"香川県","wrongText":"満農×池","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%BA%80%E6%BF%83%E6%B1%A0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_115","_uid":"chiri_geo_115","subject":"社会","category":"地理","kana":"み","correct":"三日月湖","reading":"みかづきこ","prefecture":"","wrongText":"三ヶ×月湖","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%B8%89%E6%97%A5%E6%9C%88%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_116","_uid":"chiri_geo_116","subject":"社会","category":"地理","kana":"み","correct":"水戸市","reading":"みとし","prefecture":"茨城県","wrongText":"三×戸市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B0%B4%E6%88%B8%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_117","_uid":"chiri_geo_117","subject":"社会","category":"地理","kana":"み","correct":"水俣病","reading":"みなまたびょう","prefecture":"熊本県","wrongText":"水［W061］×病","wrongImages":[{"id":"W061","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W061.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B0%B4%E4%BF%A3%E7%97%85","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_118","_uid":"chiri_geo_118","subject":"社会","category":"地理","kana":"む","correct":"武蔵野","reading":"むさしの","prefecture":"東京都・埼玉県","wrongText":"［W062］×蔵野","wrongImages":[{"id":"W062","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W062.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%AD%A6%E8%94%B5%E9%87%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_119","_uid":"chiri_geo_119","subject":"社会","category":"地理","kana":"む","correct":"陸奥湾","reading":"むつわん","prefecture":"青森県","wrongText":"陸［W063］×湾／［W064］×羽","wrongImages":[{"id":"W063","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W063.png"},{"id":"W064","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W064.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%99%B8%E5%A5%A5%E6%B9%BE","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_120","_uid":"chiri_geo_120","subject":"社会","category":"地理","kana":"む","correct":"室蘭市","reading":"むろらんし","prefecture":"北海道","wrongText":"室［W065］×市","wrongImages":[{"id":"W065","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W065.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AE%A4%E8%98%AD%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_121","_uid":"chiri_geo_121","subject":"社会","category":"地理","kana":"も","correct":"盛岡市","reading":"もりおかし","prefecture":"岩手県","wrongText":"［W066］×岡市／森×岡市","wrongImages":[{"id":"W066","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W066.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9B%9B%E5%B2%A1%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_122","_uid":"chiri_geo_122","subject":"社会","category":"地理","kana":"や","correct":"焼津港","reading":"やいづこう","prefecture":"静岡県","wrongText":"暁×津港","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%84%BC%E6%B4%A5%E6%B8%AF","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_123","_uid":"chiri_geo_123","subject":"社会","category":"地理","kana":"や","correct":"屋敷森","reading":"やしきもり","prefecture":"","wrongText":"屋［W067］×森／［W068］×","wrongImages":[{"id":"W067","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W067.png"},{"id":"W068","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W068.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%B1%8B%E6%95%B7%E6%A3%AE","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_124","_uid":"chiri_geo_124","subject":"社会","category":"地理","kana":"や","correct":"八幡製鉄所","reading":"やはたせいてつしょ","prefecture":"福岡県","wrongText":"八幅×製鉄場×","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%85%AB%E5%B9%A1%E8%A3%BD%E9%89%84%E6%89%80","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_125","_uid":"chiri_geo_125","subject":"社会","category":"地理","kana":"ゆ","correct":"輸出","reading":"ゆしゅつ","prefecture":"","wrongText":"輸×出","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BC%B8%E5%87%BA","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_126","_uid":"chiri_geo_126","subject":"社会","category":"地理","kana":"ゆ","correct":"輸入","reading":"ゆにゅう","prefecture":"","wrongText":"輸×入","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BC%B8%E5%85%A5","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_127","_uid":"chiri_geo_127","subject":"社会","category":"地理","kana":"よ","correct":"養殖業","reading":"ようしょくぎょう","prefecture":"","wrongText":"養食×業／養植×業／養触×業","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%A4%8A%E6%AE%96%E6%A5%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_128","_uid":"chiri_geo_128","subject":"社会","category":"地理","kana":"よ","correct":"抑制栽培","reading":"よくせいさいばい","prefecture":"","wrongText":"［W069］×成×栽培","wrongImages":[{"id":"W069","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W069.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%8A%91%E5%88%B6%E6%A0%BD%E5%9F%B9","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_129","_uid":"chiri_geo_129","subject":"社会","category":"地理","kana":"よ","correct":"四日市市","reading":"よっかいちし","prefecture":"三重県","wrongText":"四日一×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%9B%9B%E6%97%A5%E5%B8%82%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_130","_uid":"chiri_geo_130","subject":"社会","category":"地理","kana":"よ","correct":"与那国島","reading":"よなぐにじま","prefecture":"沖縄県","wrongText":"世×邦×国島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%B8%8E%E9%82%A3%E5%9B%BD%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_131","_uid":"chiri_geo_131","subject":"社会","category":"地理","kana":"ら","correct":"酪農","reading":"らくのう","prefecture":"","wrongText":"酉×農","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%85%AA%E8%BE%B2","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_132","_uid":"chiri_geo_132","subject":"社会","category":"地理","kana":"ら","correct":"落花生","reading":"らっかせい","prefecture":"","wrongText":"落下×生","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%90%BD%E8%8A%B1%E7%94%9F","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_133","_uid":"chiri_geo_133","subject":"社会","category":"地理","kana":"り","correct":"輪作","reading":"りんさく","prefecture":"","wrongText":"［W070］×作","wrongImages":[{"id":"W070","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W070.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BC%AA%E4%BD%9C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_134","_uid":"chiri_geo_134","subject":"社会","category":"地理","kana":"わ","correct":"若狭湾","reading":"わかさわん","prefecture":"福井県・京都府","wrongText":"若［W071］×湾","wrongImages":[{"id":"W071","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W071.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%8B%A5%E7%8B%AD%E6%B9%BE","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_135","_uid":"chiri_geo_135","subject":"社会","category":"地理","kana":"わ","correct":"輪島市","reading":"わじまし","prefecture":"石川県","wrongText":"［W072］×島市／［W073］×","wrongImages":[{"id":"W072","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W072.png"},{"id":"W073","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W073.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BC%AA%E5%B3%B6%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_136","_uid":"chiri_geo_136","subject":"社会","category":"地理","kana":"わ","correct":"輪中","reading":"わじゅう","prefecture":"岐阜県・愛知県・三重県","wrongText":"［W074］×中／［W075］×","wrongImages":[{"id":"W074","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W074.png"},{"id":"W075","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W075.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%BC%AA%E4%B8%AD","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_geo_137","_uid":"chiri_geo_137","subject":"社会","category":"地理","kana":"わ","correct":"渡良瀬遊水地","reading":"わたらせゆうすいち","prefecture":"栃木県・群馬県・埼玉県・茨城県","wrongText":"渡良［W076］×遊水池×","wrongImages":[{"id":"W076","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_geo_W076.png"}],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B8%A1%E8%89%AF%E7%80%AC%E9%81%8A%E6%B0%B4%E5%9C%B0","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_1","_uid":"chiri_mac_1","subject":"社会","category":"地理","kana":"あ","correct":"明石市","reading":"あかしし","prefecture":"兵庫県","wrongText":"赤×石市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%98%8E%E7%9F%B3%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_2","_uid":"chiri_mac_2","subject":"社会","category":"地理","kana":"あ","correct":"英虞湾","reading":"あごわん","prefecture":"三重県","wrongText":"英［W001］×湾／［W002］×／安×虞湾","wrongImages":[{"id":"W001","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W001.png"},{"id":"W002","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W002.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%8B%B1%E8%99%9E%E6%B9%BE","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_3","_uid":"chiri_mac_3","subject":"社会","category":"地理","kana":"あ","correct":"安積疏水","reading":"あさかそすい","prefecture":"福島県","wrongText":"安績×疎×水","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AE%89%E7%A9%8D%E7%96%8F%E6%B0%B4","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_4","_uid":"chiri_mac_4","subject":"社会","category":"地理","kana":"あ","correct":"旭川市","reading":"あさひかわし","prefecture":"北海道","wrongText":"［W003］×川市／朝日×川市","wrongImages":[{"id":"W003","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W003.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%97%AD%E5%B7%9D%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_5","_uid":"chiri_mac_5","subject":"社会","category":"地理","kana":"あ","correct":"阿蘇山","reading":"あそさん","prefecture":"熊本県","wrongText":"阿［W004］×山／［W005］×／［W006］×／安×蘇山","wrongImages":[{"id":"W004","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W004.png"},{"id":"W005","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W005.png"},{"id":"W006","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W006.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%98%BF%E8%98%87%E5%B1%B1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_6","_uid":"chiri_mac_6","subject":"社会","category":"地理","kana":"あ","correct":"渥美半島","reading":"あつみはんとう","prefecture":"愛知県","wrongText":"握×美半島／渥見×半島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B8%A5%E7%BE%8E%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_7","_uid":"chiri_mac_7","subject":"社会","category":"地理","kana":"あ","correct":"阿武隈川","reading":"あぶくまがわ","prefecture":"福島県・宮城県","wrongText":"阿武［W007］×川／［W008］×","wrongImages":[{"id":"W007","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W007.png"},{"id":"W008","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W008.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%98%BF%E6%AD%A6%E9%9A%88%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_8","_uid":"chiri_mac_8","subject":"社会","category":"地理","kana":"あ","correct":"奄美大島","reading":"あまみおおしま","prefecture":"鹿児島県","wrongText":"［W009］×美大島","wrongImages":[{"id":"W009","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W009.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A5%84%E7%BE%8E%E5%A4%A7%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_9","_uid":"chiri_mac_9","subject":"社会","category":"地理","kana":"あ","correct":"淡路島","reading":"あわじしま","prefecture":"兵庫県","wrongText":"淡地×島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B7%A1%E8%B7%AF%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_10","_uid":"chiri_mac_10","subject":"社会","category":"地理","kana":"あ","correct":"亜硫酸ガス","reading":"ありゅうさんガス","prefecture":"","wrongText":"亜流×酸ガス","wrongImages":[],"note":"","sourceUrl":"https://kotobank.jp/word/%E4%BA%9C%E7%A1%AB%E9%85%B8%E3%81%8C%E3%81%99-3141934","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_11","_uid":"chiri_mac_11","subject":"社会","category":"地理","kana":"あ","correct":"淡路島","reading":"あわじしま","prefecture":"兵庫県","wrongText":"談×路島","wrongImages":[],"note":"同じ正解語が別行で掲載","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%B7%A1%E8%B7%AF%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_12","_uid":"chiri_mac_12","subject":"社会","category":"地理","kana":"あ","correct":"暗渠排水","reading":"あんきょはいすい","prefecture":"","wrongText":"安×［W010］×俳×水","wrongImages":[{"id":"W010","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W010.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://kotobank.jp/word/%E6%9A%97%E6%B8%A0%E6%8E%92%E6%B0%B4-29068","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_13","_uid":"chiri_mac_13","subject":"社会","category":"地理","kana":"い","correct":"石狩川","reading":"いしかりがわ","prefecture":"北海道","wrongText":"石［W011］×川","wrongImages":[{"id":"W011","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W011.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9F%B3%E7%8B%A9%E5%B7%9D","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_14","_uid":"chiri_mac_14","subject":"社会","category":"地理","kana":"い","correct":"石狩平野","reading":"いしかりへいや","prefecture":"北海道","wrongText":"石［W012］×平野","wrongImages":[{"id":"W012","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W012.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://www.city.ishikari.hokkaido.jp/museum/1001801/1004573/1004719.html","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_15","_uid":"chiri_mac_15","subject":"社会","category":"地理","kana":"い","correct":"緯度","reading":"いど","prefecture":"","wrongText":"偉×度","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%B7%AF%E5%BA%A6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_16","_uid":"chiri_mac_16","subject":"社会","category":"地理","kana":"い","correct":"猪苗代湖","reading":"いなわしろこ","prefecture":"福島県","wrongText":"猫×［W013］×代湖／［W014］×","wrongImages":[{"id":"W013","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W013.png"},{"id":"W014","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W014.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%8C%AA%E8%8B%97%E4%BB%A3%E6%B9%96","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_17","_uid":"chiri_mac_17","subject":"社会","category":"地理","kana":"い","correct":"茨城県","reading":"いばらきけん","prefecture":"","wrongText":"茨木×県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%8C%A8%E5%9F%8E%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_18","_uid":"chiri_mac_18","subject":"社会","category":"地理","kana":"い","correct":"伊万里市","reading":"いまりし","prefecture":"佐賀県","wrongText":"井×万理×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E4%BC%8A%E4%B8%87%E9%87%8C%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_19","_uid":"chiri_mac_19","subject":"社会","category":"地理","kana":"い","correct":"石見銀山","reading":"いわみぎんざん","prefecture":"島根県","wrongText":"岩×見銀山","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E7%9F%B3%E8%A6%8B%E9%8A%80%E5%B1%B1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_20","_uid":"chiri_mac_20","subject":"社会","category":"地理","kana":"う","correct":"有珠山","reading":"うすざん","prefecture":"北海道","wrongText":"有［W015］×山","wrongImages":[{"id":"W015","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W015.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%9C%89%E7%8F%A0%E5%B1%B1","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_21","_uid":"chiri_mac_21","subject":"社会","category":"地理","kana":"う","correct":"宇和海","reading":"うわかい","prefecture":"愛媛県","wrongText":"［W016］×和海／［W017］×","wrongImages":[{"id":"W016","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W016.png"},{"id":"W017","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W017.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%AE%87%E5%92%8C%E6%B5%B7","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_22","_uid":"chiri_mac_22","subject":"社会","category":"地理","kana":"え","correct":"越後平野","reading":"えちごへいや","prefecture":"新潟県","wrongText":"［W018］×後平野","wrongImages":[{"id":"W018","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W018.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E8%B6%8A%E5%BE%8C%E5%B9%B3%E9%87%8E","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_23","_uid":"chiri_mac_23","subject":"社会","category":"地理","kana":"え","correct":"択捉島","reading":"えとろふとう","prefecture":"北海道","wrongText":"捉択×島","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%8A%9E%E6%8D%89%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_24","_uid":"chiri_mac_24","subject":"社会","category":"地理","kana":"え","correct":"愛媛県","reading":"えひめけん","prefecture":"","wrongText":"愛姫×県","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E6%84%9B%E5%AA%9B%E7%9C%8C","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_25","_uid":"chiri_mac_25","subject":"社会","category":"地理","kana":"え","correct":"沿岸漁業","reading":"えんがんぎょぎょう","prefecture":"","wrongText":"浴×岸漁業／遠×岸漁業","wrongImages":[],"note":"","sourceUrl":"https://www.hokumo.net/fishery/net/other-fishery.html","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_26","_uid":"chiri_mac_26","subject":"社会","category":"地理","kana":"え","correct":"遠洋漁業","reading":"えんようぎょぎょう","prefecture":"","wrongText":"沿×洋漁業","wrongImages":[],"note":"","sourceUrl":"https://www.hokumo.net/fishery/net/other-fishery.html","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_27","_uid":"chiri_mac_27","subject":"社会","category":"地理","kana":"お","correct":"奥羽山脈","reading":"おううさんみゃく","prefecture":"青森県・岩手県・宮城県・秋田県・山形県・福島県","wrongText":"［W019］×羽山脈／［W020］×羽","wrongImages":[{"id":"W019","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W019.png"},{"id":"W020","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W020.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A5%A5%E7%BE%BD%E5%B1%B1%E8%84%88","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_28","_uid":"chiri_mac_28","subject":"社会","category":"地理","kana":"お","correct":"大阪市","reading":"おおさかし","prefecture":"大阪府","wrongText":"大坂×市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%A7%E9%98%AA%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_29","_uid":"chiri_mac_29","subject":"社会","category":"地理","kana":"お","correct":"大隅半島","reading":"おおすみはんとう","prefecture":"鹿児島県","wrongText":"大［W021］×半島／大［W022］×半島×","wrongImages":[{"id":"W021","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W021.png"},{"id":"W022","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W022.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%A7%E9%9A%85%E5%8D%8A%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_30","_uid":"chiri_mac_30","subject":"社会","category":"地理","kana":"お","correct":"太田川(広島県)","reading":"おおたがわ","prefecture":"広島県","wrongText":"太×田川","wrongImages":[],"note":"","sourceUrl":"https://www.mlit.go.jp/river/toukei_chousa/kasen/jiten/nihon_kawa/0710_ootagawa/0710_ootagawa_00.html","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_31","_uid":"chiri_mac_31","subject":"社会","category":"地理","kana":"お","correct":"大田区(東京都)","reading":"おおたく","prefecture":"東京都","wrongText":"太×田区","wrongImages":[],"note":"OCR修正：太田区→大田区","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%A7%E7%94%B0%E5%8C%BA","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_32","_uid":"chiri_mac_32","subject":"社会","category":"地理","kana":"お","correct":"太田市(群馬県)","reading":"おおたし","prefecture":"群馬県","wrongText":"太×田市","wrongImages":[],"note":"","sourceUrl":"https://ja.wikipedia.org/wiki/%E5%A4%AA%E7%94%B0%E5%B8%82","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_33","_uid":"chiri_mac_33","subject":"社会","category":"地理","kana":"お","correct":"男鹿半島","reading":"おがはんとう","prefecture":"秋田県","wrongText":"牡×鹿半島","wrongImages":[],"note":"","sourceUrl":"https://kotobank.jp/word/%E7%94%B7%E9%B9%BF%E5%8D%8A%E5%B3%B6-39795","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0},{"id":"chiri_mac_34","_uid":"chiri_mac_34","subject":"社会","category":"地理","kana":"お","correct":"隠岐諸島","reading":"おきしょとう","prefecture":"島根県","wrongText":"［W023］×岐諸島","wrongImages":[{"id":"W023","url":"https://ponpoko-design.github.io/kanji-app/images/shakai/chiri/chiri_mac_W023.png"}],"note":"大きい赤字は画像IDで置換","sourceUrl":"https://ja.wikipedia.org/wiki/%E9%9A%A0%E5%B2%90%E8%AB%B8%E5%B3%B6","registeredAt":"2026-07-15","missCount":0,"charMiss":{},"totalCount":0,"correctCount":0}];
+
+function loadShakaiData() {
+  let raw = localStorage.getItem('shakai_chiri_data');
+  if (!raw) {
+    // 初回起動：初期データ（地理）を投入する
+    localStorage.setItem('shakai_chiri_data', JSON.stringify(SEED_SHAKAI_CHIRI_DATA));
+    localStorage.setItem('shakai_chiri_local_updated_ts', new Date().toISOString());
+    if (window.firestoreShakaiSave) window.firestoreShakaiSave(SEED_SHAKAI_CHIRI_DATA);
+    return JSON.parse(JSON.stringify(SEED_SHAKAI_CHIRI_DATA));
+  }
+  return JSON.parse(raw);
+}
+
+function saveShakaiData(data) {
+  if (window._setShakaiLocalSaving) window._setShakaiLocalSaving(true);
+  setTimeout(() => { if (window._setShakaiLocalSaving) window._setShakaiLocalSaving(false); }, 5000);
+  localStorage.setItem('shakai_chiri_data', JSON.stringify(data));
+  localStorage.setItem('shakai_chiri_local_updated_ts', new Date().toISOString());
+  if (window.firestoreShakaiSave) window.firestoreShakaiSave(data);
+}
+
+// 「あ」〜「わ」の1文字を五十音の行（グループ）に変換する
+const KANA_GYOU_MAP = {
+  'あ':'あ行','い':'あ行','う':'あ行','え':'あ行','お':'あ行',
+  'か':'か行','き':'か行','く':'か行','け':'か行','こ':'か行',
+  'さ':'さ行','し':'さ行','す':'さ行','せ':'さ行','そ':'さ行',
+  'た':'た行','ち':'た行','つ':'た行','て':'た行','と':'た行',
+  'な':'な行','に':'な行','ぬ':'な行','ね':'な行','の':'な行',
+  'は':'は行','ひ':'は行','ふ':'は行','へ':'は行','ほ':'は行',
+  'ま':'ま行','み':'ま行','む':'ま行','め':'ま行','も':'ま行',
+  'や':'や行','ゆ':'や行','よ':'や行',
+  'ら':'ら行','り':'ら行','る':'ら行','れ':'ら行','ろ':'ら行',
+  'わ':'わ行','を':'わ行','ん':'わ行'
+};
+function getKanaGyou(kana) { return KANA_GYOU_MAP[kana] || 'その他'; }
+
 function loadPracticeData() {
   return JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
 }
@@ -3830,6 +4063,178 @@ function showDojoStart() {
 
 // 「問題を選ぶ」ボタン → ページ内で出題選択を表示
 function openDojoSelect() { openDojoSelectInPage(); }
+
+// ===== 教科選択（国語／社会） =====
+function openSubjectSelectInPage() {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const area = document.getElementById('dojoSelectArea');
+  area.innerHTML = `
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+      <div style="font-size:19px;font-weight:700;font-family:${ZMG};color:#1a3060;margin-bottom:16px;">どの教科を練習する？</div>
+      <button onclick="openDojoSelectInPage()" style="width:100%;padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:16px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:12px;display:block;">国語（漢字）</button>
+      <button onclick="openShakaiSelectInPage()" style="width:100%;padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:16px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:block;">社会（地理）</button>
+      <div style="margin-top:16px;">
+        <button onclick="closeDojoSelectInPage()" style="width:100%;padding:15px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
+      </div>
+    </div>`;
+  document.getElementById('dojoStart').classList.remove('visible');
+  area.style.display = 'block';
+  area.style.overflowY = 'auto';
+  area.style.webkitOverflowScrolling = 'touch';
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const headerH = document.querySelector('header').offsetHeight;
+  area.style.height = (vh - headerH) + 'px';
+  area.scrollTop = 0;
+}
+
+// ===== 社会（地理）出題フロー =====
+const SHAKAI_GYOU_LIST = ['あ行','か行','さ行','た行','な行','は行','ま行','や行','ら行','わ行'];
+
+function openShakaiSelectInPage() {
+  const data = loadShakaiData();
+  const ZMG = "'Zen Maru Gothic',serif";
+  const gyouBtns = SHAKAI_GYOU_LIST.map(g => {
+    const count = data.filter(q => getKanaGyou(q.kana) === g).length;
+    if (!count) return '';
+    return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;margin-bottom:8px;background:#fff;" id="shakai_gyou_${g}">
+      <input type="radio" name="shakaiGyou" value="${g}" style="accent-color:#3B82F6;" onchange="updateShakaiGyouUI()">
+      <span style="font-family:${ZMG};font-size:15px;">${g}（${count}問）</span>
+    </label>`;
+  }).join('');
+  const area = document.getElementById('dojoSelectArea');
+  area.innerHTML = `
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="openSubjectSelectInPage()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">社会（地理）：範囲を選ぶ</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #3B82F6;background:#EFF6FF;border-radius:12px;cursor:pointer;margin-bottom:8px;" id="shakai_gyou_all">
+        <input type="radio" name="shakaiGyou" value="all" checked style="accent-color:#3B82F6;" onchange="updateShakaiGyouUI()">
+        <span style="font-family:${ZMG};font-size:15px;">ぜんぶ（${data.length}問）</span>
+      </label>
+      ${gyouBtns}
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+        <button onclick="shakaiPageShowCount()" style="padding:14px 32px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
+      </div>
+    </div>`;
+  document.getElementById('dojoStart').classList.remove('visible');
+  area.style.display = 'block';
+  area.style.overflowY = 'auto';
+  area.style.webkitOverflowScrolling = 'touch';
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const headerH = document.querySelector('header').offsetHeight;
+  area.style.height = (vh - headerH) + 'px';
+  area.scrollTop = 0;
+}
+
+function updateShakaiGyouUI() {
+  ['all', ...SHAKAI_GYOU_LIST].forEach(g => {
+    const el = document.getElementById('shakai_gyou_' + g);
+    if (!el) return;
+    const radio = el.querySelector('input');
+    if (!radio) return;
+    el.style.borderColor = radio.checked ? '#3B82F6' : '#e0e4ea';
+    el.style.background = radio.checked ? '#EFF6FF' : '#fff';
+  });
+}
+
+function shakaiPageShowCount() {
+  const gyou = document.querySelector('input[name="shakaiGyou"]:checked')?.value || 'all';
+  window._shakaiPendingGyou = gyou;
+  window._shakaiPendingCount = null;
+  window._pendingAnswerTiming = 'perQ';
+  window._answerTiming = 'perQ';
+  const ZMG = "'Zen Maru Gothic',serif";
+  const area = document.getElementById('dojoSelectArea');
+  const countBtns = [5,10,20,30].map(n =>
+    `<button id="shakaiCountBtn_${n}" onclick="selectShakaiCount(${n})" style="padding:20px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:24px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;transition:background 0.15s,color 0.15s;">${n}問</button>`
+  ).join('');
+  area.innerHTML = `
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <button onclick="openShakaiSelectInPage()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">問題数を選ぶ</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">${countBtns}</div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+        <button id="shakaiCountNextBtn" onclick="shakaiPageShowAnswerTiming()" style="padding:14px 32px;background:#e0e8f0;color:#aaa;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:default;transition:background 0.15s,color 0.15s;" disabled>次へ →</button>
+      </div>
+    </div>`;
+}
+
+function selectShakaiCount(n) {
+  window._shakaiPendingCount = n;
+  [5,10,20,30].forEach(v => {
+    const btn = document.getElementById('shakaiCountBtn_' + v);
+    if (!btn) return;
+    if (v === n) { btn.style.background = '#1a6fc4'; btn.style.color = '#fff'; btn.style.border = '1.5px solid #1a6fc4'; }
+    else { btn.style.background = '#fff'; btn.style.color = '#1a3060'; btn.style.border = '1.5px solid #1a6fc4'; }
+  });
+  const nextBtn = document.getElementById('shakaiCountNextBtn');
+  if (nextBtn) { nextBtn.disabled = false; nextBtn.style.background = '#3B82F6'; nextBtn.style.color = '#fff'; nextBtn.style.cursor = 'pointer'; }
+}
+
+function shakaiPageShowAnswerTiming() {
+  if (!window._shakaiPendingCount) return;
+  const ZMG = "'Zen Maru Gothic',serif";
+  const area = document.getElementById('dojoSelectArea');
+  area.innerHTML = `
+    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button onclick="shakaiPageShowCount()" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">答えを出すタイミングは？</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button id="timingBtn_perQ" onclick="selectAnswerTiming('perQ')" style="padding:20px 16px;background:#1a6fc4;border:1.5px solid #1a6fc4;border-radius:12px;font-size:15px;font-weight:700;font-family:${ZMG};color:#fff;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">一問毎に出す<br><span style="font-size:12px;font-weight:400;opacity:0.85;">（問題1 → 1の答え → 問題2 → 2の答え…）</span></button>
+        <button id="timingBtn_bulk" onclick="selectAnswerTiming('bulk')" style="padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">まとめて出す<br><span style="font-size:12px;font-weight:400;opacity:0.7;">（問題まとめて → 回答まとめて）</span></button>
+      </div>
+      <div style="margin-top:20px;">
+        <button id="timingStartBtn" onclick="startShakaiSession()" style="width:100%;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">はじめる →</button>
+      </div>
+    </div>`;
+}
+
+// 社会データの1件を、練習セッションで使える形（漢字と同じ形）に変換する
+function shakaiToSessionItem(item) {
+  const chars = [...(item.correct || '')];
+  const answerPairs = chars.map(ch => ({ kanji: ch, kana: '' }));
+  const legacy = answerPairsToLegacy(answerPairs);
+  return {
+    ...item,
+    subject: '社会',
+    question: item.reading || '',
+    underline: '',
+    type: '漢字を書く',
+    answerPairs,
+    answerKanji: legacy.answerKanji,
+    answerText: legacy.answerText,
+    ruby: undefined
+  };
+}
+
+function startShakaiSession() {
+  const gyou = window._shakaiPendingGyou || 'all';
+  const count = window._shakaiPendingCount;
+  const timing = window._pendingAnswerTiming || 'perQ';
+  window._answerTiming = timing;
+  window._bulkPhase = (timing === 'bulk') ? 'question' : null;
+  const generator = () => {
+    const data = loadShakaiData();
+    const filtered = gyou === 'all' ? data : data.filter(q => getKanaGyou(q.kana) === gyou);
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5).slice(0, count);
+    return shuffled.map(shakaiToSessionItem);
+  };
+  const pool = generator();
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  dojoStartPool(pool, generator);
+}
+
 function openDojoSelectInPage() {
   const data = loadPracticeData();
   const ZMG = "'Zen Maru Gothic',serif";
@@ -4535,7 +4940,7 @@ function loadQuestion(i) {
   const q = session[i];
   answerShown = false;
   const maxMiss = Math.max(...session.map(x => x.missCount));
-  document.getElementById('qId').textContent = q.grade ? `${q.grade}年\n${getUnitLabel(q)}` : `${q.id}番`;
+  document.getElementById('qId').textContent = q.subject === '社会' ? `社会\n${q.category || ''}` : (q.grade ? `${q.grade}年\n${getUnitLabel(q)}` : `${q.id}番`);
 
   // Y/X 進捗表示（左下固定）
   const progressEl = document.getElementById('qProgress');
@@ -4591,6 +4996,8 @@ function loadQuestion(i) {
     showBtnRow('rowSingle');
     document.getElementById('btnNext').style.display = 'none';
   }
+
+  updateShakaiPanel(q);
 
   setTimeout(() => {
     const inner = document.getElementById('qVerticalInner');
@@ -4766,6 +5173,66 @@ function saveEditModal(btn) {
   }
 }
 
+// ===== 社会（地理など）練習画面の追加表示 =====
+function updateShakaiPanel(q) {
+  const label = document.getElementById('qPrefLabel');
+  const btn = document.getElementById('qMachigaiBtn');
+  if (!label || !btn) return;
+  if (q && q.subject === '社会') {
+    label.style.display = 'flex';
+    if (answerShown) {
+      label.textContent = q.prefecture || '';
+      btn.style.display = q.wrongText ? 'block' : 'none';
+    } else {
+      label.textContent = '都道府県は？';
+      btn.style.display = 'none';
+    }
+  } else {
+    label.style.display = 'none';
+    btn.style.display = 'none';
+  }
+}
+
+function buildWrongTextHTML(variant, imgMap) {
+  const re = /［(W[0-9]+)］/g;
+  let result = '', lastIndex = 0, m;
+  while ((m = re.exec(variant))) {
+    result += escapeHtml(variant.slice(lastIndex, m.index));
+    const id = m[1];
+    if (imgMap[id]) {
+      result += `<img src="${imgMap[id]}" alt="${id}" style="height:1.3em;vertical-align:-0.2em;margin:0 2px;">`;
+    } else {
+      result += escapeHtml(m[0]);
+    }
+    lastIndex = re.lastIndex;
+  }
+  result += escapeHtml(variant.slice(lastIndex));
+  return result;
+}
+
+function openMachigaiPopup() {
+  const q = session[current];
+  if (!q || !q.wrongText) return;
+  const ZMG = "'Zen Maru Gothic',serif";
+  const imgMap = {};
+  (q.wrongImages || []).forEach(w => { imgMap[w.id] = w.url; });
+  const variants = q.wrongText.split('／').map(v => buildWrongTextHTML(v, imgMap));
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:16px;font-weight:700;font-family:${ZMG};color:#000;">よくある間違い</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        ${variants.map(v => `<div style="font-size:22px;line-height:1.5;font-family:${ZMG};color:#C62828;font-weight:700;">${v}</div>`).join('')}
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 function toggleAnswer() {
   // まとめてモードの問題フェーズ
   if (window._answerTiming === 'bulk' && window._bulkPhase === 'question') {
@@ -4787,6 +5254,7 @@ function toggleAnswer() {
   aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
   showBtnRow('resultButtons');
   document.getElementById('btnBulkBackResult').style.display = 'none';
+  updateShakaiPanel(session[current]);
 }
 
 function bulkGoForward() {
@@ -4813,6 +5281,7 @@ function bulkGoBack() {
       aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
       showBtnRow('resultButtons');
       document.getElementById('btnBulkBackResult').style.display = current > 0 ? 'flex' : 'none';
+      updateShakaiPanel(session[current]);
     }, 50);
   } else {
     // 問題フェーズで戻る
@@ -4857,8 +5326,9 @@ function recordResult(correct) {
   }
 
   const today = new Date().toISOString().split('T')[0];
-  const data = loadPracticeData();
   const q = session[current];
+  const isShakai = q.subject === '社会';
+  const data = isShakai ? loadShakaiData() : loadPracticeData();
   let item;
   if (q._dataIndex !== undefined) {
     item = data[q._dataIndex];
@@ -4885,7 +5355,7 @@ function recordResult(correct) {
         item.dailyCharMiss[today][k] = (item.dailyCharMiss[today][k] || 0) + 1;
       });
     }
-    savePracticeData(data);
+    if (isShakai) saveShakaiData(data); else savePracticeData(data);
   }
   recordDailyActivity(1);
   document.getElementById('answerImagesWrap').classList.remove('visible');
@@ -5024,7 +5494,7 @@ function changeMode() {
   document.querySelectorAll('.tab')[1].classList.add('active');
   document.getElementById('page-practice').classList.add('active');
   // 出題選択を表示
-  openDojoSelectInPage();
+  openSubjectSelectInPage();
   fixLayout();
 }
 
