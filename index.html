@@ -682,6 +682,16 @@ rt {
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 #btnWrong:active { background: #FFCDD2; }
+#rowSearchBack { width: 100%; }
+#btnSearchBack {
+  padding: 14px 10px;
+  border: none; border-radius: 999px; cursor: pointer;
+  background: #e0e4ea; color: #1a3060;
+  font-size: 16px; font-weight: 700;
+  font-family: 'Zen Maru Gothic', serif;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+#btnSearchBack:active { background: #c8cdd5; }
 #btnNext {
   flex: 1;
   background: #f0c040; color: #1a3060;
@@ -1537,7 +1547,8 @@ if (localStorage.getItem('kanji_auth')==='ok') {
             <!-- 検索結果表示：中央に戻るボタンのみ -->
             <div id="rowSearchBack" style="display:none;width:100%;justify-content:center;">
               <button id="btnSearchBack" onclick="shakaiSearchBackToSearch()" style="flex:0 1 260px;">
-                ◀ 戻る
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                戻る
               </button>
             </div>
             <button id="btnNext" onclick="nextQuestion()" style="display:none;">
@@ -4233,12 +4244,15 @@ function openDojoSelectInPage(subject) {
   window._pendingSubject = sub;
   const ZMG = "'Zen Maru Gothic',serif";
   let unitOpts = '';
+  let shakaiTotalCount = 0;
   if (sub === 'kokugo') {
     const data = loadPracticeData();
     const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
     unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
+  } else if (sub === 'shakai') {
+    shakaiTotalCount = loadShakaiData().length;
   }
-  const rangeLabel = sub === 'shakai' ? 'グループ（あ行〜わ行）で、範囲を指定する' : '単元で、範囲を指定する';
+  const rangeLabel = sub === 'shakai' ? `ぜんぶ　全${shakaiTotalCount}問` : '単元で、範囲を指定する';
 
   function radioItem(id, value, checked, label) {
     return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:12px;cursor:pointer;margin-bottom:8px;background:#fff;" id="dsp_${id}">
@@ -4276,10 +4290,10 @@ function openDojoSelectInPage(subject) {
       </div>
       ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}` : `
       <hr style="border:none;border-top:1px solid #f0f4f8;margin:8px 0;">
-      <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:6px;">答えの言葉で検索（例：御嶽山）</label>
+      <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:6px;">正解＋よくある間違いを見たい時はここから検索</label>
       <div style="display:flex;gap:8px;margin-bottom:4px;">
-        <input id="shakaiSearchInput" type="text" placeholder="例：御嶽山" onkeydown="if(event.key==='Enter'){event.preventDefault();shakaiSearchGo();}" style="flex:1;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
-        <button onclick="shakaiSearchGo()" style="padding:10px 18px;background:#3B82F6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">検索</button>
+        <input id="shakaiSearchInput" type="text" placeholder="例：御嶽山" onkeydown="if(event.key==='Enter'){event.preventDefault();shakaiSearchGo();}" style="flex:1;min-width:0;box-sizing:border-box;padding:10px 16px;border:1px solid #ddd;border-radius:999px;font-size:15px;font-family:${ZMG};">
+        <button onclick="shakaiSearchGo()" style="flex-shrink:0;box-sizing:border-box;padding:10px 16px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;white-space:nowrap;">検索</button>
       </div>
       <div id="shakaiSearchResults"></div>`}
       <!-- 記録トグル -->
