@@ -1534,6 +1534,12 @@ if (localStorage.getItem('kanji_auth')==='ok') {
                 戻る ▶
               </button>
             </div>
+            <!-- 検索結果表示：中央に戻るボタンのみ -->
+            <div id="rowSearchBack" style="display:none;width:100%;justify-content:center;">
+              <button id="btnSearchBack" onclick="shakaiSearchBackToSearch()" style="flex:0 1 260px;">
+                ◀ 戻る
+              </button>
+            </div>
             <button id="btnNext" onclick="nextQuestion()" style="display:none;">
               次の問題
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -2120,7 +2126,7 @@ function filterUnitTo(fromId, toId) {
 
 // ボタン行の表示切り替えヘルパー
 function showBtnRow(rowId) {
-  ['rowSingle','rowBulkQ','resultButtons'].forEach(id => {
+  ['rowSingle','rowBulkQ','resultButtons','rowSearchBack'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     if (id === rowId) {
@@ -4139,6 +4145,89 @@ function shakaiToSessionItem(item) {
   };
 }
 
+// ===== 社会（地理）：答えの言葉で検索 =====
+function shakaiSearchGo() {
+  const kw = (document.getElementById('shakaiSearchInput')?.value || '').trim();
+  const resultsEl = document.getElementById('shakaiSearchResults');
+  if (!resultsEl) return;
+  if (!kw) { resultsEl.innerHTML = ''; return; }
+  const ZMG = "'Zen Maru Gothic',serif";
+  const data = loadShakaiData();
+  const matches = data.filter(q => (q.correct||'').includes(kw) || (q.reading||'').includes(kw));
+  if (!matches.length) {
+    resultsEl.innerHTML = `<div style="padding:10px 2px;color:#999;font-family:${ZMG};font-size:13px;">見つかりませんでした</div>`;
+    return;
+  }
+  if (matches.length === 1) {
+    shakaiShowSingleAnswer(matches[0]);
+    return;
+  }
+  resultsEl.innerHTML = matches.slice(0,30).map(q =>
+    `<button onclick="shakaiShowSingleAnswerByUid('${q._uid}')" style="display:block;width:100%;text-align:left;padding:10px 12px;background:#fff;border:1px solid #e0e4ea;border-radius:8px;margin-bottom:6px;font-family:${ZMG};font-size:14px;cursor:pointer;">${escapeHtml(q.correct)}<span style="color:#999;font-size:12px;margin-left:6px;">${escapeHtml(q.reading||'')}</span></button>`
+  ).join('');
+}
+
+function shakaiShowSingleAnswerByUid(uid) {
+  const data = loadShakaiData();
+  const item = data.find(q => q._uid === uid);
+  if (item) shakaiShowSingleAnswer(item);
+}
+
+function shakaiShowSingleAnswer(item) {
+  const q = shakaiToSessionItem(item);
+  session = [q];
+  current = 0;
+  window._answerTiming = 'perQ';
+  window._bulkPhase = null;
+  window._shakaiSearchMode = true;
+  answerShown = true;
+
+  document.getElementById('dojoStart').classList.remove('visible');
+  const dsArea = document.getElementById('dojoSelectArea');
+  dsArea.style.display = 'none';
+  dsArea.style.position = '';
+  dsArea.style.top = ''; dsArea.style.left = ''; dsArea.style.right = ''; dsArea.style.bottom = '';
+  document.getElementById('completeScreen').classList.remove('visible');
+  document.getElementById('questionArea').style.display = 'flex';
+  document.getElementById('questionArea').style.flexDirection = 'column';
+
+  document.getElementById('qId').textContent = `社会\n${q.category || ''}`;
+  const progressEl = document.getElementById('qProgress');
+  if (progressEl) progressEl.style.display = 'none';
+  document.getElementById('missBarCount').textContent = '';
+
+  const qt = document.getElementById('qText');
+  qt.innerHTML = '';
+  qt.appendChild(buildQ(q.question, q.underline, q.ruby));
+  buildAnswerImages(q);
+
+  const aiw = document.getElementById('answerImagesWrap');
+  aiw.classList.add('visible'); aiw.style.pointerEvents = 'auto';
+  showBtnRow('rowSearchBack');
+
+  updateShakaiPanel(q);
+
+  setTimeout(() => {
+    const inner = document.getElementById('qVerticalInner');
+    const text = document.getElementById('qText');
+    if (inner && text) {
+      text.style.fontSize = '28px';
+      let size = 28;
+      while (inner.scrollHeight > inner.clientHeight + 4 && size > 12) {
+        size -= 1;
+        text.style.fontSize = size + 'px';
+      }
+    }
+  }, 80);
+  setTimeout(fixLayout, 10);
+}
+
+function shakaiSearchBackToSearch() {
+  window._shakaiSearchMode = false;
+  document.getElementById('questionArea').style.display = 'none';
+  openDojoSelectInPage('shakai');
+}
+
 function openDojoSelectInPage(subject) {
   const sub = subject || window._pendingSubject || 'kokugo';
   window._pendingSubject = sub;
@@ -4178,13 +4267,21 @@ function openDojoSelectInPage(subject) {
           <select id="dsp_unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
         </div>
       </div>` : ''}
+      ${sub === 'kokugo' ? `
       ${radioItem('date','date',false,'登録日範囲指定')}
       <div id="dsp_dateRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
         <input type="date" id="dsp_dateFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
         <span style="font-size:13px;font-family:${ZMG};">〜</span>
         <input type="date" id="dsp_dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
       </div>
-      ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}
+      ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}` : `
+      <hr style="border:none;border-top:1px solid #f0f4f8;margin:8px 0;">
+      <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:6px;">答えの言葉で検索（例：御嶽山）</label>
+      <div style="display:flex;gap:8px;margin-bottom:4px;">
+        <input id="shakaiSearchInput" type="text" placeholder="例：御嶽山" onkeydown="if(event.key==='Enter'){event.preventDefault();shakaiSearchGo();}" style="flex:1;box-sizing:border-box;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;font-family:${ZMG};">
+        <button onclick="shakaiSearchGo()" style="padding:10px 18px;background:#3B82F6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">検索</button>
+      </div>
+      <div id="shakaiSearchResults"></div>`}
       <!-- 記録トグル -->
       <hr style="border:none;border-top:1px solid #f0f4f8;margin:8px 0;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px;">
@@ -4282,11 +4379,23 @@ function shakaiPageShowGyouSelect() {
         <input type="radio" name="shakaiGyou" value="all" checked style="accent-color:#3B82F6;" onchange="updateShakaiGyouUI()">
         <span style="font-family:${ZMG};font-size:15px;">ぜんぶ（${data.length}問）</span>
       </label>
-      ${gyouBtns}
+      <button type="button" onclick="toggleShakaiGyouDetail()" id="shakaiGyouToggleBtn" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:10px;font-size:13px;font-family:${ZMG};color:#666;cursor:pointer;margin-bottom:8px;">あ〜わ別 ▼</button>
+      <div id="shakaiGyouDetail" style="display:none;">
+        ${gyouBtns}
+      </div>
     </div>`,
     `<div style="display:flex;justify-content:flex-end;max-width:480px;margin:0 auto;">
       <button onclick="shakaiGyouNext()" style="padding:14px 32px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
     </div>`);
+}
+
+function toggleShakaiGyouDetail() {
+  const detail = document.getElementById('shakaiGyouDetail');
+  const btn = document.getElementById('shakaiGyouToggleBtn');
+  if (!detail || !btn) return;
+  const isOpen = detail.style.display !== 'none';
+  detail.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? 'あ〜わ別 ▼' : 'あ〜わ別 ▲';
 }
 
 function shakaiGyouNext() {
