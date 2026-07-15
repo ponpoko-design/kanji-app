@@ -5948,16 +5948,11 @@ function fixLayout() {
   if (mainArea) { mainArea.style.height = Math.max(vh-headerH-bottomH,80)+'px'; mainArea.style.flex='none'; }
   const contentH = Math.max(vh - headerH, 100);
 
-  // dojo-start / dojoSelectAreaの高さを設定
+  // dojo-startの高さを設定（dojoSelectAreaはflexboxで自動調整するため、ここでは高さを固定しない）
   const dojoStart = document.getElementById('dojoStart');
   if (dojoStart) {
     dojoStart.style.height = contentH + 'px';
     dojoStart.style.minHeight = contentH + 'px';
-  }
-  const dojoSel = document.getElementById('dojoSelectArea');
-  if (dojoSel && dojoSel.style.display !== 'none') {
-    dojoSel.style.height = contentH + 'px';
-    dojoSel.style.minHeight = contentH + 'px';
   }
 
 
