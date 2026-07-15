@@ -3824,76 +3824,197 @@ function saveApiKeys(btn) {
 }
 
 // ===== まちがい一覧 =====
-function menuShowData() {
+function menuShowData(initialSubject) {
   closeMenu();
   closeSettings();
-  const data = loadPracticeData();
+  const existing = document.getElementById('missStatsOverlay');
+  if (existing) existing.remove();
   const overlay = document.createElement('div');
+  overlay.id = 'missStatsOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
-  if (!data.length) {
-    overlay.innerHTML = `<div style="background:#fff;border-radius:20px;padding:32px;text-align:center;font-family:'Zen Maru Gothic',serif;"><div style="font-size:16px;color:#666;margin-bottom:20px;">まだデータがありません</div><button onclick="this.closest('[style*=fixed]').remove()" style="background:#f0c040;color:#000000;border:none;border-radius:999px;padding:10px 28px;font-size:15px;font-weight:700;font-family:'Zen Maru Gothic',serif;cursor:pointer;">閉じる</button></div>`;
-    document.body.appendChild(overlay);
-    return;
-  }
-  function renderMondaiBetsu() {
-    const sorted = [...data].sort((a,b) => b.missCount - a.missCount || (b.registeredAt||'').localeCompare(a.registeredAt||'')).filter(q => q.missCount > 0).slice(0, 10);
-    const max = Math.max(...sorted.map(q => q.missCount), 1);
-    return sorted.map(q => {
-      const grade = q.grade ? `${q.grade}年` : '−';
-      const unit = q.unit ? getUnitLabel(q) : '−';
-      const pairs = getAnswerPairs(q);
-      const answer = (q.type === 'よみがなを書く' ? (q.answerText||'') : pairs.map(p=>p.kanji+(p.kana||'')).join('')) || '−';
-      const pct = (q.missCount / max) * 100;
-      return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td><td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
-    }).join('');
-  }
-  function renderKanjiBetsu() {
-    const map = {}; const gradeMap = {}; const unitMap = {}; const dateMap = {};
-    data.forEach(q => {
-      (q.answerKanji || []).forEach(k => {
-        const miss = (q.charMiss && q.charMiss[k]) ? q.charMiss[k] : 0;
-        map[k] = (map[k] || 0) + miss;
-        if (miss > 0) { if (q.grade) gradeMap[k] = q.grade; if (q.unit) unitMap[k] = q.unit; }
-        else { if (q.grade && !gradeMap[k]) gradeMap[k] = q.grade; if (q.unit && !unitMap[k]) unitMap[k] = q.unit; }
-        if (!dateMap[k] || (q.registeredAt||'') > (dateMap[k]||'')) dateMap[k] = q.registeredAt||'';
-      });
-    });
-    const sorted = Object.entries(map).filter(([,cnt]) => cnt > 0).sort((a,b) => b[1]-a[1] || (dateMap[b[0]]||'').localeCompare(dateMap[a[0]]||'')).slice(0, 10);
-    if (!sorted.length) return `<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;font-family:'Zen Maru Gothic',serif;">漢字別データがありません</td></tr>`;
-    const max = Math.max(...sorted.map(e => e[1]), 1);
-    return sorted.map(([k, cnt]) => {
-      const grade = gradeMap[k] ? `${gradeMap[k]}年` : '−';
-      const unit = unitMap[k] ? `${unitMap[k]}` : '−';
-      const pct = (cnt / max) * 100;
-      return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td><td style="padding:8px 6px;font-size:20px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;width:40px;">${k}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${cnt}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
-    }).join('');
-  }
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;flex-shrink:0;">
-        <div style="font-size:17px;font-weight:700;color:#000;font-family:'Zen Maru Gothic',serif;">まちがい一覧</div>
-        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-      </div>
-      <div style="display:flex;gap:0;padding:12px 20px 0;flex-shrink:0;border-bottom:2px solid #f0f4f8;">
-        <button id="missTab1" onclick="switchMissTab(1)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid #3B82F6;margin-bottom:-2px;font-size:14px;font-weight:700;color:#3B82F6;font-family:'Zen Maru Gothic',serif;cursor:pointer;">問題別</button>
-        <button id="missTab2" onclick="switchMissTab(2)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px;font-weight:400;color:#999;font-family:'Zen Maru Gothic',serif;cursor:pointer;">漢字別</button>
-      </div>
-      <div style="overflow-y:auto;flex:1;">
-        <div id="missPane1"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;"><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">回答</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th><th style="padding:8px 6px;font-size:11px;width:60px;"></th></tr></thead><tbody>${renderMondaiBetsu()}</tbody></table></div>
-        <div id="missPane2" style="display:none;"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;"><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">学年</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:left;font-weight:600;">単元</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:center;font-weight:600;">漢字</th><th style="padding:8px 6px;font-size:11px;color:#000;font-family:'Zen Maru Gothic',serif;text-align:right;font-weight:600;">回数</th><th style="padding:8px 6px;font-size:11px;width:60px;"></th></tr></thead><tbody>${renderKanjiBetsu()}</tbody></table></div>
-      </div>
-    </div>`;
-  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  window._missState = { subject: initialSubject || 'kokugo', shakaiCat: 'all', tab: 1, sortKey1: 'count', sortDir1: 'desc', sortKey2: 'count', sortDir2: 'desc' };
+  renderMissStatsOverlay();
+}
+
+function getMissStatsData(subject) {
+  if (subject === 'shakai') {
+    const cats = [
+      { code: 'chiri', label: '地理' },
+      { code: 'rekishi', label: '歴史' },
+      { code: 'komin', label: '公民' }
+    ];
+    let combined = [];
+    cats.forEach(c => {
+      const arr = loadShakaiData(c.code) || [];
+      combined = combined.concat(arr.map(q => ({ ...q, _catLabel: c.label })));
+    });
+    return combined;
+  }
+  return loadPracticeData();
+}
+
+function sortIndicator(key, curKey, dir) {
+  if (key !== curKey) return '';
+  return dir === 'desc' ? ' ▼' : ' ▲';
+}
+
+function toggleMissSort(paneNum, key) {
+  const st = window._missState;
+  const curKey = paneNum === 1 ? st.sortKey1 : st.sortKey2;
+  const curDir = paneNum === 1 ? st.sortDir1 : st.sortDir2;
+  const newDir = (curKey === key && curDir === 'desc') ? 'asc' : 'desc';
+  if (paneNum === 1) { st.sortKey1 = key; st.sortDir1 = newDir; }
+  else { st.sortKey2 = key; st.sortDir2 = newDir; }
+  renderMissStatsOverlay();
+}
+
+function switchMissSubject(subject) {
+  window._missState.subject = subject;
+  window._missState.shakaiCat = 'all';
+  renderMissStatsOverlay();
+}
+
+function switchMissShakaiCat(cat) {
+  window._missState.shakaiCat = cat;
+  renderMissStatsOverlay();
 }
 
 function switchMissTab(n) {
-  [1,2].forEach(i => {
-    document.getElementById('missPane'+i).style.display = n===i ? '' : 'none';
-    document.getElementById('missTab'+i).style.borderBottomColor = n===i ? '#3B82F6' : 'transparent';
-    document.getElementById('missTab'+i).style.color = n===i ? '#3B82F6' : '#999';
-    document.getElementById('missTab'+i).style.fontWeight = n===i ? '700' : '400';
-  });
+  window._missState.tab = n;
+  renderMissStatsOverlay();
+}
+
+function renderMissStatsOverlay() {
+  const overlay = document.getElementById('missStatsOverlay');
+  if (!overlay) return;
+  const st = window._missState;
+  const subject = st.subject;
+  let data = getMissStatsData(subject);
+  if (subject === 'shakai' && st.shakaiCat && st.shakaiCat !== 'all') {
+    data = data.filter(q => q._catLabel === st.shakaiCat);
+  }
+  const ZMG = "'Zen Maru Gothic',serif";
+
+  if (!data.length) {
+    overlay.innerHTML = `<div style="background:#fff;border-radius:20px;padding:32px;text-align:center;font-family:${ZMG};"><div style="font-size:16px;color:#666;margin-bottom:20px;">まだデータがありません</div><button onclick="this.closest('[style*=fixed]').remove()" style="background:#f0c040;color:#000000;border:none;border-radius:999px;padding:10px 28px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">閉じる</button></div>`;
+    return;
+  }
+
+  function renderMondaiBetsu() {
+    let rows = data.filter(q => q.missCount > 0);
+    const key = st.sortKey1, dir = st.sortDir1;
+    rows.sort((a, b) => {
+      let av, bv;
+      if (key === 'count') { av = a.missCount; bv = b.missCount; }
+      else if (key === 'label') {
+        av = subject === 'shakai' ? (a._catLabel || '') : `${a.grade||0}_${getUnitLabel(a)}`;
+        bv = subject === 'shakai' ? (b._catLabel || '') : `${b.grade||0}_${getUnitLabel(b)}`;
+        return dir === 'desc' ? String(bv).localeCompare(String(av), 'ja') : String(av).localeCompare(String(bv), 'ja');
+      } else { av = a.missCount; bv = b.missCount; }
+      return dir === 'desc' ? bv - av : av - bv;
+    });
+    rows = rows.slice(0, 10);
+    if (!rows.length) return `<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;font-family:${ZMG};">データがありません</td></tr>`;
+    const max = Math.max(...rows.map(q => q.missCount), 1);
+    return rows.map(q => {
+      let label1;
+      if (subject === 'shakai') {
+        label1 = q._catLabel || '';
+        var answer = q.correct || '−';
+      } else {
+        label1 = q.grade ? `${q.grade}年 ${getUnitLabel(q)}` : '−';
+        const pairs = getAnswerPairs(q);
+        answer = (q.type === 'よみがなを書く' ? (q.answerText||'') : pairs.map(p=>p.kanji+(p.kana||'')).join('')) || '−';
+      }
+      const pct = (q.missCount / max) * 100;
+      return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:12px;color:#000;font-family:${ZMG};white-space:nowrap;">${label1}</td><td style="padding:8px 6px;font-size:15px;color:#000;font-family:${ZMG};white-space:nowrap;">${answer}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:${ZMG};white-space:nowrap;text-align:right;">${q.missCount}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
+    }).join('');
+  }
+
+  function renderKanjiBetsu() {
+    const map = {}; const labelMap = {}; const dateMap = {};
+    data.forEach(q => {
+      const chars = subject === 'shakai' ? [...(q.correct || '')] : (q.answerKanji || []);
+      chars.forEach(k => {
+        const miss = (q.charMiss && q.charMiss[k]) ? q.charMiss[k] : 0;
+        map[k] = (map[k] || 0) + miss;
+        const lbl = subject === 'shakai' ? (q._catLabel || '') : (q.grade ? `${q.grade}年 ${getUnitLabel(q)}` : '−');
+        if (miss > 0 || !labelMap[k]) labelMap[k] = lbl;
+        if (!dateMap[k] || (q.registeredAt||'') > (dateMap[k]||'')) dateMap[k] = q.registeredAt||'';
+      });
+    });
+    let entries = Object.entries(map).filter(([,cnt]) => cnt > 0);
+    const key = st.sortKey2, dir = st.sortDir2;
+    entries.sort((a, b) => {
+      if (key === 'label') {
+        const av = labelMap[a[0]] || '', bv = labelMap[b[0]] || '';
+        return dir === 'desc' ? bv.localeCompare(av, 'ja') : av.localeCompare(bv, 'ja');
+      } else if (key === 'char') {
+        return dir === 'desc' ? b[0].localeCompare(a[0], 'ja') : a[0].localeCompare(b[0], 'ja');
+      }
+      return dir === 'desc' ? b[1]-a[1] : a[1]-b[1];
+    });
+    entries = entries.slice(0, 10);
+    if (!entries.length) return `<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;font-family:${ZMG};">データがありません</td></tr>`;
+    const max = Math.max(...entries.map(e => e[1]), 1);
+    return entries.map(([k, cnt]) => {
+      const lbl = labelMap[k] || '−';
+      const pct = (cnt / max) * 100;
+      return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:12px;color:#000;font-family:${ZMG};white-space:nowrap;">${lbl}</td><td style="padding:8px 6px;font-size:20px;color:#000;font-family:${ZMG};text-align:center;width:40px;">${k}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:${ZMG};white-space:nowrap;text-align:right;">${cnt}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
+    }).join('');
+  }
+
+  function subjectTabBtn(label, val) {
+    const active = subject === val;
+    return `<button onclick="switchMissSubject('${val}')" style="flex:1;padding:8px 0;background:${active?'#eef4ff':'none'};border:none;border-radius:8px;font-size:13px;font-weight:700;color:${active?'#1a6fc4':'#999'};font-family:${ZMG};cursor:pointer;">${label}</button>`;
+  }
+
+  function shakaiCatBtn(label, val) {
+    const active = (st.shakaiCat || 'all') === val;
+    return `<button onclick="switchMissShakaiCat('${val}')" style="padding:5px 12px;background:${active?'#1a6fc4':'#f0f4f8'};border:none;border-radius:999px;font-size:12px;font-weight:700;color:${active?'#fff':'#666'};font-family:${ZMG};cursor:pointer;white-space:nowrap;">${label}</button>`;
+  }
+
+  const label1Header = subject === 'shakai' ? '教科' : '学年・単元';
+  const label1Sort = subject === 'shakai' ? '教科' : '学年順';
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:520px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 0;flex-shrink:0;">
+        <div style="font-size:17px;font-weight:700;color:#000;font-family:${ZMG};">まちがい一覧</div>
+        <button onclick="document.getElementById('missStatsOverlay').remove()" style="background:none;border:none;cursor:pointer;padding:4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div style="display:flex;gap:6px;padding:10px 20px 0;flex-shrink:0;background:#f8f9fa;margin:0 16px;border-radius:10px;">
+        ${subjectTabBtn('国語', 'kokugo')}
+        ${subjectTabBtn('社会', 'shakai')}
+      </div>
+      ${subject === 'shakai' ? `
+      <div style="display:flex;gap:6px;padding:10px 20px 0;flex-shrink:0;flex-wrap:wrap;">
+        ${shakaiCatBtn('すべて', 'all')}
+        ${shakaiCatBtn('地理', '地理')}
+        ${shakaiCatBtn('歴史', '歴史')}
+        ${shakaiCatBtn('公民', '公民')}
+      </div>` : ''}
+      <div style="display:flex;gap:0;padding:12px 20px 0;flex-shrink:0;border-bottom:2px solid #f0f4f8;">
+        <button id="missTab1" onclick="switchMissTab(1)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid ${st.tab===1?'#3B82F6':'transparent'};margin-bottom:-2px;font-size:14px;font-weight:${st.tab===1?'700':'400'};color:${st.tab===1?'#3B82F6':'#999'};font-family:${ZMG};cursor:pointer;">問題別</button>
+        <button id="missTab2" onclick="switchMissTab(2)" style="flex:1;padding:8px 0;background:none;border:none;border-bottom:2px solid ${st.tab===2?'#3B82F6':'transparent'};margin-bottom:-2px;font-size:14px;font-weight:${st.tab===2?'700':'400'};color:${st.tab===2?'#3B82F6':'#999'};font-family:${ZMG};cursor:pointer;">文字別</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;">
+        <div id="missPane1" style="display:${st.tab===1?'':'none'};"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+          <th onclick="toggleMissSort(1,'label')" style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;font-weight:600;cursor:pointer;">${label1Header}${sortIndicator('label',st.sortKey1,st.sortDir1)}</th>
+          <th style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;font-weight:600;">回答</th>
+          <th onclick="toggleMissSort(1,'count')" style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:right;font-weight:600;cursor:pointer;">回数${sortIndicator('count',st.sortKey1,st.sortDir1)}</th>
+          <th style="padding:8px 6px;font-size:11px;width:60px;"></th>
+        </tr></thead><tbody>${renderMondaiBetsu()}</tbody></table></div>
+        <div id="missPane2" style="display:${st.tab===2?'':'none'};"><table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#f8f9fa;border-bottom:2px solid #e0e4ea;">
+          <th onclick="toggleMissSort(2,'label')" style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:left;font-weight:600;cursor:pointer;">${label1Header}${sortIndicator('label',st.sortKey2,st.sortDir2)}</th>
+          <th onclick="toggleMissSort(2,'char')" style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:center;font-weight:600;cursor:pointer;">文字${sortIndicator('char',st.sortKey2,st.sortDir2)}</th>
+          <th onclick="toggleMissSort(2,'count')" style="padding:8px 6px;font-size:11px;color:#000;font-family:${ZMG};text-align:right;font-weight:600;cursor:pointer;">回数${sortIndicator('count',st.sortKey2,st.sortDir2)}</th>
+          <th style="padding:8px 6px;font-size:11px;width:60px;"></th>
+        </tr></thead><tbody>${renderKanjiBetsu()}</tbody></table></div>
+      </div>
+    </div>`;
 }
 
 // ===== 確認画面 =====
@@ -5962,14 +6083,25 @@ function renderStatsPage() {
   const todayCount = daily[getTodayJST()] || 0;
   const streak = stats.streak || 0;
 
-  // よく間違う漢字
+  // よく間違う漢字（国語／社会 切り替え対応）
+  const missSubject = window._statsMissSubject || 'kokugo';
   const kanjiMap = {}, kanjiUnit = {};
-  data.forEach(q => {
-    (q.answerKanji||[]).forEach(k => {
-      const miss = (q.charMiss||{})[k] || 0;
-      if (miss > 0) { kanjiMap[k] = (kanjiMap[k]||0) + miss; kanjiUnit[k] = q.unit; }
+  if (missSubject === 'shakai') {
+    const shakaiData = getMissStatsData('shakai');
+    shakaiData.forEach(q => {
+      [...(q.correct||'')].forEach(k => {
+        const miss = (q.charMiss||{})[k] || 0;
+        if (miss > 0) { kanjiMap[k] = (kanjiMap[k]||0) + miss; kanjiUnit[k] = q._catLabel; }
+      });
     });
-  });
+  } else {
+    data.forEach(q => {
+      (q.answerKanji||[]).forEach(k => {
+        const miss = (q.charMiss||{})[k] || 0;
+        if (miss > 0) { kanjiMap[k] = (kanjiMap[k]||0) + miss; kanjiUnit[k] = q.unit ? `単元${q.unit}` : ''; }
+      });
+    });
+  }
   const topKanji = Object.entries(kanjiMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const maxMiss = topKanji.length ? topKanji[0][1] : 1;
   const barMax = Math.max(...barData.map(b=>b.val), 1);
@@ -6110,13 +6242,16 @@ function renderStatsPage() {
     </div>
 
     <!-- よく間違う漢字 -->
-    ${topKanji.length ? `
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div style="font-size:12px;color:#999;font-family:${ZMG};">よく間違う漢字 TOP5</div>
-        <button onclick="menuShowData();" style="background:none;border:none;cursor:pointer;font-size:14px;font-weight:700;color:#1a6fc4;font-family:${ZMG};text-decoration:underline;padding:0;">詳しく見る</button>
+        <button onclick="menuShowData('${missSubject}');" style="background:none;border:none;cursor:pointer;font-size:14px;font-weight:700;color:#1a6fc4;font-family:${ZMG};text-decoration:underline;padding:0;">詳しく見る</button>
       </div>
-      ${topKanji.map(([k,cnt]) => {
+      <div style="display:flex;gap:6px;margin-bottom:12px;">
+        <button onclick="window._statsMissSubject='kokugo';renderStatsPage();" style="padding:5px 14px;background:${missSubject==='kokugo'?'#1a6fc4':'#f0f4f8'};border:none;border-radius:999px;font-size:12px;font-weight:700;color:${missSubject==='kokugo'?'#fff':'#666'};font-family:${ZMG};cursor:pointer;">国語</button>
+        <button onclick="window._statsMissSubject='shakai';renderStatsPage();" style="padding:5px 14px;background:${missSubject==='shakai'?'#1a6fc4':'#f0f4f8'};border:none;border-radius:999px;font-size:12px;font-weight:700;color:${missSubject==='shakai'?'#fff':'#666'};font-family:${ZMG};cursor:pointer;">社会</button>
+      </div>
+      ${topKanji.length ? topKanji.map(([k,cnt]) => {
         const pct = Math.round((cnt/maxMiss)*100);
         const color = pct>70?'#FF4D4D':pct>40?'#f0c040':'#1a6fc4';
         return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
@@ -6125,15 +6260,15 @@ function renderStatsPage() {
             <div style="height:8px;background:#f0f4f8;border-radius:999px;overflow:hidden;">
               <div style="height:100%;width:${pct}%;background:${color};border-radius:999px;"></div>
             </div>
-            <div style="font-size:10px;color:#bbb;font-family:${ZMG};margin-top:2px;">単元${kanjiUnit[k]||'?'}　${cnt}回まちがい</div>
+            <div style="font-size:10px;color:#bbb;font-family:${ZMG};margin-top:2px;">${kanjiUnit[k]||''}　${cnt}回まちがい</div>
           </div>
           <div style="font-size:13px;font-weight:700;color:${color};min-width:30px;text-align:right;font-family:${ZMG};">${cnt}回</div>
         </div>`;
-      }).join('')}
-    </div>` : `
-    <div style="background:#fff;border-radius:16px;padding:32px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
-      <div style="font-size:14px;color:#999;font-family:${ZMG};line-height:2;">まだまちがいデータがありません。<br>練習すると表示されます！</div>
-    </div>`}
+      }).join('') : `
+      <div style="text-align:center;padding:16px 0;">
+        <div style="font-size:13px;color:#999;font-family:${ZMG};line-height:1.8;">まだまちがいデータがありません。<br>練習すると表示されます！</div>
+      </div>`}
+    </div>
   `;
 }
 
