@@ -3103,6 +3103,41 @@ function execResetToday(btn) {
       });
       savePracticeData(data);
 
+      // 社会（地理・歴史・公民）も同様に今日分だけ差し引く
+      SHAKAI_CATEGORY_LIST.forEach(cat => {
+        const sdata = loadShakaiData(cat);
+        let changed = false;
+        sdata.forEach(q => {
+          const todayMiss     = (q.dailyMiss    || {})[today] || 0;
+          const todayTotal    = (q.dailyTotal   || {})[today] || 0;
+          const todayCorrect  = todayTotal - todayMiss;
+          const todayCharMiss = (q.dailyCharMiss || {})[today] || {};
+          if (todayTotal > 0 || todayMiss > 0) {
+            changed = true;
+            q.missCount    = Math.max(0, (q.missCount    || 0) - todayMiss);
+            q.totalCount   = Math.max(0, (q.totalCount   || 0) - todayTotal);
+            q.correctCount = Math.max(0, (q.correctCount || 0) - todayCorrect);
+            if (!q.charMiss) q.charMiss = {};
+            Object.entries(todayCharMiss).forEach(([k, v]) => {
+              q.charMiss[k] = Math.max(0, (q.charMiss[k] || 0) - v);
+              if (q.charMiss[k] === 0) delete q.charMiss[k];
+            });
+            if (q.dailyMiss)     delete q.dailyMiss[today];
+            if (q.dailyTotal)    delete q.dailyTotal[today];
+            if (q.dailyCharMiss) delete q.dailyCharMiss[today];
+            if (q.lastTestedAt === today) delete q.lastTestedAt;
+          } else if (q.lastTestedAt === today) {
+            changed = true;
+            q.charMiss = {};
+            q.missCount = 0;
+            q.totalCount = 0;
+            q.correctCount = 0;
+            delete q.lastTestedAt;
+          }
+        });
+        if (changed) saveShakaiData(cat, sdata);
+      });
+
       parentOv.remove();
       showToast('今日の結果をリセットしました');
       updateMenuStats();
@@ -3133,6 +3168,14 @@ function execResetAll(btn) {
       localStorage.setItem('kanji_reset_ts', resetTs);
       savePracticeData(reset);
       saveStats({});
+
+      // 社会（地理・歴史・公民）も全てリセット
+      SHAKAI_CATEGORY_LIST.forEach(cat => {
+        const sdata = loadShakaiData(cat);
+        const sreset = sdata.map(q => ({ ...q, missCount: 0, charMiss: {}, totalCount: 0, correctCount: 0, lastTestedAt: undefined, dailyMiss: {}, dailyTotal: {}, dailyCharMiss: {} }));
+        saveShakaiData(cat, sreset);
+      });
+
       parentOv.remove();
       showToast('全ての結果をリセットしました');
       updateMenuStats();
