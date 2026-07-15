@@ -2994,22 +2994,24 @@ function execResetAll(btn) {
 }
 
 // ===== 問題文一覧 =====
-function showQuestionList() {
+function showQuestionList(initialFilter) {
   const data = loadPracticeData();
   if (!data.length) { showToast('問題がありません'); return; }
+  const filter = initialFilter || {};
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
   const ZMG = "'Zen Maru Gothic',serif";
   const grades = [...new Set(data.map(q => q.grade).filter(Boolean))].sort((a,b)=>a-b);
   const gradeOpts = `<option value="">全学年</option>` + grades.map(g => `<option value="${g}">${g}年</option>`).join('');
-  function buildUnitOpts(gradeFilter, unitTypeFilter) {
+  const qFilterGradeOpts = `<option value="">全学年</option>` + grades.map(g => `<option value="${g}" ${String(g)===String(filter.grade)?'selected':''}>${g}年</option>`).join('');
+  function buildUnitOpts(gradeFilter, unitTypeFilter, selectedUnit) {
     const units = [...new Set(data.filter(q => {
       if (gradeFilter && q.grade != gradeFilter) return false;
       if (unitTypeFilter === 'tan' && q.unitType === 'gak') return false;
       if (unitTypeFilter === 'gak' && q.unitType !== 'gak') return false;
       return true;
     }).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-    return `<option value="">全番号</option>` + units.map(u => `<option value="${u}">${u}</option>`).join('');
+    return `<option value="">全番号</option>` + units.map(u => `<option value="${u}" ${selectedUnit!==undefined && selectedUnit!==null && selectedUnit!=='' && String(u)===String(selectedUnit)?'selected':''}>${u}</option>`).join('');
   }
   function buildList(gradeFilter, unitTypeFilter, unitFilter, keyword) {
     const filtered = data.map((q,i) => ({...q, _listIdx: i})).filter(q => {
@@ -3064,21 +3066,21 @@ function showQuestionList() {
       </div>
       <div style="padding:10px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:6px;">
-          <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
+          <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${qFilterGradeOpts}</select>
           <select id="qFilterUnitType" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
             <option value="">全種別</option>
-            <option value="tan">単元</option>
-            <option value="gak">学校</option>
+            <option value="tan" ${filter.unitType==='tan'?'selected':''}>単元</option>
+            <option value="gak" ${filter.unitType==='gak'?'selected':''}>学校</option>
           </select>
-          <select id="qFilterUnit" onchange="refreshQList()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts('','')}</select>
+          <select id="qFilterUnit" onchange="refreshQList()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts(filter.grade||'', filter.unitType||'', filter.unit)}</select>
         </div>
-        <input id="qFilterKeyword" type="text" placeholder="問題文・漢字で検索" oninput="refreshQList()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+        <input id="qFilterKeyword" type="text" value="${(filter.keyword||'').replace(/"/g,'&quot;')}" placeholder="問題文・漢字で検索" oninput="refreshQList()" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
       </div>
       <div style="padding:6px 12px;border-bottom:1px solid #f0f4f8;flex-shrink:0;display:flex;gap:8px;">
         <button onclick="document.getElementById('qListRows').querySelectorAll('input').forEach(cb=>cb.checked=true)" style="background:#f0f4f8;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-family:${ZMG};cursor:pointer;">全選択</button>
         <button onclick="document.getElementById('qListRows').querySelectorAll('input').forEach(cb=>cb.checked=false)" style="background:#f0f4f8;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-family:${ZMG};cursor:pointer;">全解除</button>
       </div>
-      <div id="qListRows" style="overflow-y:auto;flex:1;">${buildList('','','','')}</div>
+      <div id="qListRows" style="overflow-y:auto;flex:1;">${buildList(filter.grade||'', filter.unitType||'', filter.unit||'', filter.keyword||'')}</div>
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <button onclick="execDeleteFromList(this)" style="flex:1;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">選択した問題を削除</button>
@@ -3144,6 +3146,12 @@ function openEditFromList(dataIndex) {
   const prevCurrent = current;
   session = [{ ...q, _dataIndex: dataIndex }];
   current = 0;
+  window._editFromListFilter = {
+    grade: document.getElementById('qFilterGrade')?.value || '',
+    unitType: document.getElementById('qFilterUnitType')?.value || '',
+    unit: document.getElementById('qFilterUnit')?.value || '',
+    keyword: document.getElementById('qFilterKeyword')?.value || ''
+  };
   openEditModal();
   window._editFromListDataIndex = dataIndex;
   window._editFromListPrevSession = prevSession;
@@ -4560,7 +4568,9 @@ function saveEditModal(btn) {
     showToast('保存しました');
     // 既存の問題一覧overlayを閉じてから開き直す（最新データで再描画するため）
     document.querySelectorAll('[style*="fixed"][style*="z-index:900"]').forEach(el => el.remove());
-    showQuestionList();
+    const restoreFilter = window._editFromListFilter;
+    window._editFromListFilter = undefined;
+    showQuestionList(restoreFilter);
   } else {
     loadQuestion(current);
     showToast('保存しました');
