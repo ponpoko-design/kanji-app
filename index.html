@@ -4064,27 +4064,34 @@ function showDojoStart() {
 // 「問題を選ぶ」ボタン → ページ内で出題選択を表示
 function openDojoSelect() { openDojoSelectInPage(); }
 
+// 出題選択エリア（dojoSelectArea）を、スクロール領域＋下部固定ボタンのflex構成で描画する共通関数。
+// JSでの高さ計算に依存せず、CSSのflexboxだけで確実にスクロールできるようにする。
+// iPhone SE3・iPhone 16・iPad を最低ラインとして動作すること。
+function renderSelectAreaPage(contentHTML, footerHTML) {
+  const area = document.getElementById('dojoSelectArea');
+  area.style.display = 'flex';
+  area.style.flexDirection = 'column';
+  area.style.overflowY = 'hidden';
+  area.style.webkitOverflowScrolling = '';
+  area.style.height = '';
+  area.innerHTML =
+    `<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;">${contentHTML}</div>` +
+    (footerHTML ? `<div style="flex-shrink:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#f0f4f8;box-shadow:0 -4px 8px rgba(0,0,0,0.05);">${footerHTML}</div>` : '');
+  document.getElementById('dojoStart').classList.remove('visible');
+}
+
 // ===== 教科選択（国語／社会） =====
 function openSubjectSelectInPage() {
   const ZMG = "'Zen Maru Gothic',serif";
-  const area = document.getElementById('dojoSelectArea');
-  area.innerHTML = `
-    <div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">
+  renderSelectAreaPage(`
+    <div style="max-width:480px;margin:0 auto;">
       <div style="font-size:19px;font-weight:700;font-family:${ZMG};color:#1a3060;margin-bottom:16px;">どの教科を練習する？</div>
       <button onclick="openDojoSelectInPage()" style="width:100%;padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:16px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:12px;display:block;">国語（漢字）</button>
       <button onclick="openShakaiSelectInPage()" style="width:100%;padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:16px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:block;">社会（地理）</button>
       <div style="margin-top:16px;">
         <button onclick="closeDojoSelectInPage()" style="width:100%;padding:15px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">← 戻る</button>
       </div>
-    </div>`;
-  document.getElementById('dojoStart').classList.remove('visible');
-  area.style.display = 'block';
-  area.style.overflowY = 'auto';
-  area.style.webkitOverflowScrolling = 'touch';
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const headerH = document.querySelector('header').offsetHeight;
-  area.style.height = (vh - headerH) + 'px';
-  area.scrollTop = 0;
+    </div>`, '');
 }
 
 // ===== 社会（地理）出題フロー =====
@@ -4102,8 +4109,8 @@ function openShakaiSelectInPage() {
     </label>`;
   }).join('');
   const area = document.getElementById('dojoSelectArea');
-  area.innerHTML = `
-    <div style="padding:16px;max-width:480px;margin:0 auto;">
+  renderSelectAreaPage(`
+    <div style="max-width:480px;margin:0 auto;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <button onclick="openSubjectSelectInPage()" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -4115,18 +4122,10 @@ function openShakaiSelectInPage() {
         <span style="font-family:${ZMG};font-size:15px;">ぜんぶ（${data.length}問）</span>
       </label>
       ${gyouBtns}
-    </div>
-    <div style="position:sticky;bottom:0;background:#f0f4f8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:flex-end;box-shadow:0 -4px 8px rgba(0,0,0,0.05);">
+    </div>`,
+    `<div style="display:flex;justify-content:flex-end;max-width:480px;margin:0 auto;">
       <button onclick="shakaiPageShowCount()" style="padding:14px 32px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
-    </div>`;
-  document.getElementById('dojoStart').classList.remove('visible');
-  area.style.display = 'block';
-  area.style.overflowY = 'auto';
-  area.style.webkitOverflowScrolling = 'touch';
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const headerH = document.querySelector('header').offsetHeight;
-  area.style.height = (vh - headerH) + 'px';
-  area.scrollTop = 0;
+    </div>`);
 }
 
 function updateShakaiGyouUI() {
@@ -4151,8 +4150,8 @@ function shakaiPageShowCount() {
   const countBtns = [5,10,20,30].map(n =>
     `<button id="shakaiCountBtn_${n}" onclick="selectShakaiCount(${n})" style="padding:20px 8px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:24px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:center;transition:background 0.15s,color 0.15s;">${n}問</button>`
   ).join('');
-  area.innerHTML = `
-    <div style="padding:16px;max-width:480px;margin:0 auto;">
+  renderSelectAreaPage(`
+    <div style="max-width:480px;margin:0 auto;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <button onclick="openShakaiSelectInPage()" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -4160,10 +4159,10 @@ function shakaiPageShowCount() {
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">問題数を選ぶ</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">${countBtns}</div>
-    </div>
-    <div style="position:sticky;bottom:0;background:#f0f4f8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:flex-end;box-shadow:0 -4px 8px rgba(0,0,0,0.05);">
+    </div>`,
+    `<div style="display:flex;justify-content:flex-end;max-width:480px;margin:0 auto;">
       <button id="shakaiCountNextBtn" onclick="shakaiPageShowAnswerTiming()" style="padding:14px 32px;background:#e0e8f0;color:#aaa;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:default;transition:background 0.15s,color 0.15s;" disabled>次へ →</button>
-    </div>`;
+    </div>`);
 }
 
 function selectShakaiCount(n) {
@@ -4181,9 +4180,8 @@ function selectShakaiCount(n) {
 function shakaiPageShowAnswerTiming() {
   if (!window._shakaiPendingCount) return;
   const ZMG = "'Zen Maru Gothic',serif";
-  const area = document.getElementById('dojoSelectArea');
-  area.innerHTML = `
-    <div style="padding:16px;max-width:480px;margin:0 auto;">
+  renderSelectAreaPage(`
+    <div style="max-width:480px;margin:0 auto;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
         <button onclick="shakaiPageShowCount()" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -4210,10 +4208,10 @@ function shakaiPageShowAnswerTiming() {
           <span class="toggle-slider"></span>
         </label>
       </div>
-    </div>
-    <div style="position:sticky;bottom:0;background:#f0f4f8;padding:12px 16px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -4px 8px rgba(0,0,0,0.05);">
+    </div>`,
+    `<div style="max-width:480px;margin:0 auto;">
       <button id="timingStartBtn" onclick="startShakaiSession()" style="width:100%;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">はじめる →</button>
-    </div>`;
+    </div>`);
 }
 
 // 社会データの1件を、練習セッションで使える形（漢字と同じ形）に変換する
