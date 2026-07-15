@@ -1566,6 +1566,10 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       </span>
       写真からラクラク問題化
     </div>
+    <div class="menu-item" onclick="closeMenu();showQuestionList();">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+      問題文一覧
+    </div>
     <div class="menu-item" onclick="menuSettings()">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
@@ -1577,10 +1581,6 @@ if (localStorage.getItem('kanji_auth')==='ok') {
 <div class="menu-overlay" id="settingsOverlay" onclick="closeSettings()">
   <div class="menu-panel" onclick="event.stopPropagation()" style="width:280px;">
     <div style="padding:16px 20px 8px; font-size:13px; color:#999; font-family:'Zen Maru Gothic',serif; border-bottom:1px solid #f0f4f8;">設定</div>
-    <div class="menu-item" onclick="closeSettings();showQuestionList();">
-      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
-      問題文一覧
-    </div>
     <div class="menu-item" onclick="closeSettings();showApiKeySetup();">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
       APIキーを設定
@@ -2510,7 +2510,16 @@ function renderRakurakuStep4() {
   const body = document.getElementById('rakurakuBody');
   const ZMG = "'Zen Maru Gothic',serif";
 
-  const items = rakuraku.answerResults.map((q, i) => `
+  const items = rakuraku.answerResults.map((q, i) => {
+    const pairs = getAnswerPairs(q);
+    const pairRowsHTML = (pairs.length ? pairs : [{kanji:'',kana:''}]).map(p => `
+      <div class="pair-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input class="pair-kanji" type="text" placeholder="漢字" maxlength="2" value="${(p.kanji||'').replace(/"/g,'&quot;')}" style="width:56px;flex-shrink:0;padding:8px 6px;border:1px solid #ddd;border-radius:8px;font-size:16px;text-align:center;font-family:${ZMG};box-sizing:border-box;">
+        <span style="color:#999;flex-shrink:0;font-size:13px;">→</span>
+        <input class="pair-kana" type="text" placeholder="送り仮名（なければ空欄）" value="${(p.kana||'').replace(/"/g,'&quot;')}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
+        <button onclick="this.closest('.pair-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>
+      </div>`).join('');
+    return `
     <div class="answer-review-item" id="ans-item-${i}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-size:12px;font-weight:700;color:#1a6fc4;font-family:${ZMG};">${i+1}問目</span>
@@ -2537,13 +2546,9 @@ function renderRakurakuStep4() {
           <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${escapeHtml(q.answerText||'')}</span>
         </div>` : `
         <div class="answer-review-row">
-          <span class="answer-review-label">答え漢字</span>
-          <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${(q.answerKanji||[]).join('') || '（なし）'}</span>
-        </div>
-        ${q.answerText ? `<div class="answer-review-row">
-          <span class="answer-review-label">送り仮名</span>
-          <span class="answer-review-val">${escapeHtml(q.answerText)}</span>
-        </div>` : ''}`}
+          <span class="answer-review-label">答え</span>
+          <span class="answer-review-val" style="font-size:16px;font-weight:700;color:#0d3d7a;">${pairs.map(p=>escapeHtml(p.kanji)+(p.kana?`（${escapeHtml(p.kana)}）`:'')).join('') || '（なし）'}</span>
+        </div>`}
       </div>
 
       <!-- 編集モード -->
@@ -2558,29 +2563,25 @@ function renderRakurakuStep4() {
         </div>
         <div style="margin-bottom:8px;">
           <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">種類</label>
-          <select class="answer-review-type-sel" id="ans-t-${i}">
+          <select class="answer-review-type-sel" id="ans-t-${i}" onchange="toggleAnsEditSections(${i})">
             <option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option>
             <option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option>
           </select>
         </div>
-        ${q.type === 'よみがなを書く' ? `
-        <div style="margin-bottom:4px;">
-          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答え（ひらがな）</label>
-          <input class="answer-review-input" id="ans-a-${i}" type="text" value="${escapeHtml(q.answerText||'')}">
-          <input type="hidden" id="ans-k-${i}" value="">
-        </div>` : `
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答えの漢字（複数はカンマ区切り）</label>
-          <input class="answer-review-input" id="ans-k-${i}" type="text" value="${(q.answerKanji||[]).join(',')}">
+        <div id="ans-pair-section-${i}" style="display:${q.type==='よみがなを書く'?'none':'block'};margin-bottom:8px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">正解の漢字と送り仮名</label>
+          <div id="ans-pairRows-${i}">${pairRowsHTML}</div>
+          <button type="button" onclick="addAnsPairRow(${i})" style="width:100%;padding:8px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};cursor:pointer;color:#666;margin-top:2px;">＋ 漢字を追加</button>
         </div>
-        <div style="margin-bottom:4px;">
-          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">送り仮名</label>
-          <input class="answer-review-input" id="ans-a-${i}" type="text" value="${escapeHtml(q.answerText||'')}">
-        </div>`}
+        <div id="ans-yomi-section-${i}" style="display:${q.type==='よみがなを書く'?'block':'none'};margin-bottom:4px;">
+          <label style="font-size:11px;color:#999;font-family:${ZMG};display:block;margin-bottom:4px;">答え（ひらがな）</label>
+          <input class="answer-review-input" id="ans-a-${i}" type="text" value="${escapeHtml(q.type==='よみがなを書く'?(q.answerText||''):'')}">
+        </div>
         <button onclick="saveAnsEdit(${i})" style="margin-top:8px;padding:8px 16px;background:#1a6fc4;color:#fff;border:none;border-radius:8px;font-family:${ZMG};font-size:13px;font-weight:700;cursor:pointer;">保存</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   body.innerHTML = `
     <p style="font-family:${ZMG};font-size:15px;color:#666;margin-bottom:12px;line-height:1.7;">
@@ -2592,6 +2593,23 @@ function renderRakurakuStep4() {
     </button>
     <button class="rakuraku-btn-secondary" onclick="goToStep3()">← OCR結果に戻る</button>
   `;
+}
+
+function toggleAnsEditSections(i) {
+  const type = document.getElementById(`ans-t-${i}`)?.value;
+  const pairSection = document.getElementById(`ans-pair-section-${i}`);
+  const yomiSection = document.getElementById(`ans-yomi-section-${i}`);
+  if (pairSection) pairSection.style.display = type === 'よみがなを書く' ? 'none' : 'block';
+  if (yomiSection) yomiSection.style.display = type === 'よみがなを書く' ? 'block' : 'none';
+}
+
+function addAnsPairRow(i) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const row = document.createElement('div');
+  row.className = 'pair-row';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+  row.innerHTML = `<input class="pair-kanji" type="text" placeholder="漢字" maxlength="2" style="width:56px;flex-shrink:0;padding:8px 6px;border:1px solid #ddd;border-radius:8px;font-size:16px;text-align:center;font-family:${ZMG};box-sizing:border-box;"><span style="color:#999;flex-shrink:0;font-size:13px;">→</span><input class="pair-kana" type="text" placeholder="送り仮名（なければ空欄）" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;"><button onclick="this.closest('.pair-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>`;
+  document.getElementById(`ans-pairRows-${i}`).appendChild(row);
 }
 
 function toggleAnsEdit(i) {
@@ -2614,13 +2632,23 @@ function saveAnsEdit(i) {
   q.question = document.getElementById(`ans-q-${i}`).value.trim();
   q.underline = document.getElementById(`ans-u-${i}`).value.trim();
   q.type = document.getElementById(`ans-t-${i}`).value;
-  q.answerText = document.getElementById(`ans-a-${i}`).value.trim();
   if (q.type === 'よみがなを書く') {
-    // よみがな問題：answerKanjiは空、answerTextが答え
+    // よみがな問題：answerPairsは空、answerTextが答え
+    q.answerPairs = [];
     q.answerKanji = [];
+    q.answerText = document.getElementById(`ans-a-${i}`).value.trim();
   } else {
-    // 漢字を書く問題：answerKanjiに漢字、answerTextに送り仮名
-    q.answerKanji = document.getElementById(`ans-k-${i}`).value.split(',').map(k=>k.trim()).filter(k=>k);
+    // 漢字を書く問題：ペア行から answerPairs を組み立てる
+    const pairs = [];
+    document.querySelectorAll(`#ans-pairRows-${i} .pair-row`).forEach(row => {
+      const k = row.querySelector('.pair-kanji').value.trim();
+      const y = row.querySelector('.pair-kana').value.trim();
+      if (k) pairs.push({ kanji: k, kana: y });
+    });
+    const legacy = answerPairsToLegacy(pairs);
+    q.answerPairs = pairs;
+    q.answerKanji = legacy.answerKanji;
+    q.answerText = legacy.answerText;
   }
   // 表示を更新して閉じる
   renderRakurakuStep4();
@@ -2646,6 +2674,7 @@ function saveRakurakuQuestions() {
     underline: q.underline,
     answerKanji: q.answerKanji || [],
     answerText: q.answerText || '',
+    answerPairs: q.answerPairs || [],
     missCount: 0,
     charMiss: {},
     totalCount: 0,
@@ -2686,16 +2715,22 @@ ${inputText}
     "question": "一矢ムクイル",
     "underline": "ムクイル",
     "type": "漢字を書く",
-    "answerKanji": ["報"],
-    "answerText": "いる"
+    "answerPairs": [{"kanji": "報", "kana": "いる"}]
   },
   {
     "no": 2,
     "question": "試合がエンキになった。",
     "underline": "エンキ",
     "type": "よみがなを書く",
-    "answerKanji": [],
+    "answerPairs": [],
     "answerText": "えんき"
+  },
+  {
+    "no": 3,
+    "question": "掃除機でホコリをスイトル。",
+    "underline": "スイトル",
+    "type": "漢字を書く",
+    "answerPairs": [{"kanji": "吸", "kana": "い"}, {"kanji": "取", "kana": "る"}]
   }
 ]
 
@@ -2703,9 +2738,13 @@ ${inputText}
 ・questionは入力テキストの文字をそのまま使う。カタカナを漢字に絶対変換しない。文章を書き換えない。
 ・<u>タグがある場合：タグを取り除いた文章をquestionに、タグ内の文字をunderlineに入れる（文字は一切変えない）
 ・<u>タグがない場合：文中に連続するカタカナ語句があれば、それを下線部（underline）として扱う。questionはそのままの文字列を使う
-・underlineがカタカナ→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
-・underlineがひらがな→type:"漢字を書く"、answerKanjiに正解の漢字、送り仮名はanswerTextに
-・underlineが漢字→type:"よみがなを書く"、answerKanji:[]、answerTextに正解のひらがな
+・underlineがカタカナ→type:"漢字を書く"
+・underlineがひらがな→type:"漢字を書く"
+・underlineが漢字→type:"よみがなを書く"、answerPairs:[]、answerTextに正解のひらがな
+・"漢字を書く"の場合：answerPairsに、正解の「漢字1文字（またはその読みの熟語のまとまり）」と「その直後に続く送り仮名（なければ空文字""）」のペアを、文字の出てくる順番通りにすべて入れる
+  例：「報いる」→[{"kanji":"報","kana":"いる"}]
+  例：「吸い取る」のように漢字の間にひらがなが挟まる場合→[{"kanji":"吸","kana":"い"},{"kanji":"取","kana":"る"}]
+  例：「階段」のように送り仮名が無い場合→[{"kanji":"階","kana":""},{"kanji":"段","kana":""}]
 ・noは1から順番に振る
 ・JSONのみ出力してください`
       }]
@@ -2731,7 +2770,16 @@ ${inputText}
     }
     clean = text.slice(start, end + 1);
   }
-  return JSON.parse(clean);
+  const parsed = JSON.parse(clean);
+  // answerPairsから旧形式フィールド（answerKanji/answerText）も生成しておく（他機能との互換のため）
+  return parsed.map(q => {
+    if (q.type === 'よみがなを書く') {
+      return { ...q, answerPairs: [], answerKanji: [], answerText: q.answerText || '' };
+    }
+    const pairs = Array.isArray(q.answerPairs) ? q.answerPairs : [];
+    const legacy = answerPairsToLegacy(pairs);
+    return { ...q, answerPairs: pairs, answerKanji: legacy.answerKanji, answerText: legacy.answerText };
+  });
 }
 
 // ===== ユーティリティ =====
@@ -3553,7 +3601,8 @@ function menuShowData() {
     return sorted.map(q => {
       const grade = q.grade ? `${q.grade}年` : '−';
       const unit = q.unit ? getUnitLabel(q) : '−';
-      const answer = (q.answerKanji||[]).join('') + (q.answerText||'') || '−';
+      const pairs = getAnswerPairs(q);
+      const answer = (q.type === 'よみがなを書く' ? (q.answerText||'') : pairs.map(p=>p.kanji+(p.kana||'')).join('')) || '−';
       const pct = (q.missCount / max) * 100;
       return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${grade}</td><td style="padding:8px 6px;font-size:13px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${unit}</td><td style="padding:8px 6px;font-size:15px;color:#000;font-family:'Zen Maru Gothic',serif;white-space:nowrap;">${answer}</td><td style="padding:8px 6px;font-size:13px;font-weight:700;color:#FF4D4D;font-family:'Zen Maru Gothic',serif;white-space:nowrap;text-align:right;">${q.missCount}回</td><td style="padding:8px 6px;width:60px;"><div style="background:#eee;border-radius:999px;height:6px;overflow:hidden;"><div style="background:#FF4D4D;height:100%;width:${pct}%;border-radius:999px;"></div></div></td></tr>`;
     }).join('');
@@ -3613,7 +3662,8 @@ function showConfirmQuestions(questions, grade, unit) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
   const ZMG = "'Zen Maru Gothic',serif";
   const rows = questions.map((q, i) => {
-    const answer = (q.answerKanji||[]).join('') + (q.answerText||'');
+    const pairs = getAnswerPairs(q);
+    const answer = q.type === 'よみがなを書く' ? (q.answerText||'') : pairs.map(p=>p.kanji+(p.kana||'')).join('');
     const typeLabel = q.type === 'よみがなを書く' ? 'よみがな' : '書き取り';
     return `<tr style="border-bottom:1px solid #f0f4f8;"><td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};">${q.no}番</td><td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};">${q.underline}</td><td style="padding:10px 8px;font-size:15px;color:#000000;font-family:${ZMG};font-weight:700;">${answer}</td><td style="padding:10px 8px;font-size:14px;color:#000000;font-family:${ZMG};white-space:nowrap;">${typeLabel}</td></tr>`;
   }).join('');
@@ -3693,6 +3743,7 @@ function doSaveWithUnitType(btn) {
     underline: q.underline,
     answerKanji: q.answerKanji || [],
     answerText: q.answerText || '',
+    answerPairs: q.answerPairs || [],
     missCount: 0,
     charMiss: {},
     totalCount: 0,
@@ -4371,11 +4422,31 @@ function buildQ(question, underline, ruby) {
   return span;
 }
 
+// 「漢字＋直後のひらがな」のペア配列を取得する。
+// answerPairsが保存されていればそれを使用。なければ旧形式（answerKanji配列＋末尾answerText）から
+// 「最後の漢字の後ろに送り仮名がつく」という前提で自動的に組み立てる（後方互換）。
+function getAnswerPairs(q) {
+  if (Array.isArray(q.answerPairs) && q.answerPairs.length) return q.answerPairs;
+  const kanjiList = q.answerKanji || [];
+  const kana = q.answerText || '';
+  if (!kanjiList.length) return [];
+  return kanjiList.map((k, i) => ({ kanji: k, kana: i === kanjiList.length - 1 ? kana : '' }));
+}
+// ペア配列から旧形式のanswerKanji（全漢字を並べた配列）とanswerText（全ひらがなを連結）を作る
+// （検索・統計・一覧表示など、既存の他機能とのデータ互換のため）
+function answerPairsToLegacy(pairs) {
+  return {
+    answerKanji: pairs.map(p => p.kanji).filter(k => k),
+    answerText: pairs.map(p => p.kana || '').join('')
+  };
+}
+
 function buildAnswerImages(q) {
   const wrap = document.getElementById('answerImagesWrap');
   wrap.innerHTML = ''; wrap.style.pointerEvents = 'none';
   const kanjiList = q.answerKanji || [];
   const kanaChars = q.answerText ? [...q.answerText].filter(ch => ch.trim() !== '') : [];
+  const pairs = getAnswerPairs(q);
   const total = kanjiList.length + kanaChars.length;
   if (total === 0) return;
   function addItems() {
@@ -4390,32 +4461,37 @@ function buildAnswerImages(q) {
         wrap.appendChild(box);
       });
     } else {
-      kanjiList.forEach(kanji => {
-        const box = document.createElement('div');
-        box.className = 'kanji-img-box';
-        const img = document.createElement('img');
-        img.src = getImageUrl(kanji);
-        img.alt = kanji;
-        img.onerror = function() {
-          this.style.display = 'none';
-          const ph = document.createElement('div');
-          ph.className = 'no-image-box';
-          ph.textContent = kanji;
-          ph.onclick = () => { if (!answerShown) return; openPopup(kanji, false); };
-          box.appendChild(ph);
-        };
-        img.onclick = () => { if (!answerShown) return; openPopup(kanji, true); };
-        box.appendChild(img);
-        wrap.appendChild(box);
-      });
-      kanaChars.forEach(ch => {
-        const box = document.createElement('div');
-        box.className = 'kanji-img-box';
-        const t = document.createElement('div');
-        t.className = 'answer-kana-text';
-        t.textContent = ch;
-        box.appendChild(t);
-        wrap.appendChild(box);
+      // 漢字を書く問題：漢字（画像）→直後のひらがな（あれば）を、ペアの順番通りに並べる
+      pairs.forEach(pair => {
+        const kanji = pair.kanji;
+        if (kanji) {
+          const box = document.createElement('div');
+          box.className = 'kanji-img-box';
+          const img = document.createElement('img');
+          img.src = getImageUrl(kanji);
+          img.alt = kanji;
+          img.onerror = function() {
+            this.style.display = 'none';
+            const ph = document.createElement('div');
+            ph.className = 'no-image-box';
+            ph.textContent = kanji;
+            ph.onclick = () => { if (!answerShown) return; openPopup(kanji, false); };
+            box.appendChild(ph);
+          };
+          img.onclick = () => { if (!answerShown) return; openPopup(kanji, true); };
+          box.appendChild(img);
+          wrap.appendChild(box);
+        }
+        const kanaOfPair = pair.kana ? [...pair.kana].filter(ch => ch.trim() !== '') : [];
+        kanaOfPair.forEach(ch => {
+          const box = document.createElement('div');
+          box.className = 'kanji-img-box';
+          const t = document.createElement('div');
+          t.className = 'answer-kana-text';
+          t.textContent = ch;
+          box.appendChild(t);
+          wrap.appendChild(box);
+        });
       });
     }
   }
@@ -4559,6 +4635,14 @@ function openEditModal() {
       <input class="ruby-yomi" type="text" placeholder="よみ" value="${entry[1]}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
       <button onclick="this.closest('.ruby-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>
     </div>`).join('');
+  const pairs = getAnswerPairs(q);
+  const pairRows = (pairs.length ? pairs : [{kanji:'',kana:''}]).map(p => `
+    <div class="pair-row" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <input class="pair-kanji" type="text" placeholder="漢字" maxlength="2" value="${(p.kanji||'').replace(/"/g,'&quot;')}" style="width:56px;flex-shrink:0;padding:8px 6px;border:1px solid #ddd;border-radius:8px;font-size:16px;text-align:center;font-family:${ZMG};box-sizing:border-box;">
+      <span style="color:#999;flex-shrink:0;font-size:13px;">→</span>
+      <input class="pair-kana" type="text" placeholder="送り仮名（なければ空欄）" value="${(p.kana||'').replace(/"/g,'&quot;')}" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;">
+      <button onclick="this.closest('.pair-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>
+    </div>`).join('');
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;flex-shrink:0;">
@@ -4568,11 +4652,16 @@ function openEditModal() {
       <div style="padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
         <div><label style="${lbl}">問題文</label><input id="editQuestion" type="text" value="${q.question.replace(/"/g,'&quot;')}" style="${inp}"></div>
         <div><label style="${lbl}">下線部分（答えの箇所）</label><input id="editUnderline" type="text" value="${(q.underline||'').replace(/"/g,'&quot;')}" style="${inp}"></div>
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1;"><label style="${lbl}">正解の漢字<span style="font-weight:400;font-size:11px;">（複数はカンマ区切り）</span></label><input id="editKanji" type="text" value="${(q.answerKanji||[]).join(',')}" style="${inp}"></div>
-          <div style="flex:1;"><label style="${lbl}">送り仮名</label><input id="editKana" type="text" value="${(q.answerText||'').replace(/"/g,'&quot;')}" placeholder="例：かる" style="${inp}"></div>
+        <div><label style="${lbl}">種類</label><select id="editType" onchange="toggleEditTypeSections()" style="${inp}"><option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option><option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option></select></div>
+        <div id="pairSection" style="display:${q.type==='よみがなを書く'?'none':'block'};border-top:1px solid #f0f4f8;padding-top:12px;">
+          <label style="${lbl}">正解の漢字と送り仮名 <span style="font-weight:400;">（例：「吸い取る」→ 漢字「吸」送り仮名「い」＋漢字「取」送り仮名「る」）</span></label>
+          <div id="pairRows">${pairRows}</div>
+          <button type="button" onclick="addPairRow()" style="width:100%;padding:8px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};cursor:pointer;color:#666;margin-top:2px;">＋ 漢字を追加</button>
         </div>
-        <div><label style="${lbl}">種類</label><select id="editType" style="${inp}"><option value="漢字を書く" ${q.type==='漢字を書く'?'selected':''}>漢字を書く</option><option value="よみがなを書く" ${q.type==='よみがなを書く'?'selected':''}>よみがなを書く</option></select></div>
+        <div id="yomiSection" style="display:${q.type==='よみがなを書く'?'block':'none'};border-top:1px solid #f0f4f8;padding-top:12px;">
+          <label style="${lbl}">答え（ひらがな）</label>
+          <input id="editYomiText" type="text" value="${(q.type==='よみがなを書く'?(q.answerText||''):'').replace(/"/g,'&quot;')}" style="${inp}">
+        </div>
         <div style="border-top:1px solid #f0f4f8;padding-top:12px;">
           <label style="${lbl}">ルビ <span style="font-weight:400;">（問題文中の漢字によみがなをつける）</span></label>
           <div id="rubyRows">${rubyRowsHTML}</div>
@@ -4586,6 +4675,23 @@ function openEditModal() {
     </div>`;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+}
+
+function toggleEditTypeSections() {
+  const type = document.getElementById('editType')?.value;
+  const pairSection = document.getElementById('pairSection');
+  const yomiSection = document.getElementById('yomiSection');
+  if (pairSection) pairSection.style.display = type === 'よみがなを書く' ? 'none' : 'block';
+  if (yomiSection) yomiSection.style.display = type === 'よみがなを書く' ? 'block' : 'none';
+}
+
+function addPairRow() {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const row = document.createElement('div');
+  row.className = 'pair-row';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+  row.innerHTML = `<input class="pair-kanji" type="text" placeholder="漢字" maxlength="2" style="width:56px;flex-shrink:0;padding:8px 6px;border:1px solid #ddd;border-radius:8px;font-size:16px;text-align:center;font-family:${ZMG};box-sizing:border-box;"><span style="color:#999;flex-shrink:0;font-size:13px;">→</span><input class="pair-kana" type="text" placeholder="送り仮名（なければ空欄）" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:${ZMG};min-width:0;box-sizing:border-box;"><button onclick="this.closest('.pair-row').remove()" style="padding:6px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;flex-shrink:0;color:#666;">✕</button>`;
+  document.getElementById('pairRows').appendChild(row);
 }
 
 function addRubyRow() {
@@ -4602,11 +4708,23 @@ function saveEditModal(btn) {
   if (!q) return;
   const question = document.getElementById('editQuestion').value.trim();
   const underline = document.getElementById('editUnderline').value.trim();
-  const kanjiRaw = document.getElementById('editKanji').value.trim();
-  const kana = document.getElementById('editKana').value.trim();
   const type = document.getElementById('editType').value;
   if (!question) { showToast('問題文を入力してください'); return; }
-  const answerKanji = kanjiRaw ? kanjiRaw.split(',').map(k => k.trim()).filter(k => k) : [];
+  let answerPairs = [], answerKanji = [], kana = '';
+  if (type === 'よみがなを書く') {
+    kana = document.getElementById('editYomiText').value.trim();
+    answerPairs = [];
+    answerKanji = [];
+  } else {
+    document.querySelectorAll('#pairRows .pair-row').forEach(row => {
+      const k = row.querySelector('.pair-kanji').value.trim();
+      const y = row.querySelector('.pair-kana').value.trim();
+      if (k) answerPairs.push({ kanji: k, kana: y });
+    });
+    const legacy = answerPairsToLegacy(answerPairs);
+    answerKanji = legacy.answerKanji;
+    kana = legacy.answerText;
+  }
   const ruby = {};
   document.querySelectorAll('#rubyRows .ruby-row').forEach(row => {
     const k = row.querySelector('.ruby-kanji').value.trim();
@@ -4618,12 +4736,14 @@ function saveEditModal(btn) {
   if (dataIndex !== -1 && data[dataIndex]) {
     data[dataIndex].question = question; data[dataIndex].underline = underline;
     data[dataIndex].answerKanji = answerKanji; data[dataIndex].answerText = kana;
+    data[dataIndex].answerPairs = answerPairs;
     data[dataIndex].type = type;
     data[dataIndex].ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
     savePracticeData(data);
   }
   session[current].question = question; session[current].underline = underline;
   session[current].answerKanji = answerKanji; session[current].answerText = kana;
+  session[current].answerPairs = answerPairs;
   session[current].type = type;
   session[current].ruby = Object.keys(ruby).length > 0 ? ruby : undefined;
   const editOverlay = document.getElementById('editModalOverlay'); if (editOverlay) editOverlay.remove();
