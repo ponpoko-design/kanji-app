@@ -2998,7 +2998,11 @@ function showQuestionList(initialFilter) {
   const data = loadPracticeData();
   if (!data.length) { showToast('問題がありません'); return; }
   const filter = initialFilter || {};
+  // 既に開いている問題一覧オーバーレイがあれば、重複表示を防ぐため先に閉じる
+  const existing = document.getElementById('qListOverlay');
+  if (existing) existing.remove();
   const overlay = document.createElement('div');
+  overlay.id = 'qListOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
   const ZMG = "'Zen Maru Gothic',serif";
   const grades = [...new Set(data.map(q => q.grade).filter(Boolean))].sort((a,b)=>a-b);
@@ -3870,7 +3874,18 @@ function dojoPageNext() {
     const unitFrom = document.getElementById('dsp_unitFrom')?.value;
     const unitTo = document.getElementById('dsp_unitTo')?.value;
     if (!unitFrom || !unitTo) return;
-    area.innerHTML = `
+    dojoPageShowUnitMethod(unitFrom, unitTo);
+  } else {
+    const dateFrom = document.getElementById('dsp_dateFrom')?.value || '';
+    const dateTo = document.getElementById('dsp_dateTo')?.value || '';
+    dojoPageShowCount(v, '', '', dateFrom, dateTo);
+  }
+}
+
+function dojoPageShowUnitMethod(unitFrom, unitTo) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const area = document.getElementById('dojoSelectArea');
+  area.innerHTML = `
       <div style="padding:16px;max-width:480px;margin:0 auto;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
           <button onclick="openDojoSelectInPage()" style="background:none;border:none;cursor:pointer;padding:4px;">
@@ -3878,15 +3893,10 @@ function dojoPageNext() {
           </button>
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ（単元${unitFrom}〜${unitTo}）</div>
         </div>
-        <button onclick="dojoStartUnit('all','${unitFrom}','${unitTo}',0)" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部</button>
+        <button onclick="dojoPageShowAnswerTimingAll('${unitFrom}','${unitTo}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部</button>
         <button onclick="dojoPageShowCount('unitMiss','${unitFrom}','${unitTo}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">よく間違うものから</button>
         <button onclick="dojoPageShowCount('unitRandom','${unitFrom}','${unitTo}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:block;">ランダム</button>
       </div>`;
-  } else {
-    const dateFrom = document.getElementById('dsp_dateFrom')?.value || '';
-    const dateTo = document.getElementById('dsp_dateTo')?.value || '';
-    dojoPageShowCount(v, '', '', dateFrom, dateTo);
-  }
 }
 
 function dojoPageShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
@@ -4023,6 +4033,46 @@ function startFromTimingSelect() {
   window._answerTiming = timing;
   window._bulkPhase = (timing === 'bulk') ? 'question' : null;
   dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo);
+}
+
+// 「単元で範囲指定→範囲の問題を全部」用の答えタイミング選択画面
+function dojoPageShowAnswerTimingAll(unitFrom, unitTo) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const area = document.getElementById('dojoSelectArea');
+  window._pendingAnswerTiming = 'perQ';
+
+  area.innerHTML =
+    '<div style="padding:16px;max-width:480px;margin:0 auto;padding-bottom:32px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">' +
+        '<button onclick="dojoPageShowUnitMethod(\'' + unitFrom + '\',\'' + unitTo + '\')" style="background:none;border:none;cursor:pointer;padding:4px;">' +
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>' +
+        '</button>' +
+        '<div style="font-size:17px;font-weight:700;font-family:' + ZMG + ';color:#1a3060;">答えを出すタイミングは？</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:12px;">' +
+        '<button id="timingBtn_perQ" onclick="selectAnswerTiming(\'perQ\')"' +
+        ' style="padding:20px 16px;background:#1a6fc4;border:1.5px solid #1a6fc4;border-radius:12px;font-size:15px;font-weight:700;font-family:' + ZMG + ';color:#fff;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">' +
+          '一問毎に出す<br><span style="font-size:12px;font-weight:400;opacity:0.85;">（問題1 → 1の答え → 問題2 → 2の答え…）</span>' +
+        '</button>' +
+        '<button id="timingBtn_bulk" onclick="selectAnswerTiming(\'bulk\')"' +
+        ' style="padding:20px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;font-size:15px;font-weight:700;font-family:' + ZMG + ';color:#1a3060;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">' +
+          'まとめて出す<br><span style="font-size:12px;font-weight:400;opacity:0.7;">（問題まとめて → 回答まとめて）</span>' +
+        '</button>' +
+      '</div>' +
+      '<div style="margin-top:20px;">' +
+        '<button id="timingStartBtn" onclick="startFromTimingSelectAll(\'' + unitFrom + '\',\'' + unitTo + '\')"' +
+        ' style="width:100%;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:' + ZMG + ';cursor:pointer;">' +
+          'はじめる →' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function startFromTimingSelectAll(unitFrom, unitTo) {
+  const timing = window._pendingAnswerTiming || 'perQ';
+  window._answerTiming = timing;
+  window._bulkPhase = (timing === 'bulk') ? 'question' : null;
+  dojoStartUnit('all', unitFrom, unitTo, 0);
 }
 
 // スタートカード内の出題選択UIを描画
@@ -4567,7 +4617,8 @@ function saveEditModal(btn) {
     window._editFromListPrevCurrent = undefined;
     showToast('保存しました');
     // 既存の問題一覧overlayを閉じてから開き直す（最新データで再描画するため）
-    document.querySelectorAll('[style*="fixed"][style*="z-index:900"]').forEach(el => el.remove());
+    const oldList = document.getElementById('qListOverlay');
+    if (oldList) oldList.remove();
     const restoreFilter = window._editFromListFilter;
     window._editFromListFilter = undefined;
     showQuestionList(restoreFilter);
