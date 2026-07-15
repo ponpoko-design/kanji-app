@@ -3306,6 +3306,7 @@ function showShakaiQuestionList(initialFilter) {
       if (!groups[g]) groups[g] = [];
       groups[g].push(q);
     });
+    Object.values(groups).forEach(items => items.sort((a,b) => kanaCompare(a.reading, b.reading)));
     const hasFilter = gyouFilter || keyword;
     return SHAKAI_GYOU_LIST.filter(g => groups[g]).map(g => {
       const items = groups[g];
@@ -4006,6 +4007,11 @@ const KANA_GYOU_MAP = {
   'わ':'わ行','を':'わ行','ん':'わ行'
 };
 function getKanaGyou(kana) { return KANA_GYOU_MAP[kana] || 'その他'; }
+// 五十音順（あいうえお順）で比較する。読み（reading）を使い、濁点・小さい文字も考慮する
+const KANA_COLLATOR = new Intl.Collator('ja', { usage: 'sort', sensitivity: 'base' });
+function kanaCompare(a, b) {
+  return KANA_COLLATOR.compare(a || '', b || '');
+}
 
 function loadPracticeData() {
   return JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
@@ -4428,7 +4434,7 @@ function dojoPageShowGyouMethod(gyou) {
           </button>
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ（${label}）</div>
         </div>
-        <button onclick="dojoPageShowAnswerTimingAllShakai('${gyou}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部</button>
+        <button onclick="dojoPageShowAnswerTimingAllShakai('${gyou}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">あ〜わ順に</button>
         <button onclick="dojoPageShowCount('shakaiGyouMiss','${gyou}','${gyou}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">よく間違うものから</button>
         <button onclick="dojoPageShowCount('shakaiGyouRandom','${gyou}','${gyou}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:block;">ランダム</button>
       </div>`, '');
@@ -4462,7 +4468,8 @@ function startFromTimingSelectAllShakai(gyou) {
   const generator = () => {
     const data = loadShakaiData();
     const filtered = gyou === 'all' ? data : data.filter(q => getKanaGyou(q.kana) === gyou);
-    return filtered.map(shakaiToSessionItem);
+    const sorted = [...filtered].sort((a,b) => kanaCompare(a.reading, b.reading));
+    return sorted.map(shakaiToSessionItem);
   };
   const pool = generator();
   if (!pool.length) { alert('該当する問題がありません'); return; }
