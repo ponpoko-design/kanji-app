@@ -43,6 +43,12 @@
       const snap = await getDoc(DATA_DOC);
       if (snap.exists()) {
         if (isFirestoreStale(snap)) return; // リセット後は古いデータを無視
+        if (isLocalNewer(snap)) {
+          // ローカルの保存がまだFirestoreに反映されていない可能性があるため、上書きせず再送信する
+          const localData = JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
+          if (localData.length) saveToFirestore(localData);
+          return;
+        }
         const data = snap.data().questions || [];
         localStorage.setItem('kanji_practice_data', JSON.stringify(data));
       }
@@ -70,10 +76,21 @@
     return false;
   }
 
+  function isLocalNewer(snap) {
+    // ローカルの保存がFirestoreへの反映より新しい場合、Firestore側のデータで上書きしない
+    // （保存直後にリロードした場合、Firestoreへの書き込みが間に合っていない可能性への対応）
+    const localTs = localStorage.getItem('kanji_local_updated_ts');
+    if (!localTs) return false;
+    const firestoreTs = snap.data().updatedAt;
+    if (!firestoreTs || localTs > firestoreTs) return true;
+    return false;
+  }
+
   onSnapshot(DATA_DOC, (snap) => {
     if (snap.exists()) {
       if (_localSaving) return;
       if (isFirestoreStale(snap)) return;
+      if (isLocalNewer(snap)) return;
       const data = snap.data().questions || [];
       localStorage.setItem('kanji_practice_data', JSON.stringify(data));
       if (!document.getElementById('page-practice').classList.contains('active')) {
@@ -3713,6 +3730,7 @@ function savePracticeData(data) {
   setTimeout(() => { if (window._setLocalSaving) window._setLocalSaving(false); }, 5000);
   const cleaned = cleanupDailyData(data);
   localStorage.setItem('kanji_practice_data', JSON.stringify(cleaned));
+  localStorage.setItem('kanji_local_updated_ts', new Date().toISOString());
   if (window.firestoreSave) window.firestoreSave(cleaned);
 }
 
