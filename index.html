@@ -3694,6 +3694,13 @@ function showShutsudaiSelect() {
     </label>`;
   }
 
+  function sectionHeader(label) {
+    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px;">
+      <span style="font-size:12px;font-weight:700;color:#1a6fc4;font-family:${ZMG};white-space:nowrap;">${label}</span>
+      <div style="flex:1;height:1px;background:#1a6fc4;"></div>
+    </div>`;
+  }
+
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;position:sticky;top:0;background:#fff;z-index:1;">
@@ -3703,10 +3710,9 @@ function showShutsudaiSelect() {
         </button>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
-        ${radioItem('radioMiss','miss',true,'間違いが多い順')}
-        ${radioItem('radioRandom','random',false,'ランダム')}
-        ${radioItem('radioUnit','unit',false,'単元で、範囲を指定する')}
-        <div id="unitRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;flex-direction:column;gap:8px;">
+        ${sectionHeader('普段の練習')}
+        ${radioItem('radioUnit','unit',true,'単元で、範囲を指定する')}
+        <div id="unitRange" style="display:flex;padding:10px 12px;background:#f8f9fa;border-radius:8px;flex-direction:column;gap:8px;">
           <div style="display:flex;gap:6px;">
             <button id="uTypeBtnTan" onclick="switchUnitRangeType('tan','unitFrom','unitTo','uTypeBtnTan','uTypeBtnGak')"
               style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
@@ -3719,13 +3725,11 @@ function showShutsudaiSelect() {
             <select id="unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
           </div>
         </div>
-        ${radioItem('radioDate','date',false,'登録日範囲指定')}
-        <div id="dateRange" style="display:none;padding:10px 12px;background:#f8f9fa;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <input type="date" id="dateFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
-          <span style="font-size:13px;font-family:${ZMG};">〜</span>
-          <input type="date" id="dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
-        </div>
-        ${radioItem('radioEbbinghaus','ebbinghaus',false,'記憶に最適なタイミングで<span style="font-size:11px;color:#666;margin-left:4px;">（前回から1日・2日・1週・1ヶ月・2ヶ月後）</span>')}
+        ${sectionHeader('範囲なし復習')}
+        ${radioItem('radioMiss','miss',false,'間違いが多い順')}
+        ${radioItem('radioRandom','random',false,'ランダム')}
+        ${sectionHeader('記憶に最適タイミング復習')}
+        ${radioItem('radioEbbinghaus','ebbinghaus',false,'忘れにくいタイミングで出すよ！')}
       </div>
       <div style="padding:0 16px 16px;">
         <button onclick="goToShutsudaiStep2(this)" style="width:100%;background:#3B82F6;color:#fff;border:none;border-radius:999px;padding:14px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
@@ -3738,10 +3742,8 @@ function showShutsudaiSelect() {
 function updateShutsudaiUI() {
   const v = document.querySelector('input[name="shutsudai"]:checked').value;
   const ur = document.getElementById('unitRange');
-  const dr = document.getElementById('dateRange');
   if (ur) { ur.style.display = v === 'unit' ? 'flex' : 'none'; if (v === 'unit') window._activeUnitRangeType = 'tan'; }
-  if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
-  ['radioMiss','radioRandom','radioUnit','radioDate','radioEbbinghaus'].forEach(id => {
+  ['radioMiss','radioRandom','radioUnit','radioEbbinghaus'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const radio = el.querySelector('input');
@@ -3762,6 +3764,16 @@ function goToShutsudaiStep2(btn) {
     const unitFrom = document.getElementById('unitFrom')?.value;
     const unitTo = document.getElementById('unitTo')?.value;
     if (!unitFrom || !unitTo) { alert('単元を選んでください'); return; }
+    const modalUnitTotal = getUnitRangeCount(unitFrom, unitTo);
+    function modalChipRow(group, total, ZMG) {
+      return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        ${[5,10,15].map(n => `<button class="dojoChip" data-group="${group}" data-val="${n}" onclick="dojoPickChip(this)" style="padding:7px 14px;border-radius:999px;border:1.5px solid #ccd6e0;background:#fff;font-size:13px;font-family:${ZMG};cursor:pointer;">${n}問</button>`).join('')}
+        <span style="display:flex;align-items:center;gap:6px;">
+          <input type="number" class="dojoFreeInput" data-group="${group}" min="1" max="${total}" placeholder="自由" oninput="dojoPickFreeCount(this)" style="width:56px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
+          <span style="font-size:13px;font-family:${ZMG};color:#666;">問</span>
+        </span>
+      </div>`;
+    }
 
     overlay.innerHTML = `
       <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
@@ -3771,20 +3783,51 @@ function goToShutsudaiStep2(btn) {
           </button>
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};">出題方法を選ぶ</div>
         </div>
-        <div style="padding:8px 16px 4px;font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</div>
-        <div style="padding:8px 16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="padding:8px 16px 0;display:flex;align-items:baseline;justify-content:space-between;">
+          <span style="font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</span>
+          <span style="font-size:13px;font-weight:700;font-family:${ZMG};background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${modalUnitTotal}問</span>
+        </div>
+        <div style="padding:10px 16px;display:flex;flex-direction:column;gap:10px;">
           <button onclick="applyShutsudaiUnit('all','${unitFrom}','${unitTo}',0,this)"
             style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
             範囲の問題を全部
           </button>
-          <button onclick="showCountSelect('unitMiss','${unitFrom}','${unitTo}',this)"
-            style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
-            よく間違うものから
-          </button>
-          <button onclick="showCountSelect('unitRandom','${unitFrom}','${unitTo}',this)"
-            style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
-            ランダム
-          </button>
+
+          <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:12px;overflow:hidden;">
+            <button onclick="toggleDojoAcc('miss')" style="width:100%;text-align:left;padding:14px 16px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+              <span>よく間違うものから</span><span style="font-size:12px;color:#999;">▼</span>
+            </button>
+            <div class="dojoAccPanel" data-panel="miss" style="display:none;padding:0 16px 14px;">
+              ${modalChipRow('miss', modalUnitTotal, ZMG)}
+              <button onclick="applyShutsudaiUnitInline('unitMiss','${unitFrom}','${unitTo}',this)" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
+            </div>
+          </div>
+
+          <div class="dojoAcc" data-name="random" style="border:1.5px solid #ccd6e0;border-radius:12px;overflow:hidden;">
+            <button onclick="toggleDojoAcc('random')" style="width:100%;text-align:left;padding:14px 16px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+              <span>ランダム</span><span style="font-size:12px;color:#999;">▼</span>
+            </button>
+            <div class="dojoAccPanel" data-panel="random" style="display:none;padding:0 16px 14px;">
+              ${modalChipRow('random', modalUnitTotal, ZMG)}
+              <button onclick="applyShutsudaiUnitInline('unitRandom','${unitFrom}','${unitTo}',this)" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
+            </div>
+          </div>
+
+          <div class="dojoAcc" data-name="order" style="border:2px solid #1a6fc4;border-radius:12px;overflow:hidden;">
+            <button onclick="toggleDojoAcc('order')" style="width:100%;text-align:left;padding:14px 16px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+              <span>順番に：○問目〜○問目</span><span style="font-size:12px;color:#999;">▼</span>
+            </button>
+            <div class="dojoAccPanel" data-panel="order" style="display:block;padding:0 16px 14px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <input type="number" id="modalOrderFrom" value="1" min="1" max="${modalUnitTotal}" oninput="updateModalOrderPreview(${modalUnitTotal})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+                <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
+                <input type="number" id="modalOrderTo" value="${Math.min(10, modalUnitTotal || 1)}" min="1" max="${modalUnitTotal}" oninput="updateModalOrderPreview(${modalUnitTotal})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+                <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+              </div>
+              <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="modalOrderCount" style="font-weight:700;color:#1a2a3a;">${Math.min(10, modalUnitTotal || 1)}問</span></div>
+              <button onclick="applyShutsudaiUnitOrder('${unitFrom}','${unitTo}',this)" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
+            </div>
+          </div>
         </div>
         <div style="padding:8px 16px 16px;">
           <button onclick="this.closest('[style*=fixed]').remove()" style="width:100%;padding:12px;background:#f0f4f8;color:#666;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">キャンセル</button>
@@ -3869,6 +3912,45 @@ function applyShutsudaiUnit(method, unitFrom, unitTo, count, btn) {
   } else if (method === 'unitRandom') {
     pool = [...rangeData].sort(() => Math.random() - 0.5).slice(0, count);
   }
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  startSession(pool, btn);
+}
+
+// この画面内のチップ選択から、よく間違う／ランダムを即開始（モーダル版）
+function applyShutsudaiUnitInline(mode, unitFrom, unitTo, btn) {
+  const group = mode === 'unitMiss' ? 'miss' : 'random';
+  const activeChip = document.querySelector('.dojoChip.active[data-group="' + group + '"]');
+  const freeInput = document.querySelector('.dojoFreeInput[data-group="' + group + '"]');
+  let count = activeChip ? parseInt(activeChip.dataset.val) : (freeInput && freeInput.value ? parseInt(freeInput.value) : null);
+  if (!count || isNaN(count) || count < 1) { showToast('問題数を選んでください'); return; }
+  applyShutsudaiUnit(mode, unitFrom, unitTo, count, btn);
+}
+
+// 「順番に：○問目〜○問目」を即開始（モーダル版）
+function updateModalOrderPreview(total) {
+  const fromEl = document.getElementById('modalOrderFrom');
+  const toEl = document.getElementById('modalOrderTo');
+  const out = document.getElementById('modalOrderCount');
+  if (!fromEl || !toEl || !out) return;
+  const f = Math.max(1, Math.min(total || 1, parseInt(fromEl.value) || 1));
+  const t = Math.max(1, Math.min(total || 1, parseInt(toEl.value) || 1));
+  const lo = Math.min(f, t), hi = Math.max(f, t);
+  out.textContent = (hi - lo + 1) + '問';
+}
+
+function applyShutsudaiUnitOrder(unitFrom, unitTo, btn) {
+  const data = loadPracticeData();
+  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
+  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
+  const uRangeType = getActiveUnitRangeType();
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
+  if (!rangeData.length) { alert('該当する問題がありません'); return; }
+  const fromEl = document.getElementById('modalOrderFrom');
+  const toEl = document.getElementById('modalOrderTo');
+  const f = Math.max(1, Math.min(rangeData.length, parseInt(fromEl?.value) || 1));
+  const t = Math.max(1, Math.min(rangeData.length, parseInt(toEl?.value) || 1));
+  const lo2 = Math.min(f, t), hi2 = Math.max(f, t);
+  const pool = rangeData.slice(lo2 - 1, hi2);
   if (!pool.length) { alert('該当する問題がありません'); return; }
   startSession(pool, btn);
 }
@@ -4590,16 +4672,20 @@ function openDojoSelectInPage(subject) {
       <span style="font-family:${ZMG};font-size:15px;">${label}</span>
     </label>`;
   }
+  function sectionHeader(label) {
+    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px;">
+      <span style="font-size:12px;font-weight:700;color:#1a6fc4;font-family:${ZMG};white-space:nowrap;">${label}</span>
+      <div style="flex:1;height:1px;background:#1a6fc4;"></div>
+    </div>`;
+  }
 
   renderSelectAreaPage(`
     <div style="max-width:480px;margin:0 auto;">
       <div style="font-size:19px;font-weight:700;font-family:${ZMG};color:#1a3060;margin-bottom:16px;">出題する問題は、どうする？${sub==='shakai' ? `（${SHAKAI_CATEGORY_LABEL[window._pendingShakaiCategory||'chiri']}）` : ''}</div>
-      ${radioItem('miss','miss',true,'間違いが多い順')}
-      ${radioItem('random','random',false,'ランダム')}
-      ${radioItem('unit','unit',false,rangeLabel)}
-      ${(sub === 'shakai' && (window._pendingShakaiCategory||'chiri') === 'rekishi') ? radioItem('era','era',false,'時代別') : ''}
       ${sub === 'kokugo' ? `
-      <div id="dsp_unitRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
+      ${sectionHeader('普段の練習')}
+      ${radioItem('unit','unit',true,rangeLabel)}
+      <div id="dsp_unitRange" style="display:flex;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:6px;">
           <button id="dsp_uTypeBtnTan" onclick="switchUnitRangeType('tan','dsp_unitFrom','dsp_unitTo','dsp_uTypeBtnTan','dsp_uTypeBtnGak')"
             style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
@@ -4611,15 +4697,16 @@ function openDojoSelectInPage(subject) {
           <span style="font-size:13px;font-family:${ZMG};">〜</span>
           <select id="dsp_unitTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">${unitOpts}</select>
         </div>
-      </div>` : ''}
-      ${sub === 'kokugo' ? `
-      ${radioItem('date','date',false,'登録日範囲指定')}
-      <div id="dsp_dateRange" style="display:none;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap;">
-        <input type="date" id="dsp_dateFrom" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
-        <span style="font-size:13px;font-family:${ZMG};">〜</span>
-        <input type="date" id="dsp_dateTo" style="padding:6px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;">
       </div>
-      ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}` : `
+      ${sectionHeader('範囲なし復習')}
+      ${radioItem('miss','miss',false,'間違いが多い順')}
+      ${radioItem('random','random',false,'ランダム')}
+      ${sectionHeader('記憶に最適タイミング復習')}
+      ${radioItem('ebbinghaus','ebbinghaus',false,'忘れにくいタイミングで出すよ！')}` : `
+      ${radioItem('miss','miss',true,'間違いが多い順')}
+      ${radioItem('random','random',false,'ランダム')}
+      ${radioItem('unit','unit',false,rangeLabel)}
+      ${(sub === 'shakai' && (window._pendingShakaiCategory||'chiri') === 'rekishi') ? radioItem('era','era',false,'時代別') : ''}
       <hr style="border:none;border-top:1px solid #f0f4f8;margin:8px 0;">
       <label style="font-size:12px;color:#999;font-family:${ZMG};display:block;margin-bottom:6px;">正解＋よくある間違いを見たい時はここから検索</label>
       <div style="display:flex;gap:8px;margin-bottom:4px;">
@@ -4923,20 +5010,145 @@ function startFromTimingSelectAllShakaiEra(era) {
   dojoStartPool(pool, generator);
 }
 
+function getUnitRangeCount(unitFrom, unitTo) {
+  const data = loadPracticeData();
+  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
+  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
+  const uRangeType = getActiveUnitRangeType();
+  return data.filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan'))).length;
+}
+
 function dojoPageShowUnitMethod(unitFrom, unitTo) {
   const ZMG = "'Zen Maru Gothic',serif";
+  const total = getUnitRangeCount(unitFrom, unitTo);
+  const defaultTo = Math.min(10, total || 1);
+  function chipRow(group) {
+    return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      ${[5,10,15].map(n => `<button class="dojoChip" data-group="${group}" data-val="${n}" onclick="dojoPickChip(this)" style="padding:7px 14px;border-radius:999px;border:1.5px solid #ccd6e0;background:#fff;font-size:13px;font-family:${ZMG};cursor:pointer;">${n}問</button>`).join('')}
+      <span style="display:flex;align-items:center;gap:6px;">
+        <input type="number" class="dojoFreeInput" data-group="${group}" min="1" max="${total}" placeholder="自由" oninput="dojoPickFreeCount(this)" style="width:56px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
+        <span style="font-size:13px;font-family:${ZMG};color:#666;">問</span>
+      </span>
+    </div>`;
+  }
   renderSelectAreaPage(`
       <div style="max-width:480px;margin:0 auto;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
           <button onclick="openDojoSelectInPage('kokugo')" style="background:none;border:none;cursor:pointer;padding:4px;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ（単元${unitFrom}〜${unitTo}）</div>
+          <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ</div>
         </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-size:13px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</span>
+          <span style="font-size:13px;font-weight:700;font-family:${ZMG};background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${total}問</span>
+        </div>
+
         <button onclick="dojoPageShowAnswerTimingAll('${unitFrom}','${unitTo}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部</button>
-        <button onclick="dojoPageShowCount('unitMiss','${unitFrom}','${unitTo}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">よく間違うものから</button>
-        <button onclick="dojoPageShowCount('unitRandom','${unitFrom}','${unitTo}')" style="width:100%;padding:15px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:12px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:block;">ランダム</button>
+
+        <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:12px;margin-bottom:10px;overflow:hidden;">
+          <button onclick="toggleDojoAcc('miss')" style="width:100%;text-align:left;padding:14px 16px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>よく間違うものから</span><span style="font-size:12px;color:#999;">▼</span>
+          </button>
+          <div class="dojoAccPanel" data-panel="miss" style="display:none;padding:0 16px 14px;">
+            ${chipRow('miss')}
+            <button onclick="dojoPageUnitMethodStart('unitMiss','${unitFrom}','${unitTo}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
+          </div>
+        </div>
+
+        <div class="dojoAcc" data-name="random" style="border:1.5px solid #ccd6e0;border-radius:12px;margin-bottom:10px;overflow:hidden;">
+          <button onclick="toggleDojoAcc('random')" style="width:100%;text-align:left;padding:14px 16px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>ランダム</span><span style="font-size:12px;color:#999;">▼</span>
+          </button>
+          <div class="dojoAccPanel" data-panel="random" style="display:none;padding:0 16px 14px;">
+            ${chipRow('random')}
+            <button onclick="dojoPageUnitMethodStart('unitRandom','${unitFrom}','${unitTo}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
+          </div>
+        </div>
+
+        <div class="dojoAcc" data-name="order" style="border:2px solid #1a6fc4;border-radius:12px;margin-bottom:10px;overflow:hidden;">
+          <button onclick="toggleDojoAcc('order')" style="width:100%;text-align:left;padding:14px 16px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>順番に：○問目〜○問目</span><span style="font-size:12px;color:#999;">▼</span>
+          </button>
+          <div class="dojoAccPanel" data-panel="order" style="display:block;padding:0 16px 14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <input type="number" id="dojoOrderFrom" value="1" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+              <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
+              <input type="number" id="dojoOrderTo" value="${defaultTo}" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+              <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+            </div>
+            <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="dojoOrderCount" style="font-weight:700;color:#1a2a3a;">${defaultTo}問</span></div>
+            <button onclick="dojoPageUnitMethodStart('unitOrder','${unitFrom}','${unitTo}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
+          </div>
+        </div>
       </div>`, '');
+}
+
+function toggleDojoAcc(name) {
+  const panels = document.querySelectorAll('.dojoAccPanel');
+  const target = document.querySelector('.dojoAccPanel[data-panel="' + name + '"]');
+  const wasOpen = target && target.style.display !== 'none';
+  panels.forEach(p => { p.style.display = 'none'; });
+  if (target && !wasOpen) target.style.display = 'block';
+}
+
+function dojoPickChip(btn) {
+  const group = btn.dataset.group;
+  document.querySelectorAll('.dojoChip[data-group="' + group + '"]').forEach(c => {
+    c.classList.remove('active');
+    c.style.background = '#fff'; c.style.borderColor = '#ccd6e0'; c.style.color = '#1a2a3a';
+  });
+  btn.classList.add('active');
+  btn.style.background = '#1a6fc4'; btn.style.borderColor = '#1a6fc4'; btn.style.color = '#fff';
+  const free = document.querySelector('.dojoFreeInput[data-group="' + group + '"]');
+  if (free) free.value = '';
+}
+
+function dojoPickFreeCount(input) {
+  const group = input.dataset.group;
+  document.querySelectorAll('.dojoChip[data-group="' + group + '"]').forEach(c => {
+    c.classList.remove('active');
+    c.style.background = '#fff'; c.style.borderColor = '#ccd6e0'; c.style.color = '#1a2a3a';
+  });
+}
+
+function updateDojoOrderPreview(total) {
+  const fromEl = document.getElementById('dojoOrderFrom');
+  const toEl = document.getElementById('dojoOrderTo');
+  const out = document.getElementById('dojoOrderCount');
+  if (!fromEl || !toEl || !out) return;
+  const f = Math.max(1, Math.min(total || 1, parseInt(fromEl.value) || 1));
+  const t = Math.max(1, Math.min(total || 1, parseInt(toEl.value) || 1));
+  const lo = Math.min(f, t), hi = Math.max(f, t);
+  out.textContent = (hi - lo + 1) + '問';
+}
+
+function dojoPageUnitMethodStart(mode, unitFrom, unitTo) {
+  if (mode === 'unitOrder') {
+    const fromEl = document.getElementById('dojoOrderFrom');
+    const toEl = document.getElementById('dojoOrderTo');
+    const total = getUnitRangeCount(unitFrom, unitTo);
+    const f = Math.max(1, Math.min(total || 1, parseInt(fromEl?.value) || 1));
+    const t = Math.max(1, Math.min(total || 1, parseInt(toEl?.value) || 1));
+    window._pendingOrderFrom = Math.min(f, t);
+    window._pendingOrderTo = Math.max(f, t);
+    window._pendingCount = window._pendingOrderTo - window._pendingOrderFrom + 1;
+  } else {
+    const group = mode === 'unitMiss' ? 'miss' : 'random';
+    const activeChip = document.querySelector('.dojoChip.active[data-group="' + group + '"]');
+    const freeInput = document.querySelector('.dojoFreeInput[data-group="' + group + '"]');
+    let count = activeChip ? parseInt(activeChip.dataset.val) : (freeInput && freeInput.value ? parseInt(freeInput.value) : null);
+    if (!count || isNaN(count) || count < 1) { showToast('問題数を選んでください'); return; }
+    window._pendingCount = count;
+  }
+  window._pendingMode = mode;
+  window._pendingUnitFrom = unitFrom || '';
+  window._pendingUnitTo = unitTo || '';
+  window._pendingDateFrom = '';
+  window._pendingDateTo = '';
+  window._pendingAnswerTiming = 'perQ';
+  window._answerTiming = 'perQ';
+  dojoPageShowAnswerTiming();
 }
 
 function dojoPageShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
@@ -5025,10 +5237,15 @@ function dojoPageShowAnswerTiming() {
   const df = window._pendingDateFrom  || '';
   const dt = window._pendingDateTo    || '';
 
+  const isUnitMode = (m === 'unitMiss' || m === 'unitRandom' || m === 'unitOrder');
+  const backOnClick = isUnitMode
+    ? `dojoPageShowUnitMethod('${uf}','${ut}')`
+    : `dojoPageShowCount('${m}','${uf}','${ut}','${df}','${dt}')`;
+
   renderSelectAreaPage(
     '<div style="max-width:480px;margin:0 auto;">' +
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">' +
-        '<button onclick="dojoPageShowCount(\'' + m + '\',\'' + uf + '\',\'' + ut + '\',\'' + df + '\',\'' + dt + '\')" style="background:none;border:none;cursor:pointer;padding:4px;">' +
+        '<button onclick="' + backOnClick + '" style="background:none;border:none;cursor:pointer;padding:4px;">' +
           '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>' +
         '</button>' +
         '<div style="font-size:17px;font-weight:700;font-family:' + ZMG + ';color:#1a3060;">答えを出すタイミングは？</div>' +
@@ -5082,7 +5299,29 @@ function startFromTimingSelect() {
   const timing = window._pendingAnswerTiming || 'perQ';
   window._answerTiming = timing;
   window._bulkPhase = (timing === 'bulk') ? 'question' : null;
+  if (mode === 'unitOrder') {
+    dojoStartUnitOrder(unitFrom, unitTo, window._pendingOrderFrom, window._pendingOrderTo);
+    return;
+  }
   dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo);
+}
+
+// 単元範囲を「○問目〜○問目」の順番で出題
+function dojoStartUnitOrder(unitFrom, unitTo, fromN, toN) {
+  const generator = () => {
+    const data = loadPracticeData();
+    const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
+    const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
+    const uRangeType = getActiveUnitRangeType();
+    const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
+    const f = Math.max(1, fromN || 1);
+    const t = Math.min(rangeData.length, toN || rangeData.length);
+    if (f > t) return [];
+    return rangeData.slice(f - 1, t);
+  };
+  const pool = generator();
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  dojoStartPool(pool, generator);
 }
 
 // 「単元で範囲指定→範囲の問題を全部」用の答えタイミング選択画面
@@ -5140,13 +5379,18 @@ function renderDojoStartCard() {
       <span style="font-family:${ZMG};font-size:14px;">${label}</span>
     </label>`;
   }
+  function sectionHeader(label) {
+    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0 2px;">
+      <span style="font-size:12px;font-weight:700;color:#1a6fc4;font-family:${ZMG};white-space:nowrap;">${label}</span>
+      <div style="flex:1;height:1px;background:#1a6fc4;"></div>
+    </div>`;
+  }
 
   card.innerHTML = `
     <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題する問題は、どうする？</div>
-    ${radioItem('miss','miss',true,'間違いが多い順')}
-    ${radioItem('random','random',false,'ランダム')}
-    ${radioItem('unit','unit',false,'単元で、範囲を指定する')}
-    <div id="ds_unitRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
+    ${sectionHeader('普段の練習')}
+    ${radioItem('unit','unit',true,'単元で、範囲を指定する')}
+    <div id="ds_unitRange" style="display:flex;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
       <div style="display:flex;gap:6px;">
         <button id="ds_uTypeBtnTan" onclick="switchUnitRangeType('tan','ds_unitFrom','ds_unitTo','ds_uTypeBtnTan','ds_uTypeBtnGak')"
           style="flex:1;padding:5px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
@@ -5159,13 +5403,11 @@ function renderDojoStartCard() {
         <select id="ds_unitTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">${unitOpts}</select>
       </div>
     </div>
-    ${radioItem('date','date',false,'登録日範囲指定')}
-    <div id="ds_dateRange" style="display:none;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <input type="date" id="ds_dateFrom" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">
-      <span style="font-size:13px;font-family:${ZMG};">〜</span>
-      <input type="date" id="ds_dateTo" style="padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;">
-    </div>
-    ${radioItem('ebbinghaus','ebbinghaus',false,'記憶に最適なタイミングで')}
+    ${sectionHeader('範囲なし復習')}
+    ${radioItem('miss','miss',false,'間違いが多い順')}
+    ${radioItem('random','random',false,'ランダム')}
+    ${sectionHeader('記憶に最適タイミング復習')}
+    ${radioItem('ebbinghaus','ebbinghaus',false,'忘れにくいタイミングで出すよ！')}
     <button onclick="dojoNext()" style="width:100%;margin-top:4px;padding:13px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
   `;
 }
@@ -5173,10 +5415,8 @@ function renderDojoStartCard() {
 function updateDojoModeUI() {
   const v = document.querySelector('input[name="dojoMode"]:checked')?.value;
   const ur = document.getElementById('ds_unitRange');
-  const dr = document.getElementById('ds_dateRange');
   if (ur) { ur.style.display = v === 'unit' ? 'flex' : 'none'; if (v === 'unit') window._activeUnitRangeType = 'tan'; }
-  if (dr) dr.style.display = v === 'date' ? 'flex' : 'none';
-  ['miss','random','unit','date','ebbinghaus'].forEach(id => {
+  ['miss','random','unit','ebbinghaus'].forEach(id => {
     const el = document.getElementById('ds_' + id);
     if (!el) return;
     const radio = el.querySelector('input');
