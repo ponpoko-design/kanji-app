@@ -3783,16 +3783,10 @@ function goToShutsudaiStep2(btn) {
           </button>
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};">出題方法を選ぶ</div>
         </div>
-        <div style="padding:8px 16px 0;display:flex;align-items:baseline;justify-content:space-between;">
+        <div style="padding:8px 16px 0;">
           <span style="font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</span>
-          <span style="font-size:13px;font-weight:700;font-family:${ZMG};background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${modalUnitTotal}問</span>
         </div>
         <div style="padding:10px 16px;display:flex;flex-direction:column;gap:10px;">
-          <button onclick="applyShutsudaiUnit('all','${unitFrom}','${unitTo}',0,this)"
-            style="width:100%;padding:14px 16px;background:#fff;border:1.5px solid #1a6fc4;border-radius:999px;text-align:left;cursor:pointer;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;">
-            範囲の問題を全部
-          </button>
-
           <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:999px;overflow:hidden;">
             <button onclick="toggleDojoAcc('miss')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
               <span>よく間違うものから</span><span style="font-size:12px;color:#999;">▼</span>
@@ -3813,19 +3807,28 @@ function goToShutsudaiStep2(btn) {
             </div>
           </div>
 
-          <div class="dojoAcc" data-name="order" style="border:2px solid #1a6fc4;border-radius:20px;overflow:hidden;">
-            <button onclick="toggleDojoAcc('order')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-              <span>順番に：○問目〜○問目</span><span style="font-size:12px;color:#999;">▼</span>
+          <div class="dojoAcc" data-name="all" style="border:2px solid #1a6fc4;border-radius:20px;overflow:hidden;">
+            <button onclick="toggleDojoAcc('all')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+              <span>ぜんぶ</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:13px;font-weight:700;background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${modalUnitTotal}問</span>
+                <span style="font-size:12px;color:#999;">▼</span>
+              </span>
             </button>
-            <div class="dojoAccPanel" data-panel="order" style="display:block;padding:0 16px 14px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                <input type="number" id="modalOrderFrom" value="1" min="1" max="${modalUnitTotal}" oninput="updateModalOrderPreview(${modalUnitTotal})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
-                <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
-                <input type="number" id="modalOrderTo" value="${Math.min(10, modalUnitTotal || 1)}" min="1" max="${modalUnitTotal}" oninput="updateModalOrderPreview(${modalUnitTotal})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
-                <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+            <div class="dojoAccPanel" data-panel="all" style="display:block;padding:0 18px 14px;">
+              <button onclick="applyShutsudaiUnit('all','${unitFrom}','${unitTo}',0,this)" style="width:100%;padding:13px 16px;background:#fff;border:1px solid #ccd6e0;border-radius:16px;text-align:left;cursor:pointer;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:10px;">範囲の問題を全部を出題する</button>
+
+              <div style="border:1px solid #ccd6e0;border-radius:16px;padding:12px 14px;">
+                <div style="font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:8px;">順番に：○問目〜○問目</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <input type="number" id="modalOrderFrom" value="1" min="1" max="${modalUnitTotal}" oninput="updateModalOrderPreview(${modalUnitTotal})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+                  <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
+                  <input type="number" id="modalOrderTo" value="${Math.min(10, modalUnitTotal || 1)}" min="1" max="${modalUnitTotal}" oninput="updateModalOrderPreview(${modalUnitTotal})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+                  <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+                </div>
+                <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="modalOrderCount" style="font-weight:700;color:#1a2a3a;">${Math.min(10, modalUnitTotal || 1)}問</span></div>
+                <button onclick="applyShutsudaiUnitOrder('${unitFrom}','${unitTo}',this)" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
               </div>
-              <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="modalOrderCount" style="font-weight:700;color:#1a2a3a;">${Math.min(10, modalUnitTotal || 1)}問</span></div>
-              <button onclick="applyShutsudaiUnitOrder('${unitFrom}','${unitTo}',this)" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
             </div>
           </div>
         </div>
@@ -5256,12 +5259,9 @@ function dojoPageShowUnitMethod(unitFrom, unitTo) {
           </button>
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ</div>
         </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+        <div style="margin-bottom:14px;">
           <span style="font-size:13px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</span>
-          <span style="font-size:13px;font-weight:700;font-family:${ZMG};background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${total}問</span>
         </div>
-
-        <button onclick="dojoPageShowAnswerTimingAll('${unitFrom}','${unitTo}')" style="width:100%;padding:15px 20px 15px 26px;background:#fff;border:1.5px solid #1a6fc4;border-radius:999px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部</button>
 
         <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:999px;margin-bottom:10px;overflow:hidden;">
           <button onclick="toggleDojoAcc('miss')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
@@ -5283,19 +5283,28 @@ function dojoPageShowUnitMethod(unitFrom, unitTo) {
           </div>
         </div>
 
-        <div class="dojoAcc" data-name="order" style="border:2px solid #1a6fc4;border-radius:20px;margin-bottom:10px;overflow:hidden;">
-          <button onclick="toggleDojoAcc('order')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>順番に：○問目〜○問目</span><span style="font-size:12px;color:#999;">▼</span>
+        <div class="dojoAcc" data-name="all" style="border:2px solid #1a6fc4;border-radius:20px;margin-bottom:10px;overflow:hidden;">
+          <button onclick="toggleDojoAcc('all')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>ぜんぶ</span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:700;background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${total}問</span>
+              <span style="font-size:12px;color:#999;">▼</span>
+            </span>
           </button>
-          <div class="dojoAccPanel" data-panel="order" style="display:block;padding:0 16px 14px;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-              <input type="number" id="dojoOrderFrom" value="1" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
-              <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
-              <input type="number" id="dojoOrderTo" value="${defaultTo}" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
-              <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+          <div class="dojoAccPanel" data-panel="all" style="display:block;padding:0 18px 14px;">
+            <button onclick="dojoPageShowAnswerTimingAll('${unitFrom}','${unitTo}')" style="width:100%;padding:13px 16px;background:#fff;border:1px solid #ccd6e0;border-radius:16px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部を出題する</button>
+
+            <div style="border:1px solid #ccd6e0;border-radius:16px;padding:12px 14px;">
+              <div style="font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:8px;">順番に：○問目〜○問目</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <input type="number" id="dojoOrderFrom" value="1" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+                <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
+                <input type="number" id="dojoOrderTo" value="${defaultTo}" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+                <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+              </div>
+              <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="dojoOrderCount" style="font-weight:700;color:#1a2a3a;">${defaultTo}問</span></div>
+              <button onclick="dojoPageUnitMethodStart('unitOrder','${unitFrom}','${unitTo}')" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
             </div>
-            <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="dojoOrderCount" style="font-weight:700;color:#1a2a3a;">${defaultTo}問</span></div>
-            <button onclick="dojoPageUnitMethodStart('unitOrder','${unitFrom}','${unitTo}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
           </div>
         </div>
       </div>`, '');
