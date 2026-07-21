@@ -4541,17 +4541,6 @@ function openShakaiCategorySelectInPage() {
 // ===== 社会（地理）データ用の補助 =====
 const SHAKAI_GYOU_LIST = ['あ行','か行','さ行','た行','な行','は行','ま行','や行','ら行','わ行'];
 
-function updateShakaiGyouUI() {
-  ['all', ...SHAKAI_GYOU_LIST].forEach(g => {
-    const el = document.getElementById('shakai_gyou_' + g);
-    if (!el) return;
-    const radio = el.querySelector('input');
-    if (!radio) return;
-    el.style.borderColor = radio.checked ? '#3B82F6' : '#e0e4ea';
-    el.style.background = radio.checked ? '#EFF6FF' : '#fff';
-  });
-}
-
 // 社会データの1件を、練習セッションで使える形（漢字と同じ形）に変換する
 function shakaiToSessionItem(item) {
   const chars = [...(item.correct || '')];
@@ -4847,19 +4836,12 @@ function dojoPageNext() {
   // 次の画面に進む前にトグル状態を保存
   const toggleEl = document.getElementById('recordToggleInput');
   window._pendingDoNotRecord = toggleEl ? !toggleEl.checked : false;
-  const sub = window._pendingSubject || 'kokugo';
 
   if (v === 'unit') {
-    if (sub === 'shakai') {
-      shakaiPageShowGyouSelect();
-      return;
-    }
     const unitFrom = document.getElementById('dsp_unitFrom')?.value;
     const unitTo = document.getElementById('dsp_unitTo')?.value;
     if (!unitFrom || !unitTo) return;
     dojoPageShowUnitMethod(unitFrom, unitTo);
-  } else if (v === 'era') {
-    shakaiPageShowEraSelect();
   } else {
     const dateFrom = document.getElementById('dsp_dateFrom')?.value || '';
     const dateTo = document.getElementById('dsp_dateTo')?.value || '';
@@ -4868,53 +4850,6 @@ function dojoPageNext() {
 }
 
 // ===== 社会（地理）：グループ（あ行〜わ行）で範囲を指定する =====
-function shakaiPageShowGyouSelect() {
-  const data = loadShakaiData(window._pendingShakaiCategory || 'chiri');
-  const ZMG = "'Zen Maru Gothic',serif";
-  const gyouBtns = SHAKAI_GYOU_LIST.map(g => {
-    const count = data.filter(q => getKanaGyou(q.kana) === g).length;
-    if (!count) return '';
-    return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:999px;cursor:pointer;margin-bottom:8px;background:#fff;" id="shakai_gyou_${g}">
-      <input type="radio" name="shakaiGyou" value="${g}" style="accent-color:#3B82F6;" onchange="updateShakaiGyouUI()">
-      <span style="font-family:${ZMG};font-size:15px;">${g}（${count}問）</span>
-    </label>`;
-  }).join('');
-  renderSelectAreaPage(`
-    <div style="max-width:480px;margin:0 auto;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="openDojoSelectInPage('shakai')" style="background:none;border:none;cursor:pointer;padding:4px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">グループを選ぶ</div>
-      </div>
-      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #3B82F6;background:#EFF6FF;border-radius:999px;cursor:pointer;margin-bottom:8px;" id="shakai_gyou_all">
-        <input type="radio" name="shakaiGyou" value="all" checked style="accent-color:#3B82F6;" onchange="updateShakaiGyouUI()">
-        <span style="font-family:${ZMG};font-size:15px;">ぜんぶ（${data.length}問）</span>
-      </label>
-      <button type="button" onclick="toggleShakaiGyouDetail()" id="shakaiGyouToggleBtn" style="width:100%;padding:10px;background:#f5f5f5;border:1px dashed #ccc;border-radius:10px;font-size:13px;font-family:${ZMG};color:#666;cursor:pointer;margin-bottom:8px;">あ〜わ別 ▼</button>
-      <div id="shakaiGyouDetail" style="display:none;">
-        ${gyouBtns}
-      </div>
-    </div>`,
-    `<div style="display:flex;justify-content:flex-end;max-width:480px;margin:0 auto;">
-      <button onclick="shakaiGyouNext()" style="padding:14px 32px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
-    </div>`);
-}
-
-function toggleShakaiGyouDetail() {
-  const detail = document.getElementById('shakaiGyouDetail');
-  const btn = document.getElementById('shakaiGyouToggleBtn');
-  if (!detail || !btn) return;
-  const isOpen = detail.style.display !== 'none';
-  detail.style.display = isOpen ? 'none' : 'block';
-  btn.textContent = isOpen ? 'あ〜わ別 ▼' : 'あ〜わ別 ▲';
-}
-
-function shakaiGyouNext() {
-  const gyou = document.querySelector('input[name="shakaiGyou"]:checked')?.value || 'all';
-  dojoPageShowGyouMethod(gyou);
-}
-
 function getShakaiGyouCount(gyou) {
   const data = loadShakaiData(window._pendingShakaiCategory || 'chiri');
   return gyou === 'all' ? data.length : data.filter(q => getKanaGyou(q.kana) === gyou).length;
@@ -4932,62 +4867,6 @@ function shakaiChipRow(group, total, ZMG) {
     </span>
   </div>`;
 }
-function dojoPageShakaiMethodStart(mode, key) {
-  const group = (mode === 'shakaiGyouMiss' || mode === 'shakaiEraMiss') ? 'miss' : 'random';
-  const activeChip = document.querySelector('.dojoChip.active[data-group="' + group + '"]');
-  const freeInput = document.querySelector('.dojoFreeInput[data-group="' + group + '"]');
-  let count = activeChip ? parseInt(activeChip.dataset.val) : (freeInput && freeInput.value ? parseInt(freeInput.value) : null);
-  if (!count || isNaN(count) || count < 1) { showToast('問題数を選んでください'); return; }
-  window._pendingMode = mode;
-  window._pendingUnitFrom = key;
-  window._pendingUnitTo = key;
-  window._pendingDateFrom = '';
-  window._pendingDateTo = '';
-  window._pendingCount = count;
-  window._pendingAnswerTiming = 'perQ';
-  window._answerTiming = 'perQ';
-  dojoPageShowAnswerTiming();
-}
-
-function dojoPageShowGyouMethod(gyou) {
-  const ZMG = "'Zen Maru Gothic',serif";
-  const label = gyou === 'all' ? 'ぜんぶ' : gyou;
-  const total = getShakaiGyouCount(gyou);
-  renderSelectAreaPage(`
-      <div style="max-width:480px;margin:0 auto;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <button onclick="shakaiPageShowGyouSelect()" style="background:none;border:none;cursor:pointer;padding:4px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ</div>
-        </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
-          <span style="font-size:13px;color:#999;font-family:${ZMG};">${label}</span>
-          <span style="font-size:13px;font-weight:700;font-family:${ZMG};background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${total}問</span>
-        </div>
-        <button onclick="dojoPageShowAnswerTimingAllShakai('${gyou}')" style="width:100%;padding:15px 20px 15px 26px;background:#fff;border:1.5px solid #1a6fc4;border-radius:999px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">あ〜わ順に</button>
-
-        <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:999px;margin-bottom:10px;overflow:hidden;">
-          <button onclick="toggleDojoAcc('miss')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>よく間違うものから</span><span style="font-size:12px;color:#999;">▼</span>
-          </button>
-          <div class="dojoAccPanel" data-panel="miss" style="display:none;padding:0 16px 14px;">
-            ${shakaiChipRow('miss', total, ZMG)}
-            <button onclick="dojoPageShakaiMethodStart('shakaiGyouMiss','${gyou}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
-          </div>
-        </div>
-
-        <div class="dojoAcc" data-name="random" style="border:1.5px solid #ccd6e0;border-radius:999px;overflow:hidden;">
-          <button onclick="toggleDojoAcc('random')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>ランダム</span><span style="font-size:12px;color:#999;">▼</span>
-          </button>
-          <div class="dojoAccPanel" data-panel="random" style="display:none;padding:0 16px 14px;">
-            ${shakaiChipRow('random', total, ZMG)}
-            <button onclick="dojoPageShakaiMethodStart('shakaiGyouRandom','${gyou}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
-          </div>
-        </div>
-      </div>`, '');
-}
 
 function dojoPageShowAnswerTimingAllShakai(gyou) {
   const ZMG = "'Zen Maru Gothic',serif";
@@ -4995,7 +4874,7 @@ function dojoPageShowAnswerTimingAllShakai(gyou) {
   renderSelectAreaPage(`
     <div style="max-width:480px;margin:0 auto;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-        <button onclick="dojoPageShowGyouMethod('${gyou}')" style="background:none;border:none;cursor:pointer;padding:4px;">
+        <button onclick="openDojoSelectInPage('shakai')" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">答えを出すタイミングは？</div>
@@ -5046,99 +4925,13 @@ function eraMatches(itemEra, key) {
   return g.eras.some(e => tags.includes(e));
 }
 
-function shakaiPageShowEraSelect() {
-  const data = loadShakaiData(window._pendingShakaiCategory || 'chiri');
-  const ZMG = "'Zen Maru Gothic',serif";
-  const eraBtns = SHAKAI_ERA_GROUPS.map(g => {
-    const count = data.filter(q => eraMatches(q.prefecture, g.key)).length;
-    if (!count) return '';
-    return `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #e0e4ea;border-radius:999px;cursor:pointer;margin-bottom:8px;background:#fff;" id="shakai_era_${g.key}">
-      <input type="radio" name="shakaiEra" value="${g.key}" style="accent-color:#3B82F6;" onchange="updateShakaiEraUI()">
-      <span style="font-family:${ZMG};font-size:15px;">${g.label}（${count}問）</span>
-    </label>`;
-  }).join('');
-  renderSelectAreaPage(`
-    <div style="max-width:480px;margin:0 auto;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <button onclick="openDojoSelectInPage('shakai')" style="background:none;border:none;cursor:pointer;padding:4px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">時代を選ぶ</div>
-      </div>
-      <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid #3B82F6;background:#EFF6FF;border-radius:999px;cursor:pointer;margin-bottom:8px;" id="shakai_era_all">
-        <input type="radio" name="shakaiEra" value="all" checked style="accent-color:#3B82F6;" onchange="updateShakaiEraUI()">
-        <span style="font-family:${ZMG};font-size:15px;">ぜんぶ（${data.length}問）</span>
-      </label>
-      ${eraBtns}
-    </div>`,
-    `<div style="display:flex;justify-content:flex-end;max-width:480px;margin:0 auto;">
-      <button onclick="shakaiEraNext()" style="padding:14px 32px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">次へ →</button>
-    </div>`);
-}
-
-function updateShakaiEraUI() {
-  ['all', ...SHAKAI_ERA_GROUPS.map(g => g.key)].forEach(k => {
-    const el = document.getElementById('shakai_era_' + k);
-    if (!el) return;
-    const radio = el.querySelector('input');
-    if (!radio) return;
-    el.style.borderColor = radio.checked ? '#3B82F6' : '#e0e4ea';
-    el.style.background = radio.checked ? '#EFF6FF' : '#fff';
-  });
-}
-
-function shakaiEraNext() {
-  const era = document.querySelector('input[name="shakaiEra"]:checked')?.value || 'all';
-  dojoPageShowEraMethod(era);
-}
-
-function dojoPageShowEraMethod(era) {
-  const ZMG = "'Zen Maru Gothic',serif";
-  const label = era === 'all' ? 'ぜんぶ' : (getEraGroup(era)?.label || era);
-  const total = getShakaiEraCount(era);
-  renderSelectAreaPage(`
-      <div style="max-width:480px;margin:0 auto;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <button onclick="shakaiPageShowEraSelect()" style="background:none;border:none;cursor:pointer;padding:4px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
-          <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ</div>
-        </div>
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
-          <span style="font-size:13px;color:#999;font-family:${ZMG};">${label}</span>
-          <span style="font-size:13px;font-weight:700;font-family:${ZMG};background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${total}問</span>
-        </div>
-        <button onclick="dojoPageShowAnswerTimingAllShakaiEra('${era}')" style="width:100%;padding:15px 20px 15px 26px;background:#fff;border:1.5px solid #1a6fc4;border-radius:999px;text-align:left;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">あ〜わ順に</button>
-
-        <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:999px;margin-bottom:10px;overflow:hidden;">
-          <button onclick="toggleDojoAcc('miss')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>よく間違うものから</span><span style="font-size:12px;color:#999;">▼</span>
-          </button>
-          <div class="dojoAccPanel" data-panel="miss" style="display:none;padding:0 16px 14px;">
-            ${shakaiChipRow('miss', total, ZMG)}
-            <button onclick="dojoPageShakaiMethodStart('shakaiEraMiss','${era}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
-          </div>
-        </div>
-
-        <div class="dojoAcc" data-name="random" style="border:1.5px solid #ccd6e0;border-radius:999px;overflow:hidden;">
-          <button onclick="toggleDojoAcc('random')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>ランダム</span><span style="font-size:12px;color:#999;">▼</span>
-          </button>
-          <div class="dojoAccPanel" data-panel="random" style="display:none;padding:0 16px 14px;">
-            ${shakaiChipRow('random', total, ZMG)}
-            <button onclick="dojoPageShakaiMethodStart('shakaiEraRandom','${era}')" style="width:100%;padding:11px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
-          </div>
-        </div>
-      </div>`, '');
-}
-
 function dojoPageShowAnswerTimingAllShakaiEra(era) {
   const ZMG = "'Zen Maru Gothic',serif";
   window._pendingAnswerTiming = 'perQ';
   renderSelectAreaPage(`
     <div style="max-width:480px;margin:0 auto;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-        <button onclick="dojoPageShowEraMethod('${era}')" style="background:none;border:none;cursor:pointer;padding:4px;">
+        <button onclick="openDojoSelectInPage('shakai')" style="background:none;border:none;cursor:pointer;padding:4px;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">答えを出すタイミングは？</div>
@@ -5405,10 +5198,6 @@ function dojoPageShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
   let backOnClick;
   if (mode === 'unitMiss' || mode === 'unitRandom') {
     backOnClick = `dojoPageShowUnitMethod('${unitFrom}','${unitTo}')`;
-  } else if (mode === 'shakaiGyouMiss' || mode === 'shakaiGyouRandom') {
-    backOnClick = `dojoPageShowGyouMethod('${unitFrom}')`;
-  } else if (mode === 'shakaiEraMiss' || mode === 'shakaiEraRandom') {
-    backOnClick = `dojoPageShowEraMethod('${unitFrom}')`;
   } else {
     backOnClick = `openDojoSelectInPage('${window._pendingSubject || 'kokugo'}')`;
   }
@@ -5476,15 +5265,9 @@ function dojoPageShowAnswerTiming() {
   const dt = window._pendingDateTo    || '';
 
   const isUnitMode = (m === 'unitMiss' || m === 'unitRandom' || m === 'unitOrder');
-  const isGyouMode = (m === 'shakaiGyouMiss' || m === 'shakaiGyouRandom');
-  const isEraMode = (m === 'shakaiEraMiss' || m === 'shakaiEraRandom');
   const isShakaiTopMode = (m === 'shakaiTopMiss' || m === 'shakaiTopRandom' || m === 'shakaiOrder');
   const backOnClick = isUnitMode
     ? `dojoPageShowUnitMethod('${uf}','${ut}')`
-    : isGyouMode
-    ? `dojoPageShowGyouMethod('${uf}')`
-    : isEraMode
-    ? `dojoPageShowEraMethod('${uf}')`
     : isShakaiTopMode
     ? `openDojoSelectInPage('shakai')`
     : `dojoPageShowCount('${m}','${uf}','${ut}','${df}','${dt}')`;
@@ -5774,14 +5557,6 @@ function dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo) {
         list = [...data].sort((a,b)=>b.missCount-a.missCount).slice(0,count);
       } else if (mode === 'random') {
         list = [...data].sort(()=>Math.random()-0.5).slice(0,count);
-      } else if (mode === 'shakaiGyouMiss') {
-        list = data.filter(q=>getKanaGyou(q.kana)===unitFrom).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
-      } else if (mode === 'shakaiGyouRandom') {
-        list = data.filter(q=>getKanaGyou(q.kana)===unitFrom).sort(()=>Math.random()-0.5).slice(0,count);
-      } else if (mode === 'shakaiEraMiss') {
-        list = data.filter(q=>eraMatches(q.prefecture, unitFrom)).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
-      } else if (mode === 'shakaiEraRandom') {
-        list = data.filter(q=>eraMatches(q.prefecture, unitFrom)).sort(()=>Math.random()-0.5).slice(0,count);
       } else if (mode === 'date') {
         list = data.filter(q=>{
           if(!q.registeredAt) return false;
