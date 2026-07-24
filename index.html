@@ -923,6 +923,62 @@ rt {
 }
 .no-record-banner.visible { display: flex; }
 
+/* ===== 連続記録ポップアップ ===== */
+.streak-popup-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(20,20,25,0.55); z-index:900;
+  align-items:center; justify-content:center;
+  padding:24px;
+}
+.streak-popup-overlay.visible { display:flex; }
+.streak-popup-card {
+  background:#fff; border-radius:24px;
+  width:100%; max-width:300px;
+  padding:28px 22px 22px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.35);
+  text-align:center;
+  animation:menuIn 0.18s ease;
+}
+.streak-popup-badge {
+  width:76px; height:76px; border-radius:50%;
+  background:linear-gradient(135deg,#0d3d7a,#1a6fc4);
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 14px;
+  box-shadow:0 4px 16px rgba(26,111,196,0.35);
+}
+.streak-popup-num {
+  font-size:44px; font-weight:700; color:#1a2a3a; line-height:1;
+  font-family:'Zen Maru Gothic',serif;
+}
+.streak-popup-numrow { display:flex; align-items:baseline; justify-content:center; gap:4px; margin-bottom:4px; }
+.streak-popup-numlabel { font-size:16px; font-weight:700; color:#999; font-family:'Zen Maru Gothic',serif; }
+.streak-popup-main {
+  font-size:19px; font-weight:700; color:#1a2a3a;
+  margin:10px 0 6px; line-height:1.4;
+  font-family:'Zen Maru Gothic',serif;
+}
+.streak-popup-sub {
+  font-size:13px; color:#888; margin-bottom:16px; line-height:1.5;
+  font-family:'Zen Maru Gothic',serif;
+}
+.streak-popup-stars { display:flex; justify-content:center; gap:5px; margin-bottom:18px; }
+.streak-popup-btn {
+  width:100%; padding:14px 0; border:none; border-radius:999px;
+  background:#f0c040; color:#5a4200; font-size:16px; font-weight:700;
+  font-family:'Zen Maru Gothic',serif; cursor:pointer;
+  box-shadow:0 4px 16px rgba(240,192,64,0.4);
+}
+.streak-popup-btn:active { transform:scale(0.97); }
+.dojo-dev-toggle {
+  margin-top:20px; display:flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,0.14); border-radius:999px;
+  padding:6px 8px 6px 18px;
+}
+.dojo-dev-toggle-text {
+  font-size:12px; color:rgba(255,255,255,0.85);
+  font-family:'Zen Maru Gothic',serif; text-align:left; line-height:1.4;
+}
+
 .menu-overlay {
   display:none; position:fixed; inset:0;
   background:rgba(0,0,0,0.6); z-index:800;
@@ -1581,10 +1637,34 @@ if (localStorage.getItem('kanji_auth')==='ok') {
         <div class="dojo-start-icon">⛩️</div>
         <div class="dojo-start-title">目指せ漢字の達人！</div>
         <div class="dojo-start-sub">今日も練習をはじめよう</div>
-        <button class="dojo-start-btn" id="dojoStartBtn" onclick="openSubjectSelectInPage()">
+        <button class="dojo-start-btn" id="dojoStartBtn" onclick="handleStartPracticeClick()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           問題を選ぶ
         </button>
+        <div class="dojo-dev-toggle">
+          <div id="devModeToggleText" class="dojo-dev-toggle-text">記録する<br>（ふだんはONでいいよ）</div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="devModeToggleInput" checked onchange="onDevModeToggleChange()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 連続記録ポップアップ -->
+      <div class="streak-popup-overlay" id="streakPopupOverlay">
+        <div class="streak-popup-card">
+          <div class="streak-popup-badge">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="#FF6B35"><path d="M12 2c0 0-1.5 3.5-1.5 6c0 1.6 1 2.8 1 2.8s-3-1.2-3-4.3c0 0-3.5 3.5-3.5 7.5a6 6 0 0 0 12 0c0-5-5-12-5-12z"/></svg>
+          </div>
+          <div class="streak-popup-numrow">
+            <span class="streak-popup-num" id="streakPopupNum">0</span>
+            <span class="streak-popup-numlabel">日連続</span>
+          </div>
+          <div class="streak-popup-main" id="streakPopupMain"></div>
+          <div class="streak-popup-sub" id="streakPopupSub"></div>
+          <div class="streak-popup-stars" id="streakPopupStars"></div>
+          <button class="streak-popup-btn" onclick="closeStreakPopupAndStart()">はじめる</button>
+        </div>
       </div>
 
       <!-- ページ内出題選択エリア -->
@@ -4449,7 +4529,7 @@ function initPractice() {
 // 道場スタート画面を表示
 function showDojoStart() {
   const data = loadPracticeData();
-  window._doNotRecord = false;
+  initDevModeToggle(); // 永続保存された開発者モードの状態をwindow._doNotRecordに復元
   window._answerTiming = 'perQ'; // デフォルトに戻す
   window._bulkPhase = null;
   window._bulkResults = [];
@@ -4469,7 +4549,7 @@ function showDojoStart() {
       btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>問題を選ぶ';
       btn.style.background = '#f0c040';
       btn.style.cursor = 'pointer';
-      btn.onclick = openSubjectSelectInPage;
+      btn.onclick = handleStartPracticeClick;
     }
   }
   setTimeout(fixLayout, 10);
@@ -4777,22 +4857,6 @@ function openDojoSelectInPage(subject) {
         <button onclick="shakaiSearchGo()" style="flex-shrink:0;box-sizing:border-box;padding:10px 16px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;white-space:nowrap;">検索</button>
       </div>
       <div id="shakaiSearchResults"></div>`}
-      <!-- 記録トグル -->
-      <hr style="border:none;border-top:1px solid #f0f4f8;margin:8px 0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:32px;height:32px;background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a6fc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <div>
-            <div id="recordToggleText" style="font-size:15px;font-weight:700;color:#1a2a3a;font-family:${ZMG};">普段は、ONでいいよ</div>
-          </div>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="recordToggleInput" checked onchange="onRecordToggleChange()">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
     </div>`,
     sub === 'shakai'
     ? `<div style="max-width:480px;margin:0 auto;">
@@ -4833,9 +4897,6 @@ function updateDojoPageUI() {
 function dojoPageNext() {
   const v = document.querySelector('input[name="dojoPageMode"]:checked')?.value;
   if (!v) return;
-  // 次の画面に進む前にトグル状態を保存
-  const toggleEl = document.getElementById('recordToggleInput');
-  window._pendingDoNotRecord = toggleEl ? !toggleEl.checked : false;
 
   if (v === 'unit') {
     const unitFrom = document.getElementById('dsp_unitFrom')?.value;
@@ -5603,21 +5664,90 @@ function dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo) {
   dojoStartPool(pool, generator);
 }
 
-// 記録トグルの状態変更
-function onRecordToggleChange() {
-  const on = document.getElementById('recordToggleInput')?.checked;
-  const text = document.getElementById('recordToggleText');
-  const banner = document.getElementById('noRecordBanner');
+// ===== 開発者モード（記録トグル・トップページに常設） =====
+// localStorageに永続保存し、道場を開くたびに保存済みの状態を復元する。
+function getDevNoRecord() {
+  return localStorage.getItem('kanji_dev_no_record') === '1';
+}
+function initDevModeToggle() {
+  const noRecord = getDevNoRecord();
+  window._doNotRecord = noRecord;
+  const input = document.getElementById('devModeToggleInput');
+  if (input) input.checked = !noRecord;
+  updateDevModeToggleText(!noRecord);
+}
+function onDevModeToggleChange() {
+  const on = document.getElementById('devModeToggleInput')?.checked;
+  localStorage.setItem('kanji_dev_no_record', on ? '0' : '1');
+  window._doNotRecord = !on;
+  updateDevModeToggleText(!!on);
+}
+function updateDevModeToggleText(on) {
+  const text = document.getElementById('devModeToggleText');
   if (!text) return;
   if (on) {
-    text.textContent = '普段は、ONでいいよ';
-    text.style.color = '#1a2a3a';
-    banner?.classList.remove('visible');
+    text.innerHTML = '記録する<br>（ふだんはONでいいよ）';
+    text.style.color = 'rgba(255,255,255,0.85)';
   } else {
-    text.textContent = '開発者モード';
-    text.style.color = '#C62828';
-    banner?.classList.remove('visible');
+    text.innerHTML = '開発者モード<br>（記録はされないよ）';
+    text.style.color = '#FFD9A0';
   }
+}
+
+// 「問題を選ぶ」ボタンが押されたときの処理
+// 通常モード：その日まだ見せていなければポップアップを見せ、「見せた日」を記録（1日1回）
+// 開発者モード：確認しやすいよう毎回ポップアップを見せるが、「見せた日」の記録は更新しない
+//   （＝開発者モードで何度開いても、後で通常モードに戻ったときの「1日1回」判定に影響しない）
+function handleStartPracticeClick() {
+  if (window._doNotRecord) {
+    showStreakPopup(false);
+    return;
+  }
+  const today = getTodayJST();
+  const shownDate = localStorage.getItem('kanji_streak_popup_shown_date');
+  if (shownDate === today) {
+    openSubjectSelectInPage();
+    return;
+  }
+  showStreakPopup(true);
+}
+
+// 今日の練習をした場合に何日連続になるかを計算（先取りで見せる値）
+function getEffectiveStreakForToday() {
+  const stats = loadStats();
+  const today = getTodayJST();
+  if (stats.lastActiveDate === today) return stats.streak || 0;
+  const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
+  if (stats.lastActiveDate === yesterday) return (stats.streak || 0) + 1;
+  return 1;
+}
+
+// 連続日数に応じた応援メッセージ（しきい値で機能を制限するものではなく、文言のバリエーションのみ）
+function getStreakMessage(n) {
+  if (n <= 1) return { main: 'はじめの一歩！', sub: '今日から漢字道場スタート！' };
+  if (n < 7) return { main: n + '日連続だ！その調子！', sub: 'この調子で続けよう' };
+  if (n < 14) return { main: n + '日連続達成！', sub: '1週間の壁を突破したよ！' };
+  if (n < 30) return { main: n + '日連続！', sub: 'もう習慣になってきたね' };
+  if (n < 100) return { main: n + '日連続！', sub: 'もう漢字マスターだ！' };
+  return { main: n + '日連続！！', sub: 'ここまで来たらつわものだよ！' };
+}
+
+// markAsShown: trueのとき「今日はもう見せた」をlocalStorageに記録する（通常モードのみtrue）
+function showStreakPopup(markAsShown) {
+  const streak = getEffectiveStreakForToday();
+  const msg = getStreakMessage(streak);
+  document.getElementById('streakPopupNum').textContent = streak;
+  document.getElementById('streakPopupMain').textContent = msg.main;
+  document.getElementById('streakPopupSub').textContent = msg.sub;
+  const stars = getWeekStars();
+  document.getElementById('streakPopupStars').innerHTML = stars.map(s => `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="${s.done ? '#F5A623' : '#e6e6e6'}"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`).join('');
+  if (markAsShown) localStorage.setItem('kanji_streak_popup_shown_date', getTodayJST());
+  document.getElementById('streakPopupOverlay').classList.add('visible');
+}
+function closeStreakPopupAndStart() {
+  document.getElementById('streakPopupOverlay').classList.remove('visible');
+  openSubjectSelectInPage();
 }
 
 function dojoStartPool(pool, generator) {
@@ -5638,14 +5768,7 @@ function dojoStartPool(pool, generator) {
     window._bulkResults = [];
     window._bulkAnswered = [];
   }
-  // 記録するかどうかのフラグを保存（セッション中維持）
-  const toggleEl = document.getElementById('recordToggleInput');
-  if (window._pendingDoNotRecord !== undefined) {
-    window._doNotRecord = window._pendingDoNotRecord;
-    window._pendingDoNotRecord = undefined;
-  } else {
-    window._doNotRecord = toggleEl ? !toggleEl.checked : false;
-  }
+  // 記録するかどうかのフラグは、トップページの開発者モードトグルで設定済み（window._doNotRecord）
   document.getElementById('questionArea').style.display = 'flex';
   document.getElementById('questionArea').style.flexDirection = 'column';
   document.getElementById('completeScreen').classList.remove('visible');
