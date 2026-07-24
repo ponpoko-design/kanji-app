@@ -975,7 +975,7 @@ rt {
   padding:6px 8px 6px 18px;
 }
 .dojo-dev-toggle-text {
-  font-size:12px; color:rgba(255,255,255,0.85);
+  font-size:15px; color:rgba(255,255,255,0.85);
   font-family:'Zen Maru Gothic',serif; text-align:left; line-height:1.4;
 }
 
@@ -1642,7 +1642,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
           問題を選ぶ
         </button>
         <div class="dojo-dev-toggle">
-          <div id="devModeToggleText" class="dojo-dev-toggle-text">記録する<br>（ふだんはONでいいよ）</div>
+          <div id="devModeToggleText" class="dojo-dev-toggle-text">普通はON</div>
           <label class="toggle-switch">
             <input type="checkbox" id="devModeToggleInput" checked onchange="onDevModeToggleChange()">
             <span class="toggle-slider"></span>
@@ -5686,10 +5686,10 @@ function updateDevModeToggleText(on) {
   const text = document.getElementById('devModeToggleText');
   if (!text) return;
   if (on) {
-    text.innerHTML = '記録する<br>（ふだんはONでいいよ）';
+    text.innerHTML = '普通はON';
     text.style.color = 'rgba(255,255,255,0.85)';
   } else {
-    text.innerHTML = '開発者モード<br>（記録はされないよ）';
+    text.innerHTML = '開発者モード';
     text.style.color = '#FFD9A0';
   }
 }
