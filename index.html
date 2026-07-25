@@ -1693,20 +1693,6 @@ if (localStorage.getItem('kanji_auth')==='ok') {
         </div>
       </div>
 
-      <!-- その日の記録モーダル -->
-      <div class="day-detail-overlay" id="dayDetailOverlay">
-        <div class="day-detail-card">
-          <div class="day-detail-header">
-            <div>
-              <div class="day-detail-title" id="dayDetailTitle"></div>
-              <div class="day-detail-count">全<span id="dayDetailCount">0</span>問</div>
-            </div>
-            <button class="day-detail-close" onclick="closeDayDetailModal()">×</button>
-          </div>
-          <div class="day-detail-body" id="dayDetailList"></div>
-        </div>
-      </div>
-
       <!-- ページ内出題選択エリア -->
       <div id="dojoSelectArea" style="display:none;flex:1;width:100%;min-height:0;background:#f0f4f8;overflow-y:auto;-webkit-overflow-scrolling:touch;"></div>
 
@@ -1779,7 +1765,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.0822</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.0900</div>
   </div>
 </div>
 
@@ -1811,6 +1797,20 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
       閉じる
     </div>
+  </div>
+</div>
+
+<!-- その日の記録モーダル（どのタブからでも開けるよう、タブの外側に配置） -->
+<div class="day-detail-overlay" id="dayDetailOverlay">
+  <div class="day-detail-card">
+    <div class="day-detail-header">
+      <div>
+        <div class="day-detail-title" id="dayDetailTitle"></div>
+        <div class="day-detail-count">全<span id="dayDetailCount">0</span>問</div>
+      </div>
+      <button class="day-detail-close" onclick="closeDayDetailModal()">×</button>
+    </div>
+    <div class="day-detail-body" id="dayDetailList"></div>
   </div>
 </div>
 
