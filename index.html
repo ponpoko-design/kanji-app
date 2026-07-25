@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.0930</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1015</div>
   </div>
 </div>
 
@@ -2870,7 +2870,7 @@ function saveRakurakuQuestions() {
   const unit = parseInt(unitStr);
   if (isNaN(unit)) { showToast('数字で入力してください'); return; }
   const grade = getCurrentGrade();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayJST();
   const existing = loadPracticeData();
   const newItems = rakuraku.answerResults.map((q, i) => ({
     id: q.no || (i + 1),
@@ -4437,7 +4437,7 @@ function doSaveWithUnitType(btn) {
   if (isNaN(unitNum) || unitNum < 1) { showToast('番号を入力してください'); return; }
   const unitType = window._unitTypeSel || 'tan'; // 'tan'=単元, 'gak'=学校
   btn.closest('[style*=fixed]').remove();
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayJST();
   const existing = loadPracticeData();
   const newItems = questions.map((q, i) => ({
     id: q.no,
@@ -5840,22 +5840,33 @@ function showDayDetailModal(dateStr) {
   if (!entries.length) {
     listEl.innerHTML = `<div style="text-align:center;padding:30px 0;color:#999;font-size:13px;font-family:${ZMG};">この日の記録はまだありません</div>`;
   } else {
-    // 教科＋単元でグループ化
+    // 教科＋単元でグループ化（同じ単元はまとめて表示。単元セルは先頭行のみ）
     const groups = {};
+    const order = [];
     entries.forEach(e => {
       const key = e.subject + '_' + e.unitLabel;
-      if (!groups[key]) groups[key] = { subject: e.subject, unitLabel: e.unitLabel, items: [] };
+      if (!groups[key]) { groups[key] = { subject: e.subject, unitLabel: e.unitLabel, items: [] }; order.push(key); }
       groups[key].items.push(e);
     });
-    listEl.innerHTML = Object.values(groups).map(g => `
-      <div style="margin-bottom:14px;">
-        <div style="font-size:12px;color:#1a6fc4;font-weight:700;font-family:${ZMG};margin-bottom:6px;">${g.subject}　${escapeHtml(g.unitLabel)}</div>
-        ${g.items.map(e => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#f8fafc;border-radius:8px;margin-bottom:5px;">
-            <span style="font-size:14px;color:#1a2a3a;font-family:${ZMG};">${escapeHtml(e.answer)}</span>
-            ${e.count > 1 ? `<span style="font-size:12px;color:#999;font-family:${ZMG};">×${e.count}回</span>` : ''}
-          </div>`).join('')}
-      </div>`).join('');
+    let rows = '';
+    order.forEach(key => {
+      const g = groups[key];
+      g.items.forEach((e, i) => {
+        rows += `
+          <div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f0f4f8;">
+            <div style="flex:0 0 88px;font-size:11px;color:#1a6fc4;font-weight:700;font-family:${ZMG};">${i===0 ? escapeHtml(g.subject + '　' + g.unitLabel) : ''}</div>
+            <div style="flex:1;font-size:14px;color:#1a2a3a;font-family:${ZMG};">${escapeHtml(e.answer)}</div>
+            <div style="flex:0 0 44px;text-align:right;font-size:12px;color:#999;font-family:${ZMG};">${e.count}回</div>
+          </div>`;
+      });
+    });
+    listEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;padding:0 4px 8px;font-size:11px;color:#bbb;font-family:${ZMG};border-bottom:1.5px solid #e8edf2;">
+        <div style="flex:0 0 88px;">単元</div>
+        <div style="flex:1;">正解</div>
+        <div style="flex:0 0 44px;text-align:right;">問題数</div>
+      </div>
+      ${rows}`;
   }
   document.getElementById('dayDetailOverlay').classList.add('visible');
 }
@@ -6455,7 +6466,7 @@ function recordResult(correct) {
     return;
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayJST();
   const q = session[current];
   const isShakai = q.subject === '社会';
   const shakaiCat = q.categoryCode || (q.category === '歴史' ? 'rekishi' : 'chiri');
