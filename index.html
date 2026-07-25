@@ -979,31 +979,34 @@ rt {
   font-family:'Zen Maru Gothic',serif; text-align:left; line-height:1.4;
 }
 
-/* ===== その日の記録モーダル ===== */
+/* ===== その日の記録ページ（右からスライドイン） ===== */
 .day-detail-overlay {
   display:none; position:fixed; inset:0;
-  background:rgba(20,20,25,0.55); z-index:900;
-  align-items:flex-end; justify-content:center;
+  background:#fff; z-index:900;
+  flex-direction:column;
+  transform:translateX(100%);
+  transition:transform 0.25s ease;
 }
-.day-detail-overlay.visible { display:flex; }
+.day-detail-overlay.visible { display:flex; transform:translateX(0); }
 .day-detail-card {
-  background:#fff; border-radius:20px 20px 0 0;
-  width:100%; max-width:480px;
-  max-height:80vh; display:flex; flex-direction:column;
-  animation:menuIn 0.18s ease;
+  background:#fff;
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
 }
 .day-detail-header {
   display:flex; align-items:center; justify-content:space-between;
-  padding:18px 18px 12px; border-bottom:1px solid #f0f4f8;
+  padding:18px 18px 14px; border-bottom:1px solid #f0f4f8;
+  flex-shrink:0;
+  padding-top:calc(18px + env(safe-area-inset-top, 0px));
 }
 .day-detail-title { font-size:16px; font-weight:700; color:#1a2a3a; font-family:'Zen Maru Gothic',serif; }
 .day-detail-count { font-size:12px; color:#999; font-family:'Zen Maru Gothic',serif; margin-top:2px; }
 .day-detail-close {
-  width:30px; height:30px; border-radius:50%; background:#f0f4f8;
+  width:34px; height:34px; border-radius:50%; background:#f0f4f8;
   display:flex; align-items:center; justify-content:center;
-  font-size:16px; color:#999; cursor:pointer; border:none;
+  font-size:18px; color:#666; cursor:pointer; border:none; flex-shrink:0;
 }
-.day-detail-body { overflow-y:auto; padding:14px 18px 24px; }
+.day-detail-body { overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 18px 24px; flex:1; }
 
 .menu-overlay {
   display:none; position:fixed; inset:0;
@@ -1765,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.0900</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.0930</div>
   </div>
 </div>
 
@@ -5859,6 +5862,14 @@ function showDayDetailModal(dateStr) {
 function closeDayDetailModal() {
   document.getElementById('dayDetailOverlay').classList.remove('visible');
 }
+// イベント委任：曜日の棒・ラベルをタップしたら、その日の記録を表示する
+// （onclick属性ではなく addEventListener で拾うことで、より確実に動作させる）
+document.addEventListener('click', function(e) {
+  const target = e.target.closest('.day-bar-tap');
+  if (target && target.dataset.dayDate) {
+    showDayDetailModal(target.dataset.dayDate);
+  }
+});
 
 function dojoStartPool(pool, generator) {
   document.getElementById('dojoStart').classList.remove('visible');
@@ -6864,7 +6875,7 @@ function renderStatsPage() {
             // 週・月タブのみ棒の上に問題数表示
             const showLabel = (period === 'week' || period === 'month') && b.val > 0;
             const tappable = period === 'week';
-            return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;${tappable?'cursor:pointer;':''}" ${tappable ? `onclick="showDayDetailModal('${b.date}')"` : ''}>
+            return `<div ${tappable ? `class="day-bar-tap" data-day-date="${b.date}"` : ''} style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;${tappable?'cursor:pointer;':''}">
               ${showLabel ? `<div style="font-size:9px;font-weight:700;color:${labelColor};font-family:'Zen Maru Gothic',serif;margin-bottom:2px;white-space:nowrap;">${b.val}</div>` : '<div style="margin-bottom:2px;height:14px;"></div>'}
               <div style="width:60%;height:${h}px;background:${bg};border-radius:999px 999px 0 0;min-height:4px;"></div>
             </div>`;
@@ -6873,7 +6884,7 @@ function renderStatsPage() {
         ${avgQ > 0 ? `<div style="position:absolute;left:0;right:0;top:${80-(avgQ/barMax)*80}px;border-top:1.5px dashed #f0c040;pointer-events:none;"><span style="position:absolute;right:0;font-size:10px;color:#f0c040;font-weight:700;transform:translateY(-14px);">平均${avgQ}問</span></div>` : ''}
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 2px;">
-        ${period==='week' ? barData.map(b=>`<span style="font-size:10px;color:#bbb;flex:1;text-align:center;cursor:pointer;padding:4px 0;" onclick="showDayDetailModal('${b.date}')">${b.label}</span>`).join('') :
+        ${period==='week' ? barData.map(b=>`<span class="day-bar-tap" data-day-date="${b.date}" style="font-size:10px;color:#bbb;flex:1;text-align:center;cursor:pointer;padding:4px 0;">${b.label}</span>`).join('') :
           period==='month' ? ['1','','','','','','7','','','','','','14','','','','','','','','21','','','','','','','',barData.length.toString()].slice(0,5).map((l,i)=>`<span style="font-size:10px;color:#bbb;">${[1,7,14,21,barData.length][i]}</span>`).join('') :
           period==='year' ? Array.from({length:12},(_,i)=>`<span style="font-size:10px;color:#bbb;">${i+1}</span>`).join('') :
           barData.map(b=>`<span style="font-size:10px;color:#bbb;">${b.label.replace('年','')}</span>`).join('')
