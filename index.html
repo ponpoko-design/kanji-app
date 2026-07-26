@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1026</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1034</div>
   </div>
 </div>
 
@@ -6850,9 +6850,51 @@ function renderStatsPage() {
     periodLabel = 'すべて';
   }
 
-  // 正答率
-  const totalAnswered = data.reduce((a,q)=>a+(q.totalCount||0),0);
-  const totalCorrect = data.reduce((a,q)=>a+(q.correctCount||0),0);
+  // 正答率（選択した期間だけの正答率。ただし日別の正誤データは直近30日分しか保存していないため、
+  // 期間の開始日がその保存期間より前の場合は正確に出せないので「－」にする）
+  function sumAccuracyForDateFilter(matchFn) {
+    let total = 0, miss = 0;
+    function scan(items) {
+      items.forEach(item => {
+        Object.entries(item.dailyTotal || {}).forEach(([d, c]) => { if (matchFn(d)) total += c; });
+        Object.entries(item.dailyMiss || {}).forEach(([d, c]) => { if (matchFn(d)) miss += c; });
+      });
+    }
+    scan(loadPracticeData());
+    ['chiri','rekishi','komin'].forEach(cat => scan(loadShakaiData(cat)));
+    return { total, correct: total - miss };
+  }
+  const dailyRetentionCutoff = new Date();
+  dailyRetentionCutoff.setDate(dailyRetentionCutoff.getDate() - 30);
+  const dailyRetentionCutoffStr = dailyRetentionCutoff.toISOString().split('T')[0];
+
+  let totalAnswered, totalCorrect, rateUnavailable = false;
+  if (period === 'all') {
+    // 「すべて」タブは累計なのでこれまで通り全期間の数字
+    totalAnswered = data.reduce((a,q)=>a+(q.totalCount||0),0);
+    totalCorrect = data.reduce((a,q)=>a+(q.correctCount||0),0);
+  } else {
+    let periodStartStr;
+    if (period === 'week') periodStartStr = barData[0].date;
+    else if (period === 'month') periodStartStr = `${curYear}-${String(curMonth+1).padStart(2,'0')}-01`;
+    else periodStartStr = `${curYear}-01-01`; // year
+
+    if (periodStartStr < dailyRetentionCutoffStr) {
+      rateUnavailable = true;
+      totalAnswered = 0; totalCorrect = 0;
+    } else if (period === 'week') {
+      const r = sumAccuracyForDateFilter(d => barData.some(b => b.date === d));
+      totalAnswered = r.total; totalCorrect = r.correct;
+    } else if (period === 'month') {
+      const monthPrefix = `${curYear}-${String(curMonth+1).padStart(2,'0')}-`;
+      const r = sumAccuracyForDateFilter(d => d.startsWith(monthPrefix));
+      totalAnswered = r.total; totalCorrect = r.correct;
+    } else {
+      const yearPrefix = `${curYear}-`;
+      const r = sumAccuracyForDateFilter(d => d.startsWith(yearPrefix));
+      totalAnswered = r.total; totalCorrect = r.correct;
+    }
+  }
   const overallRate = totalAnswered > 0 ? Math.round(totalCorrect/totalAnswered*100) : 0;
 
   // 選択されている週の★（曜日ごとにdate付き。選択した週を反映する）
@@ -6987,7 +7029,7 @@ function renderStatsPage() {
               ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="#f0c040"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>'
               : '<svg width="28" height="28" viewBox="0 0 24 24" fill="#e8eef4"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>'
             }
-            <span style="font-size:11px;color:${s.done?'#1a6fc4':'#bbb'};font-family:${ZMG};">${s.label}</span>
+            <span style="font-size:11px;color:${s.done?'#1a6fc4':'#bbb'};font-weight:${s.done?'700':'400'};font-family:${ZMG};">${s.label}</span>
           </div>`).join('')}
       </div>
     </div>` : ''}
@@ -7010,14 +7052,14 @@ function renderStatsPage() {
             </div>`;
           }).join('')}
         </div>
-        ${avgQ > 0 ? `<div style="position:absolute;left:0;right:0;top:${80-(avgQ/barMax)*80}px;border-top:1.5px dashed #f0c040;pointer-events:none;"><span style="position:absolute;right:0;font-size:10px;color:#f0c040;font-weight:700;font-family:${ZMG};transform:translateY(-14px);">平均${avgQ}問</span></div>` : ''}
+        ${avgQ > 0 ? `<div style="position:absolute;left:0;right:0;top:${80-(avgQ/barMax)*80}px;border-top:1.5px dashed #f0c040;pointer-events:none;"><span style="position:absolute;right:0;font-size:12px;color:#f0c040;font-weight:700;font-family:${ZMG};transform:translateY(-14px);">平均${avgQ}問</span></div>` : ''}
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 2px;">
         ${period==='week' ? barData.map(b=>{
             const [, bm, bd] = b.date.split('-').map(Number);
             const dateLabel = bd === 1 ? `${bm}/${bd}` : `${bd}`;
             const labelColor = b.val > 0 ? '#1a6fc4' : '#bbb';
-            return `<span class="day-bar-tap" data-day-date="${b.date}" style="font-size:11px;color:${labelColor};flex:1;text-align:center;cursor:pointer;padding:4px 0;font-family:${ZMG};white-space:nowrap;">${dateLabel}（${b.label}）</span>`;
+            return `<span class="day-bar-tap" data-day-date="${b.date}" style="font-size:11px;color:${labelColor};font-weight:${b.val>0?'700':'400'};flex:1;text-align:center;cursor:pointer;padding:4px 0;font-family:${ZMG};white-space:nowrap;">${dateLabel}（${b.label}）</span>`;
           }).join('') :
           period==='month' ? ['1','','','','','','7','','','','','','14','','','','','','','','21','','','','','','','',barData.length.toString()].slice(0,5).map((l,i)=>`<span style="font-size:10px;color:#bbb;">${[1,7,14,21,barData.length][i]}</span>`).join('') :
           period==='year' ? Array.from({length:12},(_,i)=>`<span style="font-size:10px;color:#bbb;">${i+1}</span>`).join('') :
