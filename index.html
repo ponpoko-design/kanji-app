@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1015</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1105</div>
   </div>
 </div>
 
@@ -5801,12 +5801,23 @@ function showDayDetailModal(dateStr) {
 
   // 国語
   const kokugoData = loadPracticeData();
+  // 単元ごとの「何問目」を計算（同じ単元・学校区分の中で、登録順に1から数える）
+  // ＝「順番に：○問目〜○問目」で出題するときと同じ数え方
+  const unitPosCounter = {};
+  const unitPosMap = new Map();
+  kokugoData.forEach(item => {
+    if (!item.unit) return;
+    const key = (item.unitType || 'tan') + '_' + item.unit;
+    unitPosCounter[key] = (unitPosCounter[key] || 0) + 1;
+    unitPosMap.set(item, unitPosCounter[key]);
+  });
   kokugoData.forEach(item => {
     const cnt = (item.dailyTotal || {})[dateStr] || 0;
     if (cnt > 0) {
       entries.push({
         subject: '国語',
         unitLabel: getUnitLabel(item) || '単元未設定',
+        qNo: item.unit ? unitPosMap.get(item) : null,
         answer: (item.answerKanji || []).join('') || item.reading || '',
         count: cnt
       });
@@ -5814,20 +5825,59 @@ function showDayDetailModal(dateStr) {
   });
 
   // 社会（地理・歴史・公民）
-  const shakaiCatLabels = { chiri: '地理', rekishi: '歴史', komin: '公民' };
-  Object.keys(shakaiCatLabels).forEach(cat => {
-    const data = loadShakaiData(cat);
-    data.forEach(item => {
+  // 地理：カテゴリ全体の中で登録順に1から数える（「ぜんぶ→順番に○問目〜○問目」と同じ数え方）
+  const chiriData = loadShakaiData('chiri');
+  const chiriPosMap = new Map();
+  chiriData.forEach((item, i) => chiriPosMap.set(item, i + 1));
+  chiriData.forEach(item => {
+    const cnt = (item.dailyTotal || {})[dateStr] || 0;
+    if (cnt > 0) {
+      entries.push({
+        subject: '社会',
+        unitLabel: '地理',
+        qNo: chiriPosMap.get(item),
+        answer: item.correct || '',
+        count: cnt
+      });
+    }
+  });
+
+  // 歴史：時代（10グループ）ごとに、その時代の中で登録順に1から数える
+  // 複数の時代にまたがる問題は、該当する全ての時代に並行して表示する
+  const rekishiData = loadShakaiData('rekishi');
+  const eraPosCounters = {};
+  SHAKAI_ERA_GROUPS.forEach(g => {
+    let pos = 0;
+    rekishiData.forEach(item => {
       const cnt = (item.dailyTotal || {})[dateStr] || 0;
-      if (cnt > 0) {
-        entries.push({
-          subject: '社会',
-          unitLabel: shakaiCatLabels[cat],
-          answer: item.correct || '',
-          count: cnt
-        });
+      if (eraMatches(item.prefecture, g.key)) {
+        pos++;
+        if (cnt > 0) {
+          entries.push({
+            subject: '社会',
+            unitLabel: '歴史（' + g.label + '）',
+            qNo: pos,
+            answer: item.correct || '',
+            count: cnt
+          });
+        }
       }
     });
+  });
+
+  // 公民：単元・時代の概念がないため「何問目」は出さない
+  const kominData = loadShakaiData('komin');
+  kominData.forEach(item => {
+    const cnt = (item.dailyTotal || {})[dateStr] || 0;
+    if (cnt > 0) {
+      entries.push({
+        subject: '社会',
+        unitLabel: '公民',
+        qNo: null,
+        answer: item.correct || '',
+        count: cnt
+      });
+    }
   });
 
   const dateObj = new Date(dateStr + 'T00:00:00+09:00');
@@ -5848,23 +5898,29 @@ function showDayDetailModal(dateStr) {
       if (!groups[key]) { groups[key] = { subject: e.subject, unitLabel: e.unitLabel, items: [] }; order.push(key); }
       groups[key].items.push(e);
     });
+    // 各グループ内は「何問目」の昇順で並べる（何問目まで進んだか一目で分かるように）
+    order.forEach(key => {
+      groups[key].items.sort((a,b) => (a.qNo || 0) - (b.qNo || 0));
+    });
     let rows = '';
     order.forEach(key => {
       const g = groups[key];
       g.items.forEach((e, i) => {
         rows += `
-          <div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f0f4f8;">
-            <div style="flex:0 0 88px;font-size:11px;color:#1a6fc4;font-weight:700;font-family:${ZMG};">${i===0 ? escapeHtml(g.subject + '　' + g.unitLabel) : ''}</div>
+          <div style="display:flex;align-items:center;gap:6px;padding:9px 4px;border-bottom:1px solid #f0f4f8;">
+            <div style="flex:0 0 96px;font-size:11px;color:#1a6fc4;font-weight:700;font-family:${ZMG};line-height:1.3;">${i===0 ? escapeHtml(g.subject + '　' + g.unitLabel) : ''}</div>
+            <div style="flex:0 0 40px;font-size:12px;color:#666;font-family:${ZMG};">${e.qNo ? e.qNo + '問目' : '－'}</div>
             <div style="flex:1;font-size:14px;color:#1a2a3a;font-family:${ZMG};">${escapeHtml(e.answer)}</div>
-            <div style="flex:0 0 44px;text-align:right;font-size:12px;color:#999;font-family:${ZMG};">${e.count}回</div>
+            <div style="flex:0 0 40px;text-align:right;font-size:12px;color:#999;font-family:${ZMG};">${e.count}回</div>
           </div>`;
       });
     });
     listEl.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;padding:0 4px 8px;font-size:11px;color:#bbb;font-family:${ZMG};border-bottom:1.5px solid #e8edf2;">
-        <div style="flex:0 0 88px;">単元</div>
+      <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;font-size:11px;color:#bbb;font-family:${ZMG};border-bottom:1.5px solid #e8edf2;">
+        <div style="flex:0 0 96px;">単元</div>
+        <div style="flex:0 0 40px;">何問目</div>
         <div style="flex:1;">正解</div>
-        <div style="flex:0 0 44px;text-align:right;">問題数</div>
+        <div style="flex:0 0 40px;text-align:right;">問題数</div>
       </div>
       ${rows}`;
   }
