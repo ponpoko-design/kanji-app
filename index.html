@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1005</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1013</div>
   </div>
 </div>
 
@@ -7013,13 +7013,15 @@ function renderStatsPage() {
         ${avgQ > 0 ? `<div style="position:absolute;left:0;right:0;top:${80-(avgQ/barMax)*80}px;border-top:1.5px dashed #f0c040;pointer-events:none;"><span style="position:absolute;right:0;font-size:10px;color:#f0c040;font-weight:700;transform:translateY(-14px);">平均${avgQ}問</span></div>` : ''}
       </div>
       <div style="display:flex;justify-content:space-between;padding:0 2px;">
-        ${period==='week' ? barData.map(b=>`<span class="day-bar-tap" data-day-date="${b.date}" style="font-size:10px;color:#bbb;flex:1;text-align:center;cursor:pointer;padding:4px 0;">${b.label}</span>`).join('') :
+        ${period==='week' ? barData.map(b=>{
+            const [, bm, bd] = b.date.split('-').map(Number);
+            return `<span class="day-bar-tap" data-day-date="${b.date}" style="font-size:10px;color:#bbb;flex:1;text-align:center;cursor:pointer;padding:4px 0;font-family:${ZMG};white-space:nowrap;">${bm}/${bd}（${b.label}）</span>`;
+          }).join('') :
           period==='month' ? ['1','','','','','','7','','','','','','14','','','','','','','','21','','','','','','','',barData.length.toString()].slice(0,5).map((l,i)=>`<span style="font-size:10px;color:#bbb;">${[1,7,14,21,barData.length][i]}</span>`).join('') :
           period==='year' ? Array.from({length:12},(_,i)=>`<span style="font-size:10px;color:#bbb;">${i+1}</span>`).join('') :
           barData.map(b=>`<span style="font-size:10px;color:#bbb;">${b.label.replace('年','')}</span>`).join('')
         }
       </div>
-      ${period==='week' ? `<div style="text-align:center;font-size:10px;color:#bbb;margin-top:8px;">曜日をタップすると、その日にやった問題が見られるよ</div>` : ''}
     </div>
 
     <!-- よく間違う漢字 -->
