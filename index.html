@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1105</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.0924</div>
   </div>
 </div>
 
@@ -6724,6 +6724,7 @@ function renderStatsPage() {
   let totalQ = 0, activeDays = 0, avgQ = 0;
   let barData = []; // {label, val, isToday}
   let periodLabel = '';
+  let weekRangeLabel = '';
 
   if (period === 'week') {
     // 選択された週（デフォルトは今週）
@@ -6735,6 +6736,8 @@ function renderStatsPage() {
       const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
       monday = new Date(jstNow.getTime() + mondayOffset * 86400000);
     }
+    const sunday = new Date(monday.getTime() + 6 * 86400000);
+    weekRangeLabel = `${monday.getMonth()+1}/${monday.getDate()}〜${sunday.getMonth()+1}/${sunday.getDate()}`;
     const days = ['月','火','水','木','金','土','日'];
     barData = days.map((label, i) => {
       const d = new Date(monday.getTime() + i * 86400000);
@@ -6795,8 +6798,8 @@ function renderStatsPage() {
   const totalCorrect = data.reduce((a,q)=>a+(q.correctCount||0),0);
   const overallRate = totalAnswered > 0 ? Math.round(totalCorrect/totalAnswered*100) : 0;
 
-  // 今週の★
-  const weekStars = getWeekStars();
+  // 選択されている週の★（曜日ごとにdate付き。選択した週を反映する）
+  const weekStars = period === 'week' ? barData.map(b => ({ label: b.label, done: b.val > 0, date: b.date })) : [];
   const todayCount = daily[getTodayJST()] || 0;
   const streak = stats.streak || 0;
 
@@ -6914,13 +6917,13 @@ function renderStatsPage() {
       </div>
     </div>
 
-    <!-- 今週の★（weekタブのみ） -->
+    <!-- 選択した週の★（weekタブのみ） -->
     ${period === 'week' ? `
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
-      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;">今週の★（月〜日）</div>
+      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;">選択した${weekRangeLabel}の★</div>
       <div style="display:flex;justify-content:space-between;gap:4px;">
         ${weekStars.map(s => `
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;">
+          <div class="day-bar-tap" data-day-date="${s.date}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;">
             ${s.done
               ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="#f0c040"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>'
               : '<svg width="28" height="28" viewBox="0 0 24 24" fill="#e8eef4"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>'
@@ -6932,7 +6935,7 @@ function renderStatsPage() {
 
     <!-- バーグラフ -->
     <div style="background:#fff;border-radius:16px;padding:16px 16px 12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
-      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">${period==='week'?'今週の問題数':period==='month'?`${curYear}年${curMonth+1}月`:period==='year'?`${curYear}年（月別）`:'年別'}</div>
+      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">${period==='week'?`選択した${weekRangeLabel}の問題数`:period==='month'?`${curYear}年${curMonth+1}月`:period==='year'?`${curYear}年（月別）`:'年別'}</div>
       <div style="position:relative;">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;height:96px;gap:2px;margin-bottom:6px;">
           ${barData.map(b => {
