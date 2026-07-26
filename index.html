@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1034</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260726.1045</div>
   </div>
 </div>
 
@@ -4532,10 +4532,9 @@ function loadPracticeData() {
   return JSON.parse(localStorage.getItem('kanji_practice_data') || '[]');
 }
 function cleanupDailyData(data) {
-  // 30日より古い日別記録を削除してデータ量を一定に保つ
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 30);
-  const cutoffStr = cutoff.toISOString().split('T')[0];
+  // 今月・先月・先々月の3ヶ月分をまるごと保存し、それより古い日別記録は削除する
+  // （月の日数に関わらず、その月全体のデータが必ず揃うようにするため）
+  const cutoffStr = getDailyRetentionCutoffStr();
   data.forEach(q => {
     ['dailyTotal', 'dailyMiss', 'dailyCharMiss'].forEach(key => {
       if (!q[key]) return;
@@ -4545,6 +4544,15 @@ function cleanupDailyData(data) {
     });
   });
   return data;
+}
+// 日別記録（dailyTotal/dailyMiss等）を保存しておく期間の下限日（この日を含めて以降を保存）
+// 今月の1日から2ヶ月さかのぼった月の1日＝今月・先月・先々月の3ヶ月分
+function getDailyRetentionCutoffStr() {
+  const todayStr = getTodayJST();
+  const [ty, tm] = todayStr.split('-').map(Number);
+  let cutoffYear = ty, cutoffMonth = tm - 2;
+  while (cutoffMonth <= 0) { cutoffMonth += 12; cutoffYear -= 1; }
+  return `${cutoffYear}-${String(cutoffMonth).padStart(2,'0')}-01`;
 }
 
 function savePracticeData(data) {
@@ -6850,7 +6858,7 @@ function renderStatsPage() {
     periodLabel = 'すべて';
   }
 
-  // 正答率（選択した期間だけの正答率。ただし日別の正誤データは直近30日分しか保存していないため、
+  // 正答率（選択した期間だけの正答率。ただし日別の正誤データは今月・先月・先々月の3ヶ月分しか保存していないため、
   // 期間の開始日がその保存期間より前の場合は正確に出せないので「－」にする）
   function sumAccuracyForDateFilter(matchFn) {
     let total = 0, miss = 0;
@@ -6864,9 +6872,7 @@ function renderStatsPage() {
     ['chiri','rekishi','komin'].forEach(cat => scan(loadShakaiData(cat)));
     return { total, correct: total - miss };
   }
-  const dailyRetentionCutoff = new Date();
-  dailyRetentionCutoff.setDate(dailyRetentionCutoff.getDate() - 30);
-  const dailyRetentionCutoffStr = dailyRetentionCutoff.toISOString().split('T')[0];
+  const dailyRetentionCutoffStr = getDailyRetentionCutoffStr();
 
   let totalAnswered, totalCorrect, rateUnavailable = false;
   if (period === 'all') {
