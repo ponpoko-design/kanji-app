@@ -1768,7 +1768,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260727.0851</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260727.0911</div>
   </div>
 </div>
 
@@ -4536,7 +4536,7 @@ function cleanupDailyData(data) {
   // （月の日数に関わらず、その月全体のデータが必ず揃うようにするため）
   const cutoffStr = getDailyRetentionCutoffStr();
   data.forEach(q => {
-    ['dailyTotal', 'dailyMiss', 'dailyCharMiss'].forEach(key => {
+    ['dailyTotal', 'dailyMiss', 'dailyCharMiss', 'dailyEraTotal'].forEach(key => {
       if (!q[key]) return;
       Object.keys(q[key]).forEach(date => {
         if (date < cutoffStr) delete q[key][date];
@@ -5067,7 +5067,14 @@ function startFromTimingSelectAllShakaiEra(era) {
     const data = loadShakaiData(window._pendingShakaiCategory || 'chiri');
     const filtered = era === 'all' ? data : data.filter(q => eraMatches(q.prefecture, era));
     const sorted = [...filtered].sort((a,b) => kanaCompare(a.reading, b.reading));
-    return sorted.map(shakaiToSessionItem);
+    // 「時代別」から選んで出題した場合のみ、実際に選んだ時代キーをセッションアイテムに持たせる。
+    // これにより、記録を保存するときに「この日、この問題をどの時代の勉強として答えたか」が分かるようになる。
+    // （'all'＝「ぜんぶ」を選んだ場合は特定の時代を選んだわけではないので付与しない）
+    return sorted.map(q => {
+      const sessionItem = shakaiToSessionItem(q);
+      if (era !== 'all') sessionItem._selectedEraKey = era;
+      return sessionItem;
+    });
   };
   const pool = generator();
   if (!pool.length) { alert('該当する問題がありません'); return; }
@@ -5900,10 +5907,12 @@ function showDayDetailModal(dateStr) {
 
   // 歴史：時代（10グループ）ごとに、その時代の中で登録順に1から数える
   // 1問が複数の時代にまたがる場合でも、行としては1つにまとめる。
-  // 代表の時代（＝一番左の列に出す時代）は「その日、実際に子どもが選んで学習した時代」にしたいが、
-  // どの時代を選んで出題したかという情報自体は保存していないため、
-  // 「その日答えた問題の中で、いちばん多くの問題にマッチしている時代」を代表として推定する
-  // （例：室町時代を選んで20問やった場合、20問全問が室町にマッチするため室町が選ばれる）。
+  // 代表の時代（＝一番左の列に出す時代）は、以下の優先順位で決める：
+  //   1. dailyEraTotal（「時代別」から選んで出題した記録）があれば、それを最優先で使う
+  //      → 実際に選んだ時代がそのまま分かるので、推測は不要
+  //   2. 上記の記録がない分（間違いが多い順・ランダム・あ〜わ別・順番になど、
+  //      時代を選ばない出題方法で答えた分。または本機能追加より前の古い記録）は、
+  //      「その日答えた問題の中で、いちばん多くの問題にマッチしている時代」を推定して代表にする
   // それ以外にマッチした時代は「他にでてくる時代」として別途保持する。
   const rekishiData = loadShakaiData('rekishi');
   const eraPosMaps = {}; // { eraKey: Map(item -> その時代内での登録順の位置) }（全期間の登録順、今まで通り）
@@ -5919,6 +5928,7 @@ function showDayDetailModal(dateStr) {
     eraPosMaps[g.key] = m;
   });
   const todaysRekishiItems = rekishiData.filter(item => ((item.dailyTotal || {})[dateStr] || 0) > 0);
+  // 推測ロジック（フォールバック）用に、その日答えた問題の中での時代ごとのマッチ数を集計しておく
   const eraCountToday = {};
   SHAKAI_ERA_GROUPS.forEach(g => { eraCountToday[g.key] = 0; });
   todaysRekishiItems.forEach(item => {
@@ -5926,15 +5936,10 @@ function showDayDetailModal(dateStr) {
       if (eraMatches(item.prefecture, g.key)) eraCountToday[g.key]++;
     });
   });
-  todaysRekishiItems.forEach(item => {
-    const cnt = (item.dailyTotal || {})[dateStr] || 0;
+  function pushRekishiEntry(item, eraKey, cnt) {
     const matchedGroups = SHAKAI_ERA_GROUPS.filter(g => eraMatches(item.prefecture, g.key));
     if (!matchedGroups.length) return; // 時代タグが未設定などの場合は記録に出さない
-    // その日いちばん多くの問題にマッチした時代を代表にする（同数ならSHAKAI_ERA_GROUPSの並び順で先のものを優先）
-    let primary = matchedGroups[0];
-    matchedGroups.forEach(g => {
-      if (eraCountToday[g.key] > eraCountToday[primary.key]) primary = g;
-    });
+    let primary = getEraGroup(eraKey) || matchedGroups[0];
     entries.push({
       subject: '社会',
       unitLabel: '歴史（' + primary.label + '）',
@@ -5943,6 +5948,31 @@ function showDayDetailModal(dateStr) {
       count: cnt,
       others: matchedGroups.filter(g => g.key !== primary.key).map(g => g.label)
     });
+  }
+  todaysRekishiItems.forEach(item => {
+    const totalCnt = (item.dailyTotal || {})[dateStr] || 0;
+    const eraBreakdown = (item.dailyEraTotal || {})[dateStr] || {};
+    let recordedCnt = 0;
+    // 1. 実際に選んだ時代の記録（dailyEraTotal）がある分は、そのままその時代で1行ずつ表示する
+    Object.keys(eraBreakdown).forEach(eraKey => {
+      const c = eraBreakdown[eraKey] || 0;
+      if (c > 0) {
+        pushRekishiEntry(item, eraKey, c);
+        recordedCnt += c;
+      }
+    });
+    // 2. 残り（時代を選ばない出題方法で答えた分、または本機能追加より前の記録）は推測ロジックで表示する
+    const remainder = totalCnt - recordedCnt;
+    if (remainder > 0) {
+      const matchedGroups = SHAKAI_ERA_GROUPS.filter(g => eraMatches(item.prefecture, g.key));
+      if (matchedGroups.length) {
+        let guessedPrimary = matchedGroups[0];
+        matchedGroups.forEach(g => {
+          if (eraCountToday[g.key] > eraCountToday[guessedPrimary.key]) guessedPrimary = g;
+        });
+        pushRekishiEntry(item, guessedPrimary.key, remainder);
+      }
+    }
   });
 
   // 公民：単元・時代の概念がないため「何問目」は出さない
@@ -5988,25 +6018,30 @@ function showDayDetailModal(dateStr) {
     let rows = '';
     order.forEach(key => {
       const g = groups[key];
+      // 単元セル（先頭行のみ表示）：「歴史（XX時代）」のような形式は「歴史」「XX時代」を別行に分けて
+      // 「社会」「歴史」「室町時代」のように3行で表示する。それ以外（地理・公民・国語）は今まで通り2行。
+      const eraMatch = g.unitLabel.match(/^歴史（(.+)）$/);
+      const unitLines = eraMatch ? [g.subject, '歴史', eraMatch[1]] : [g.subject, g.unitLabel];
+      const unitCellHtml = unitLines.map(l => escapeHtml(l)).join('<br>');
       g.items.forEach((e, i) => {
-        const othersLabel = (e.others && e.others.length) ? e.others.join('、') : '';
+        const othersLabel = (e.others && e.others.length) ? e.others.join('<br>') : '';
         rows += `
-          <div style="display:flex;align-items:center;gap:6px;padding:9px 4px;border-bottom:1px solid #f0f4f8;">
-            <div style="flex:0 0 88px;font-size:11px;color:#1a6fc4;font-weight:700;font-family:${ZMG};line-height:1.3;">${i===0 ? escapeHtml(g.subject + '　' + g.unitLabel) : ''}</div>
-            <div style="flex:0 0 38px;font-size:12px;color:#666;font-family:${ZMG};">${e.qNo ? e.qNo + '問目' : '－'}</div>
+          <div style="display:flex;align-items:flex-start;gap:6px;padding:9px 4px;border-bottom:1px solid #f0f4f8;">
+            <div style="flex:0 0 72px;font-size:11px;color:#1a6fc4;font-weight:700;font-family:${ZMG};line-height:1.5;">${i===0 ? unitCellHtml : ''}</div>
+            <div style="flex:0 0 20px;font-size:12px;color:#666;font-family:${ZMG};">${e.qNo ? e.qNo : '－'}</div>
             <div style="flex:1;font-size:14px;color:#1a2a3a;font-family:${ZMG};">${escapeHtml(e.answer)}</div>
-            <div style="flex:0 0 100px;font-size:11px;color:#999;font-family:${ZMG};line-height:1.3;">${escapeHtml(othersLabel)}</div>
-            <div style="flex:0 0 36px;text-align:right;font-size:12px;color:#999;font-family:${ZMG};">${e.count}回</div>
+            <div style="flex:0 0 90px;font-size:11px;color:#999;font-family:${ZMG};line-height:1.5;">${othersLabel}</div>
+            <div style="flex:0 0 32px;text-align:right;font-size:12px;color:#999;font-family:${ZMG};">${e.count}回</div>
           </div>`;
       });
     });
     listEl.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;font-size:11px;color:#bbb;font-family:${ZMG};border-bottom:1.5px solid #e8edf2;">
-        <div style="flex:0 0 88px;">単元</div>
-        <div style="flex:0 0 38px;">何問目</div>
+        <div style="flex:0 0 72px;">単元</div>
+        <div style="flex:0 0 20px;">何問目</div>
         <div style="flex:1;">正解</div>
-        <div style="flex:0 0 100px;">他にでてくる時代</div>
-        <div style="flex:0 0 36px;text-align:right;">問題数</div>
+        <div style="flex:0 0 90px;">他にでてくる時代</div>
+        <div style="flex:0 0 32px;text-align:right;">問題数</div>
       </div>
       ${rows}`;
   }
@@ -6627,6 +6662,13 @@ function recordResult(correct) {
     if (correct) item.correctCount = (item.correctCount || 0) + 1;
     if (!item.dailyTotal) item.dailyTotal = {};
     item.dailyTotal[today] = (item.dailyTotal[today] || 0) + 1;
+    // 社会・歴史で「時代別」から選んで出題した場合のみ、その日・その時代でのカウントも別途記録する。
+    // （日別詳細画面で「実際に選んで学習した時代」を推測せず、正しく参照できるようにするため）
+    if (isShakai && shakaiCat === 'rekishi' && q._selectedEraKey) {
+      if (!item.dailyEraTotal) item.dailyEraTotal = {};
+      if (!item.dailyEraTotal[today]) item.dailyEraTotal[today] = {};
+      item.dailyEraTotal[today][q._selectedEraKey] = (item.dailyEraTotal[today][q._selectedEraKey] || 0) + 1;
+    }
     if (!correct) {
       item.missCount++;
       if (!item.charMiss) item.charMiss = {};
