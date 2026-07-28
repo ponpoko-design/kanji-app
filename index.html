@@ -39,6 +39,29 @@
   window.firestoreStatsSave = saveStatsToFirestore;
   window.firestoreStatsLoad = loadStatsFromFirestore;
 
+  const UNIT_ORDER_DOC = doc(db, 'kanji', 'unitGroupOrder');
+  async function saveUnitOrderToFirestore(allMap) {
+    try { await setDoc(UNIT_ORDER_DOC, { ...allMap, updatedAt: new Date().toISOString() }); }
+    catch(e) { console.log('単元並び順保存エラー:', e); }
+  }
+  async function loadUnitOrderFromFirestore() {
+    try {
+      const snap = await getDoc(UNIT_ORDER_DOC);
+      if (snap.exists()) {
+        const d = snap.data();
+        localStorage.setItem('kanji_unit_group_order', JSON.stringify({ tan: d.tan || {}, gak: d.gak || {} }));
+      }
+    } catch(e) { console.log('単元並び順読み込みエラー:', e); }
+  }
+  window.firestoreUnitOrderSave = saveUnitOrderToFirestore;
+  window.firestoreUnitOrderLoad = loadUnitOrderFromFirestore;
+  onSnapshot(UNIT_ORDER_DOC, (snap) => {
+    if (snap.exists()) {
+      const d = snap.data();
+      localStorage.setItem('kanji_unit_group_order', JSON.stringify({ tan: d.tan || {}, gak: d.gak || {} }));
+    }
+  });
+
   async function loadFromFirestore() {
     try {
       const snap = await getDoc(DATA_DOC);
@@ -253,6 +276,7 @@
   window.firestoreShakaiLoad = loadShakaiFromFirestore;
 
   loadStatsFromFirestore();
+  loadUnitOrderFromFirestore();
   loadFromFirestore().then(() => {
     console.log('Firestore初期読み込み完了');
   });
@@ -1686,8 +1710,9 @@ if (localStorage.getItem('kanji_auth')==='ok') {
             <svg width="38" height="38" viewBox="0 0 24 24" fill="#FF6B35"><path d="M12 2c0 0-1.5 3.5-1.5 6c0 1.6 1 2.8 1 2.8s-3-1.2-3-4.3c0 0-3.5 3.5-3.5 7.5a6 6 0 0 0 12 0c0-5-5-12-5-12z"/></svg>
           </div>
           <div class="streak-popup-numrow">
+            <span class="streak-popup-numlabel">連続</span>
             <span class="streak-popup-num" id="streakPopupNum">0</span>
-            <span class="streak-popup-numlabel">日連続</span>
+            <span class="streak-popup-numlabel">日目</span>
           </div>
           <div class="streak-popup-main" id="streakPopupMain"></div>
           <div class="streak-popup-sub" id="streakPopupSub"></div>
@@ -1768,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260727.0922</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.0850</div>
   </div>
 </div>
 
@@ -1791,6 +1816,10 @@ if (localStorage.getItem('kanji_auth')==='ok') {
     <div class="menu-item" onclick="closeSettings();window.showBackupHistory();">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg></span>
       <span>バックアップから復元<br><span id="lastAutoBackupLabel" style="font-size:11px;color:#888;"></span></span>
+    </div>
+    <div class="menu-item" onclick="closeSettings();showUnitOrderSettings();">
+      <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg></span>
+      単元の並び順を編集
     </div>
     <div class="menu-item" onclick="closeSettings();deleteResultData();" style="color:#C62828;">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>
@@ -2249,7 +2278,7 @@ function switchUnitRangeType(type, fromId, toId, btnTanId, btnGakId) {
   if (btnGak) btnGak.style.cssText = type === 'gak' ? active : inactive;
   // セレクトボックスを該当unitTypeのデータで更新
   const data = loadPracticeData();
-  const units = [...new Set(data.filter(q => type === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const units = sortUnitsByOrder([...new Set(data.filter(q => type === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')).map(q => q.unit).filter(Boolean))], type);
   const opts = units.map(u => `<option value="${u}">${u}</option>`).join('');
   const fromSel = document.getElementById(fromId);
   const toSel = document.getElementById(toId);
@@ -2266,13 +2295,16 @@ function filterUnitTo(fromId, toId) {
   const fromSel = document.getElementById(fromId);
   const toSel = document.getElementById(toId);
   if (!fromSel || !toSel) return;
-  const fromVal = parseInt(fromSel.value);
-  const currentTo = parseInt(toSel.value);
-  // toの全optionを取得してfromVal以上のものだけ残す
-  const allOpts = [...fromSel.options].map(o => parseInt(o.value));
-  toSel.innerHTML = allOpts
-    .filter(u => u >= fromVal)
-    .map(u => `<option value="${u}"${u === Math.max(fromVal, currentTo) ? ' selected' : ''}>${u}</option>`)
+  const type = window['_unitRangeType_' + fromId] || getActiveUnitRangeType();
+  const fromVal = fromSel.value;
+  const currentTo = toSel.value;
+  const fromOrder = getUnitOrderValue(fromVal, type);
+  // toの全optionを取得してfromVal以上のものだけ残す（並び順ベース）
+  const allVals = [...fromSel.options].map(o => o.value);
+  const selectVal = getUnitOrderValue(currentTo, type) >= fromOrder ? currentTo : fromVal;
+  toSel.innerHTML = allVals
+    .filter(u => getUnitOrderValue(u, type) >= fromOrder)
+    .map(u => `<option value="${u}"${u === selectVal ? ' selected' : ''}>${u}</option>`)
     .join('');
 }
 
@@ -2294,8 +2326,144 @@ function showBtnRow(rowId) {
 
 function getUnitLabel(q) {
   if (!q.unit) return '';
+  const { group } = parseUnitLabel(q.unit);
+  if (group) return String(q.unit); // 「夏1」のような文字単元はそのまま表示（単元/学校を付けない）
   const prefix = q.unitType === 'gak' ? '学校' : '単元';
   return prefix + q.unit;
+}
+
+// ===== 単元の並び順（「夏1」のような文字＋数字の単元に対応）=====
+// 単元名を「グループ（先頭の数字以外の部分）」と「末尾の数字」に分解する
+// 例：「19」→ {group:'', num:19} 　「夏1」→ {group:'夏', num:1}
+function parseUnitLabel(u) {
+  const s = String(u);
+  const m = s.match(/^(\D*)(\d+)$/);
+  if (m) return { group: m[1], num: parseInt(m[2], 10) };
+  return { group: s, num: NaN };
+}
+
+// グループごとの並び順マップの読み書き（localStorage＋Firestore同期）
+function loadUnitGroupOrderAll() {
+  try { return JSON.parse(localStorage.getItem('kanji_unit_group_order') || '{}'); } catch(e) { return {}; }
+}
+function getUnitGroupOrderMap(unitType) {
+  const all = loadUnitGroupOrderAll();
+  return all[unitType === 'gak' ? 'gak' : 'tan'] || {};
+}
+function saveUnitGroupOrderMap(unitType, map) {
+  const all = loadUnitGroupOrderAll();
+  all[unitType === 'gak' ? 'gak' : 'tan'] = map;
+  localStorage.setItem('kanji_unit_group_order', JSON.stringify(all));
+  if (typeof window.firestoreUnitOrderSave === 'function') window.firestoreUnitOrderSave(all);
+}
+
+// 単元名から、並び替え・範囲比較用の数値キーを算出
+// 通常の数字単元はその数字そのまま。「夏1」等はグループの並び順＋末尾数字/100000で算出
+function getUnitOrderValue(u, unitType) {
+  const { group, num } = parseUnitLabel(u);
+  if (!group) return num;
+  const map = getUnitGroupOrderMap(unitType);
+  const groupOrder = map[group];
+  if (groupOrder === undefined) return 100000 + num; // 並び順未設定の保険（通常は登録時に設定される）
+  return groupOrder + num / 100000;
+}
+
+// 単元の配列を並び順どおりにソート
+function sortUnitsByOrder(units, unitType) {
+  return [...units].sort((a, b) => getUnitOrderValue(a, unitType) - getUnitOrderValue(b, unitType));
+}
+
+// 新しいグループ（例：「夏」）を初めて使うとき、並び順の数字を確認・登録する
+// 既に登録済みなら何もせずその値を返す
+function ensureUnitGroupOrder(group, unitType) {
+  if (!group) return null;
+  const map = getUnitGroupOrderMap(unitType);
+  if (map[group] !== undefined) return map[group];
+  const data = loadPracticeData();
+  const relevant = data.filter(q => unitType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan'));
+  const existingUnits = [...new Set(relevant.map(q => q.unit).filter(Boolean))];
+  let maxOrder = 0;
+  existingUnits.forEach(u => { const v = getUnitOrderValue(u, unitType); if (v > maxOrder) maxOrder = v; });
+  Object.values(map).forEach(v => { if (v > maxOrder) maxOrder = v; });
+  const suggested = Math.floor(maxOrder) + 1;
+  const input = prompt(
+    `新しい単元「${group}」の並び順を数字で入力してください。\n数字が大きいほど後ろに並びます。\n（例：単元19と単元20の間に入れたい場合は「19.5」）\nこのままでよければ${suggested}のままでOKです。`,
+    String(suggested)
+  );
+  let order = input !== null ? parseFloat(input) : suggested;
+  if (isNaN(order)) order = suggested;
+  map[group] = order;
+  saveUnitGroupOrderMap(unitType, map);
+  return order;
+}
+
+// 単元の範囲（from〜to）を並び順の数値で算出
+function getUnitRangeBounds(unitFrom, unitTo, unitType) {
+  const a = getUnitOrderValue(unitFrom, unitType);
+  const b = getUnitOrderValue(unitTo, unitType);
+  return { lo: Math.min(a, b), hi: Math.max(a, b) };
+}
+function isUnitInRange(u, lo, hi, unitType) {
+  const v = getUnitOrderValue(u, unitType);
+  return v >= lo && v <= hi;
+}
+
+// 「夏」のような文字グループの並び順を、あとから確認・調整できる設定画面
+function showUnitOrderSettings() {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+  function buildRows(unitType) {
+    const map = getUnitGroupOrderMap(unitType);
+    const groups = Object.keys(map);
+    if (!groups.length) {
+      return `<div style="padding:12px 4px;color:#999;font-size:13px;font-family:${ZMG};">「夏1」のような文字入りの単元はまだ登録されていません</div>`;
+    }
+    return groups.map(g => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #f0f4f8;">
+        <span style="flex:1;font-size:14px;font-family:${ZMG};color:#1a2a3a;">${g}</span>
+        <input type="number" step="0.1" value="${map[g]}" id="unitOrderInput_${unitType}_${encodeURIComponent(g)}" style="width:90px;padding:6px 8px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:${ZMG};">
+      </div>`).join('');
+  }
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;position:sticky;top:0;background:#fff;z-index:1;">
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">単元の並び順を編集</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div style="padding:16px 20px;">
+        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;line-height:1.6;">数字が大きいほど後ろに並びます。例えば単元19と単元20の間に入れたい場合は「19.5」にしてください。</div>
+        <div style="font-size:13px;font-weight:700;color:#1a6fc4;font-family:${ZMG};margin-bottom:4px;">単元</div>
+        <div id="unitOrderRows_tan">${buildRows('tan')}</div>
+        <div style="font-size:13px;font-weight:700;color:#1a6fc4;font-family:${ZMG};margin:16px 0 4px;">学校</div>
+        <div id="unitOrderRows_gak">${buildRows('gak')}</div>
+      </div>
+      <div style="padding:12px 16px 16px;">
+        <button onclick="saveUnitOrderSettings(this)" style="width:100%;padding:13px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">保存する</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function saveUnitOrderSettings(btn) {
+  ['tan', 'gak'].forEach(unitType => {
+    const map = getUnitGroupOrderMap(unitType);
+    Object.keys(map).forEach(g => {
+      const el = document.getElementById(`unitOrderInput_${unitType}_${encodeURIComponent(g)}`);
+      if (!el) return;
+      const v = parseFloat(el.value);
+      if (!isNaN(v)) map[g] = v;
+    });
+    saveUnitGroupOrderMap(unitType, map);
+  });
+  const overlay = btn.closest('[style*="position:fixed"]') || btn.closest('[style*="position: fixed"]');
+  if (overlay) overlay.remove();
+  showToast('並び順を保存しました');
 }
 
 function selectTestType(type) {
@@ -2865,10 +3033,13 @@ function saveAnsEdit(i) {
 
 // 保存処理
 function saveRakurakuQuestions() {
-  const unitStr = prompt('単元番号を入力してください（例：16）');
+  const unitStr = prompt('単元番号を入力してください（例：16、夏1）');
   if (!unitStr) return;
-  const unit = parseInt(unitStr);
-  if (isNaN(unit)) { showToast('数字で入力してください'); return; }
+  const trimmed = unitStr.trim();
+  const { group, num } = parseUnitLabel(trimmed);
+  if (isNaN(num)) { showToast('末尾に数字を含めて入力してください（例：16、夏1）'); return; }
+  if (group) ensureUnitGroupOrder(group, 'tan');
+  const unit = group ? trimmed : num;
   const grade = getCurrentGrade();
   const today = getTodayJST();
   const existing = loadPracticeData();
@@ -3331,8 +3502,9 @@ function showQuestionList(initialFilter) {
       if (unitTypeFilter === 'tan' && q.unitType === 'gak') return false;
       if (unitTypeFilter === 'gak' && q.unitType !== 'gak') return false;
       return true;
-    }).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-    return `<option value="">全番号</option>` + units.map(u => `<option value="${u}" ${selectedUnit!==undefined && selectedUnit!==null && selectedUnit!=='' && String(u)===String(selectedUnit)?'selected':''}>${u}</option>`).join('');
+    }).map(q => q.unit).filter(Boolean))];
+    const sortedUnits = sortUnitsByOrder(units, unitTypeFilter === 'gak' ? 'gak' : 'tan');
+    return `<option value="">全番号</option>` + sortedUnits.map(u => `<option value="${u}" ${selectedUnit!==undefined && selectedUnit!==null && selectedUnit!=='' && String(u)===String(selectedUnit)?'selected':''}>${u}</option>`).join('');
   }
   function buildList(gradeFilter, unitTypeFilter, unitFilter, keyword) {
     const filtered = data.map((q,i) => ({...q, _listIdx: i})).filter(q => {
@@ -3419,7 +3591,7 @@ function showQuestionList(initialFilter) {
               <option value="tan">単元</option>
               <option value="gak">学校</option>
             </select>
-            <input id="moveUnit" type="number" min="1" placeholder="番号" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
+            <input id="moveUnit" type="text" placeholder="番号（例:16、夏1）" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
           </div>
           <div style="display:flex;gap:8px;">
             <button onclick="toggleMoveUnitPanel()" style="flex:1;background:#e8eaed;color:#444;border:none;border-radius:8px;padding:9px;font-size:13px;font-family:${ZMG};cursor:pointer;">キャンセル</button>
@@ -3769,10 +3941,14 @@ function execMoveUnit() {
   const gradeEl = document.getElementById('moveGrade');
   const unitEl = document.getElementById('moveUnit');
   const newGrade = gradeEl ? parseInt(gradeEl.value) : null;
-  const newUnit = unitEl ? parseInt(unitEl.value) : null;
   const newUnitType = document.getElementById('moveUnitType')?.value || 'tan';
+  const unitStr = unitEl ? unitEl.value.trim() : '';
   if (!newGrade) { showToast('学年を選択してください'); return; }
-  if (!newUnit || isNaN(newUnit) || newUnit < 1) { showToast('単元番号を入力してください'); return; }
+  if (!unitStr) { showToast('単元番号を入力してください'); return; }
+  const { group: newUnitGroup, num: newUnitNum } = parseUnitLabel(unitStr);
+  if (isNaN(newUnitNum)) { showToast('末尾に数字を含めて入力してください（例：16、夏1）'); return; }
+  if (newUnitGroup) ensureUnitGroupOrder(newUnitGroup, newUnitType);
+  const newUnit = newUnitGroup ? unitStr : newUnitNum;
   const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
   const data = loadPracticeData();
   const targets = data.filter((_, i) => idxSet.has(i));
@@ -3781,8 +3957,9 @@ function execMoveUnit() {
     const unit = q.unit ? ` ${getUnitLabel(q)}` : '';
     return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
   });
+  const newUnitDisplay = newUnitGroup ? newUnit : `${newUnitType === 'gak' ? '学校' : '単元'}${newUnit}`;
   showConfirmModal(
-    `${targets.length}問を ${newGrade}年 ${newUnitType === 'gak' ? '学校' : '単元'}${newUnit} に移動します`,
+    `${targets.length}問を ${newGrade}年 ${newUnitDisplay} に移動します`,
     lines,
     '変更する',
     () => {
@@ -3806,8 +3983,8 @@ function showShutsudaiSelect() {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:16px;';
   const ZMG = "'Zen Maru Gothic',serif";
-  const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-  const unitsGak = [...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitsTan = sortUnitsByOrder([...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))], 'tan');
+  const unitsGak = sortUnitsByOrder([...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))], 'gak');
   const unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
   const unitOptsGak = unitsGak.map(u => `<option value="${u}">${u}</option>`).join('');
 
@@ -4025,10 +4202,9 @@ function showCountSelect(mode, unitFrom, unitTo, btn) {
 // ===== 出題実行：単元範囲 =====
 function applyShutsudaiUnit(method, unitFrom, unitTo, count, btn) {
   const data = loadPracticeData();
-  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
-  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
   const uRangeType = getActiveUnitRangeType();
-  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
+  const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => isUnitInRange(q.unit, lo, hi, uRangeType) && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
   if (!rangeData.length) { alert('該当する問題がありません'); return; }
 
   let pool = [];
@@ -4067,10 +4243,9 @@ function updateModalOrderPreview(total) {
 
 function applyShutsudaiUnitOrder(unitFrom, unitTo, btn) {
   const data = loadPracticeData();
-  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
-  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
   const uRangeType = getActiveUnitRangeType();
-  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
+  const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => isUnitInRange(q.unit, lo, hi, uRangeType) && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
   if (!rangeData.length) { alert('該当する問題がありません'); return; }
   const fromEl = document.getElementById('modalOrderFrom');
   const toEl = document.getElementById('modalOrderTo');
@@ -4783,7 +4958,7 @@ function openDojoSelectInPage(subject) {
   let shakaiTotalCount = 0;
   if (sub === 'kokugo') {
     const data = loadPracticeData();
-    const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+    const unitsTan = sortUnitsByOrder([...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))], 'tan');
     unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
   } else if (sub === 'shakai') {
     shakaiTotalCount = loadShakaiData(window._pendingShakaiCategory || 'chiri').length;
@@ -5145,10 +5320,9 @@ function dojoStartShakaiOrder(fromN, toN) {
 
 function getUnitRangeCount(unitFrom, unitTo) {
   const data = loadPracticeData();
-  const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
-  const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
   const uRangeType = getActiveUnitRangeType();
-  return data.filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan'))).length;
+  const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+  return data.filter(q => isUnitInRange(q.unit, lo, hi, uRangeType) && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan'))).length;
 }
 
 function dojoPageShowUnitMethod(unitFrom, unitTo) {
@@ -5468,10 +5642,9 @@ function startFromTimingSelect() {
 function dojoStartUnitOrder(unitFrom, unitTo, fromN, toN) {
   const generator = () => {
     const data = loadPracticeData();
-    const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
-    const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
     const uRangeType = getActiveUnitRangeType();
-    const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
+    const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+    const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => isUnitInRange(q.unit, lo, hi, uRangeType) && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
     const f = Math.max(1, fromN || 1);
     const t = Math.min(rangeData.length, toN || rangeData.length);
     if (f > t) return [];
@@ -5526,8 +5699,8 @@ function renderDojoStartCard() {
   const data = loadPracticeData();
   const card = document.getElementById('dojoStartCard');
   const ZMG = "'Zen Maru Gothic',serif";
-  const unitsTan = [...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
-  const unitsGak = [...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))].sort((a,b)=>a-b);
+  const unitsTan = sortUnitsByOrder([...new Set(data.filter(q => (!q.unitType || q.unitType==='tan')).map(q => q.unit).filter(Boolean))], 'tan');
+  const unitsGak = sortUnitsByOrder([...new Set(data.filter(q => q.unitType==='gak').map(q => q.unit).filter(Boolean))], 'gak');
   const unitOpts = unitsTan.map(u => `<option value="${u}">${u}</option>`).join('');
   const unitOptsGak = unitsGak.map(u => `<option value="${u}">${u}</option>`).join('');
 
@@ -5652,10 +5825,9 @@ function dojoShowCount(mode, unitFrom, unitTo, dateFrom, dateTo) {
 function dojoStartUnit(method, unitFrom, unitTo, count) {
   const generator = () => {
     const data = loadPracticeData();
-    const lo = Math.min(parseInt(unitFrom), parseInt(unitTo));
-    const hi = Math.max(parseInt(unitFrom), parseInt(unitTo));
     const uRangeType = getActiveUnitRangeType();
-  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => q.unit >= lo && q.unit <= hi && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
+    const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+  const rangeData = data.map((q,i) => ({...q, _dataIndex: i})).filter(q => isUnitInRange(q.unit, lo, hi, uRangeType) && (uRangeType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan')));
     if (!rangeData.length) return [];
     if (method === 'all') return rangeData;
     if (method === 'unitMiss') return [...rangeData].sort((a,b)=>b.missCount-a.missCount).slice(0,count);
@@ -5698,11 +5870,13 @@ function dojoStartSession(mode, count, unitFrom, unitTo, dateFrom, dateTo) {
     } else if (mode === 'random') {
       return [...data].map((q,i)=>({...q,_dataIndex:i})).sort(()=>Math.random()-0.5).slice(0,count);
     } else if (mode === 'unitMiss') {
-      const lo=Math.min(parseInt(unitFrom),parseInt(unitTo)), hi=Math.max(parseInt(unitFrom),parseInt(unitTo));
-      return data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>q.unit>=lo&&q.unit<=hi).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
+      const uRangeType = getActiveUnitRangeType();
+      const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+      return data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>isUnitInRange(q.unit, lo, hi, uRangeType)).sort((a,b)=>b.missCount-a.missCount).slice(0,count);
     } else if (mode === 'unitRandom') {
-      const lo=Math.min(parseInt(unitFrom),parseInt(unitTo)), hi=Math.max(parseInt(unitFrom),parseInt(unitTo));
-      return data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>q.unit>=lo&&q.unit<=hi).sort(()=>Math.random()-0.5).slice(0,count);
+      const uRangeType = getActiveUnitRangeType();
+      const { lo, hi } = getUnitRangeBounds(unitFrom, unitTo, uRangeType);
+      return data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>isUnitInRange(q.unit, lo, hi, uRangeType)).sort(()=>Math.random()-0.5).slice(0,count);
     } else if (mode === 'date') {
       return data.map((q,i)=>({...q,_dataIndex:i})).filter(q=>{
         if(!q.registeredAt) return false;
