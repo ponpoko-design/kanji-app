@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.1100</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.1111</div>
   </div>
 </div>
 
@@ -2426,7 +2426,7 @@ function showUnitGroupOrderModal(label, key, unitType, onDone) {
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:360px;padding:20px;">
       <div style="font-size:16px;font-weight:700;font-family:${ZMG};margin-bottom:4px;">「${label}」をどこに入れますか？</div>
-      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">選んだ2つのグノの間に入ります</div>
+      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">選んだ2つの間に入ります</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <select id="unitGroupInsertFrom" style="flex:1;min-width:0;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;font-family:${ZMG};">
           <option value="__start__">（いちばん はじめ）</option>
@@ -2438,8 +2438,7 @@ function showUnitGroupOrderModal(label, key, unitType, onDone) {
           <option value="__end__">（いちばん さいご）</option>
         </select>
       </div>
-      <div style="font-size:11px;color:#999;font-family:${ZMG};margin-bottom:16px;">左＝このグノの後ろ／右＝このグノの前　に入ります</div>
-      <button onclick="confirmUnitGroupInsert('${encodeURIComponent(key)}','${unitType}')" style="width:100%;padding:13px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">これで決定</button>
+      <button onclick="confirmUnitGroupInsert('${encodeURIComponent(key)}','${unitType}')" style="width:100%;margin-top:10px;padding:13px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">これで決定</button>
     </div>`;
   const toSel = overlay.querySelector('#unitGroupInsertTo');
   if (toSel) toSel.value = '__end__';
@@ -4103,7 +4102,7 @@ function showShutsudaiSelect() {
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
         ${sectionHeader('普段の練習')}
-        ${radioItem('radioUnit','unit',true,'グノで、範囲を指定する')}
+        ${radioItem('radioUnit','unit',true,'範囲を指定する')}
         <div id="unitRange" style="display:flex;padding:10px 12px;background:#f8f9fa;border-radius:8px;flex-direction:column;gap:8px;">
           <div style="display:flex;gap:6px;">
             <button id="uTypeBtnTan" onclick="switchUnitRangeType('tan','unitFrom','unitTo','uTypeBtnTan','uTypeBtnGak')"
@@ -5054,7 +5053,7 @@ function openDojoSelectInPage(subject) {
   } else if (sub === 'shakai') {
     shakaiTotalCount = loadShakaiData(window._pendingShakaiCategory || 'chiri').length;
   }
-  const rangeLabel = sub === 'shakai' ? `ぜんぶ　全${shakaiTotalCount}問` : 'グノで、範囲を指定する';
+  const rangeLabel = sub === 'shakai' ? `ぜんぶ　全${shakaiTotalCount}問` : '範囲を指定する';
 
   function radioItem(id, value, checked, label) {
     return `<label style="display:flex;align-items:center;gap:10px;padding:12px 18px;border:2px solid #e0e4ea;border-radius:999px;cursor:pointer;margin-bottom:8px;background:#fff;" id="dsp_${id}">
@@ -5811,7 +5810,7 @@ function renderDojoStartCard() {
   card.innerHTML = `
     <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題する問題は、どうする？</div>
     ${sectionHeader('普段の練習')}
-    ${radioItem('unit','unit',true,'グノで、範囲を指定する')}
+    ${radioItem('unit','unit',true,'範囲を指定する')}
     <div id="ds_unitRange" style="display:flex;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
       <div style="display:flex;gap:6px;">
         <button id="ds_uTypeBtnTan" onclick="switchUnitRangeType('tan','ds_unitFrom','ds_unitTo','ds_uTypeBtnTan','ds_uTypeBtnGak')"
