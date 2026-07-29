@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.1041</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.1100</div>
   </div>
 </div>
 
@@ -1819,7 +1819,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
     </div>
     <div class="menu-item" onclick="closeSettings();showUnitOrderSettings();">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg></span>
-      単元の並び順を編集
+      グノの並び順を編集
     </div>
     <div class="menu-item" onclick="closeSettings();deleteResultData();" style="color:#C62828;">
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>
@@ -2328,7 +2328,7 @@ function getUnitLabel(q) {
   if (!q.unit) return '';
   const { group } = parseUnitLabel(q.unit);
   if (group) return String(q.unit); // 「夏1」のような文字単元はそのまま表示（単元/学校を付けない）
-  const prefix = q.unitType === 'gak' ? '学校' : '単元';
+  const prefix = q.unitType === 'gak' ? '学校' : 'グノ';
   return prefix + q.unit;
 }
 
@@ -2397,7 +2397,7 @@ function ensureUnitGroupOrderAsync(group, num, unitType, callback) {
   const key = String(num);
   if (map[key] !== undefined) { callback(map[key]); return; }
   if (isUnitAlreadyUsed(num, unitType)) { callback(null); return; } // 既存の数字はそのままの並びでOK
-  const label = unitType === 'gak' ? `学校${num}` : `単元${num}`;
+  const label = unitType === 'gak' ? `学校${num}` : `グノ${num}`;
   showUnitGroupOrderModal(label, key, unitType, callback);
 }
 
@@ -2426,7 +2426,7 @@ function showUnitGroupOrderModal(label, key, unitType, onDone) {
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:360px;padding:20px;">
       <div style="font-size:16px;font-weight:700;font-family:${ZMG};margin-bottom:4px;">「${label}」をどこに入れますか？</div>
-      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">選んだ2つの単元の間に入ります</div>
+      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">選んだ2つのグノの間に入ります</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <select id="unitGroupInsertFrom" style="flex:1;min-width:0;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;font-family:${ZMG};">
           <option value="__start__">（いちばん はじめ）</option>
@@ -2438,7 +2438,7 @@ function showUnitGroupOrderModal(label, key, unitType, onDone) {
           <option value="__end__">（いちばん さいご）</option>
         </select>
       </div>
-      <div style="font-size:11px;color:#999;font-family:${ZMG};margin-bottom:16px;">左＝この単元の後ろ／右＝この単元の前　に入ります</div>
+      <div style="font-size:11px;color:#999;font-family:${ZMG};margin-bottom:16px;">左＝このグノの後ろ／右＝このグノの前　に入ります</div>
       <button onclick="confirmUnitGroupInsert('${encodeURIComponent(key)}','${unitType}')" style="width:100%;padding:13px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">これで決定</button>
     </div>`;
   const toSel = overlay.querySelector('#unitGroupInsertTo');
@@ -2465,7 +2465,7 @@ function confirmUnitGroupInsert(encodedKey, unitType) {
   const endOrder = toVal === '__end__' ? maxOrder + 1 : getUnitOrderValue(decodeURIComponent(toVal), unitType);
 
   if (startOrder >= endOrder) {
-    showToast('選んだ2つの単元の順番が逆になっています。選び直してください');
+    showToast('選んだ2つのグノの順番が逆になっています。選び直してください');
     return;
   }
   const order = (startOrder + endOrder) / 2;
@@ -2502,7 +2502,7 @@ function showUnitOrderSettings() {
     const relevant = data.filter(q => unitType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan'));
     const allUnits = [...new Set(relevant.map(q => q.unit).filter(Boolean))];
     if (!allUnits.length) {
-      return `<div style="padding:12px 4px;color:#999;font-size:13px;font-family:${ZMG};">単元がまだ登録されていません</div>`;
+      return `<div style="padding:12px 4px;color:#999;font-size:13px;font-family:${ZMG};">グノがまだ登録されていません</div>`;
     }
     const seenKeys = new Set();
     const rows = [];
@@ -2511,7 +2511,7 @@ function showUnitOrderSettings() {
       const key = group || String(num);
       if (seenKeys.has(key)) return;
       seenKeys.add(key);
-      const label = group ? group : (unitType === 'gak' ? `学校${num}` : `単元${num}`);
+      const label = group ? group : (unitType === 'gak' ? `学校${num}` : `グノ${num}`);
       rows.push({ key, label });
     });
     return rows.map(r => `
@@ -2524,14 +2524,14 @@ function showUnitOrderSettings() {
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:20px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #f0f4f8;position:sticky;top:0;background:#fff;z-index:1;">
-        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">単元の並び順を編集</div>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};">グノの並び順を編集</div>
         <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div style="padding:16px 20px;">
-        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;line-height:1.6;">「位置を選び直す」を押すと、既存の単元の間からあらためて位置を選べます。文字入りの単元（例：「夏」）はグループ全体がまとめて移動します。</div>
-        <div style="font-size:13px;font-weight:700;color:#1a6fc4;font-family:${ZMG};margin-bottom:4px;">単元</div>
+        <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:12px;line-height:1.6;">「位置を選び直す」を押すと、既存のグノの間からあらためて位置を選べます。文字入りのグノ（例：「夏」）はグループ全体がまとめて移動します。</div>
+        <div style="font-size:13px;font-weight:700;color:#1a6fc4;font-family:${ZMG};margin-bottom:4px;">グノ</div>
         <div id="unitOrderRows_tan">${buildRows('tan')}</div>
         <div style="font-size:13px;font-weight:700;color:#1a6fc4;font-family:${ZMG};margin:16px 0 4px;">学校</div>
         <div id="unitOrderRows_gak">${buildRows('gak')}</div>
@@ -3120,7 +3120,7 @@ function saveAnsEdit(i) {
 
 // 保存処理
 function saveRakurakuQuestions() {
-  const unitStr = prompt('単元番号を入力してください（例：16、夏1）');
+  const unitStr = prompt('グノ番号を入力してください（例：16、夏1）');
   if (!unitStr) return;
   const trimmed = unitStr.trim();
   const { group, num } = parseUnitLabel(trimmed);
@@ -3618,7 +3618,7 @@ function showQuestionList(initialFilter) {
       groups[key].items.push(q);
     });
     const hasFilter = gradeFilter || unitFilter || keyword;
-    return Object.values(groups).sort((a,b) => (a.grade||0)-(b.grade||0) || (a.unitType||'tan').localeCompare(b.unitType||'tan') || (a.unit||0)-(b.unit||0)).map(g => {
+    return Object.values(groups).sort((a,b) => (a.grade||0)-(b.grade||0) || (a.unitType||'tan').localeCompare(b.unitType||'tan') || getUnitOrderValue(a.unit, a.unitType||'tan')-getUnitOrderValue(b.unit, b.unitType||'tan')).map(g => {
       const isOpen = hasFilter || Object.keys(groups).length === 1;
       const groupId = `qgroup_${g.grade}_${g.unit}`;
       const rows = g.items.map(q => `
@@ -3631,7 +3631,7 @@ function showQuestionList(initialFilter) {
         <div>
           <div onclick="toggleQGroup('${groupId}')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8f9fa;border-bottom:1px solid #e0e4ea;cursor:pointer;user-select:none;">
             <span id="${groupId}_arrow" style="font-size:12px;color:#666;transition:transform 0.2s;display:inline-block;transform:${isOpen?'rotate(90deg)':'rotate(0deg)'};">▶</span>
-            <span style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:${ZMG};">${g.grade||'?'}年 ${g.unitType==='gak'?'学校':'単元'}${g.unit||'?'}</span>
+            <span style="font-size:13px;font-weight:700;color:#1A1A1A;font-family:${ZMG};">${g.grade||'?'}年 ${g.unitType==='gak'?'学校':'グノ'}${g.unit||'?'}</span>
             <span style="font-size:12px;color:#999;font-family:${ZMG};">${g.items.length}問</span>
           </div>
           <div id="${groupId}" style="display:${isOpen?'block':'none'};">${rows}</div>
@@ -3655,7 +3655,7 @@ function showQuestionList(initialFilter) {
           <select id="qFilterGrade" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${qFilterGradeOpts}</select>
           <select id="qFilterUnitType" onchange="updateQListUnits()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
             <option value="">全種別</option>
-            <option value="tan" ${filter.unitType==='tan'?'selected':''}>単元</option>
+            <option value="tan" ${filter.unitType==='tan'?'selected':''}>グノ</option>
             <option value="gak" ${filter.unitType==='gak'?'selected':''}>学校</option>
           </select>
           <select id="qFilterUnit" onchange="refreshQList()" style="flex:1;padding:7px 6px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${buildUnitOpts(filter.grade||'', filter.unitType||'', filter.unit)}</select>
@@ -3670,14 +3670,14 @@ function showQuestionList(initialFilter) {
       <div style="padding:12px 16px;border-top:1px solid #f0f4f8;flex-shrink:0;">
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <button onclick="execDeleteFromList(this)" style="flex:1;background:#C62828;color:#fff;border:none;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">選択した問題を削除</button>
-          <button id="btnMoveUnit" onclick="toggleMoveUnitPanel()" style="flex:1;background:#fff;color:#1A1A1A;border:2px solid #1A1A1A;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">単元を変更 ▼</button>
+          <button id="btnMoveUnit" onclick="toggleMoveUnitPanel()" style="flex:1;background:#fff;color:#1A1A1A;border:2px solid #1A1A1A;border-radius:999px;padding:12px;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">グノを変更 ▼</button>
         </div>
         <div id="moveUnitPanel" style="display:none;background:#f8f9fa;border-radius:12px;padding:12px 14px;margin-top:4px;">
           <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:8px;">選択した問題の移動先：</div>
           <div style="display:flex;gap:8px;margin-bottom:10px;">
             <select id="moveGrade" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">${gradeOpts}</select>
             <select id="moveUnitType" style="padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
-              <option value="tan">単元</option>
+              <option value="tan">グノ</option>
               <option value="gak">学校</option>
             </select>
             <input id="moveUnit" type="text" placeholder="番号（例:16、夏1）" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:${ZMG};">
@@ -4021,7 +4021,7 @@ function toggleMoveUnitPanel() {
   if (!panel) return;
   const isOpen = panel.style.display !== 'none';
   panel.style.display = isOpen ? 'none' : 'block';
-  if (btn) btn.textContent = isOpen ? '単元を変更 ▼' : '単元を変更 ▲';
+  if (btn) btn.textContent = isOpen ? 'グノを変更 ▼' : 'グノを変更 ▲';
 }
 
 function execMoveUnit() {
@@ -4033,7 +4033,7 @@ function execMoveUnit() {
   const newUnitType = document.getElementById('moveUnitType')?.value || 'tan';
   const unitStr = unitEl ? unitEl.value.trim() : '';
   if (!newGrade) { showToast('学年を選択してください'); return; }
-  if (!unitStr) { showToast('単元番号を入力してください'); return; }
+  if (!unitStr) { showToast('グノ番号を入力してください'); return; }
   const { group: newUnitGroup, num: newUnitNum } = parseUnitLabel(unitStr);
   if (isNaN(newUnitNum)) { showToast('末尾に数字を含めて入力してください（例：16、夏1）'); return; }
   const newUnit = newUnitGroup ? unitStr : newUnitNum;
@@ -4046,7 +4046,7 @@ function execMoveUnit() {
       const unit = q.unit ? ` ${getUnitLabel(q)}` : '';
       return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
     });
-    const newUnitDisplay = newUnitGroup ? newUnit : `${newUnitType === 'gak' ? '学校' : '単元'}${newUnit}`;
+    const newUnitDisplay = newUnitGroup ? newUnit : `${newUnitType === 'gak' ? '学校' : 'グノ'}${newUnit}`;
     showConfirmModal(
       `${targets.length}問を ${newGrade}年 ${newUnitDisplay} に移動します`,
       lines,
@@ -4058,7 +4058,7 @@ function execMoveUnit() {
         });
         savePracticeData(newData);
         document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
-        showToast(`${idxSet.size}問の種別・単元を変更しました`);
+        showToast(`${idxSet.size}問の種別・グノを変更しました`);
         if (typeof renderStatsPage === 'function') renderStatsPage();
         initPractice();
       }
@@ -4103,11 +4103,11 @@ function showShutsudaiSelect() {
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
         ${sectionHeader('普段の練習')}
-        ${radioItem('radioUnit','unit',true,'単元で、範囲を指定する')}
+        ${radioItem('radioUnit','unit',true,'グノで、範囲を指定する')}
         <div id="unitRange" style="display:flex;padding:10px 12px;background:#f8f9fa;border-radius:8px;flex-direction:column;gap:8px;">
           <div style="display:flex;gap:6px;">
             <button id="uTypeBtnTan" onclick="switchUnitRangeType('tan','unitFrom','unitTo','uTypeBtnTan','uTypeBtnGak')"
-              style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+              style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">グノ</button>
             <button id="uTypeBtnGak" onclick="switchUnitRangeType('gak','unitFrom','unitTo','uTypeBtnTan','uTypeBtnGak')"
               style="flex:1;padding:6px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:13px;font-weight:700;color:#555;cursor:pointer;">学校</button>
           </div>
@@ -4155,7 +4155,7 @@ function goToShutsudaiStep2(btn) {
     // 単元範囲：出題方法を選ぶ
     const unitFrom = document.getElementById('unitFrom')?.value;
     const unitTo = document.getElementById('unitTo')?.value;
-    if (!unitFrom || !unitTo) { alert('単元を選んでください'); return; }
+    if (!unitFrom || !unitTo) { alert('グノを選んでください'); return; }
     const modalUnitTotal = getUnitRangeCount(unitFrom, unitTo);
     function modalChipRow(group, total, ZMG) {
       return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
@@ -4176,7 +4176,7 @@ function goToShutsudaiStep2(btn) {
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};">出題方法を選ぶ</div>
         </div>
         <div style="padding:8px 16px 0;">
-          <span style="font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</span>
+          <span style="font-size:12px;color:#999;font-family:${ZMG};">グノ ${unitFrom}〜${unitTo}</span>
         </div>
         <div style="padding:10px 16px;display:flex;flex-direction:column;gap:10px;">
           <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:999px;overflow:hidden;">
@@ -4276,7 +4276,7 @@ function showCountSelect(mode, unitFrom, unitTo, btn) {
         </button>
         <div style="font-size:17px;font-weight:700;font-family:${ZMG};">問題数を選ぶ</div>
       </div>
-      <div style="padding:8px 16px 4px;font-size:12px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}　${modeLabel}</div>
+      <div style="padding:8px 16px 4px;font-size:12px;color:#999;font-family:${ZMG};">グノ ${unitFrom}〜${unitTo}　${modeLabel}</div>
       <div style="padding:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         ${[5,10,15,20].map(n => `
         <button onclick="applyShutsudaiUnit('${mode}','${unitFrom}','${unitTo}',${n},this)"
@@ -4587,7 +4587,7 @@ function renderMissStatsOverlay() {
     return `<button onclick="switchMissShakaiCat('${val}')" style="padding:5px 12px;background:${active?'#1a6fc4':'#f0f4f8'};border:none;border-radius:999px;font-size:12px;font-weight:700;color:${active?'#fff':'#666'};font-family:${ZMG};cursor:pointer;white-space:nowrap;">${label}</button>`;
   }
 
-  const label1Header = subject === 'shakai' ? '教科' : '学年・単元';
+  const label1Header = subject === 'shakai' ? '教科' : '学年・グノ';
   const label1Sort = subject === 'shakai' ? '教科' : '学年順';
 
   overlay.innerHTML = `
@@ -4668,12 +4668,12 @@ function confirmSaveQuestions(btn) {
       <div style="font-size:17px;font-weight:700;font-family:${ZMG};">種別と番号を入力</div>
       <div style="display:flex;gap:8px;">
         <button id="unitTypeBtnTan" onclick="selectUnitTypeBtn('tan')"
-          style="flex:1;padding:10px;border-radius:12px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:14px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+          style="flex:1;padding:10px;border-radius:12px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:14px;font-weight:700;color:#1a3060;cursor:pointer;">グノ</button>
         <button id="unitTypeBtnGak" onclick="selectUnitTypeBtn('gak')"
           style="flex:1;padding:10px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:14px;font-weight:700;color:#555;cursor:pointer;">学校</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span id="unitTypeLabel" style="font-size:14px;font-family:${ZMG};color:#666;white-space:nowrap;">単元</span>
+        <span id="unitTypeLabel" style="font-size:14px;font-family:${ZMG};color:#666;white-space:nowrap;">グノ</span>
         <input id="unitNumberInput" type="number" min="1" placeholder="番号（例：16）"
           style="flex:1;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;font-family:${ZMG};outline:none;">
       </div>
@@ -4693,7 +4693,7 @@ function selectUnitTypeBtn(type) {
   const inactive = "flex:1;padding:10px;border-radius:12px;border:2px solid #ccd6e0;background:#f8fafc;font-family:'Zen Maru Gothic',serif;font-size:14px;font-weight:700;color:#555;cursor:pointer;";
   document.getElementById('unitTypeBtnTan').style.cssText = type === 'tan' ? active : inactive;
   document.getElementById('unitTypeBtnGak').style.cssText = type === 'gak' ? active : inactive;
-  document.getElementById('unitTypeLabel').textContent = type === 'tan' ? '単元' : '学校';
+  document.getElementById('unitTypeLabel').textContent = type === 'tan' ? 'グノ' : '学校';
 }
 
 function doSaveWithUnitType(btn) {
@@ -5054,7 +5054,7 @@ function openDojoSelectInPage(subject) {
   } else if (sub === 'shakai') {
     shakaiTotalCount = loadShakaiData(window._pendingShakaiCategory || 'chiri').length;
   }
-  const rangeLabel = sub === 'shakai' ? `ぜんぶ　全${shakaiTotalCount}問` : '単元で、範囲を指定する';
+  const rangeLabel = sub === 'shakai' ? `ぜんぶ　全${shakaiTotalCount}問` : 'グノで、範囲を指定する';
 
   function radioItem(id, value, checked, label) {
     return `<label style="display:flex;align-items:center;gap:10px;padding:12px 18px;border:2px solid #e0e4ea;border-radius:999px;cursor:pointer;margin-bottom:8px;background:#fff;" id="dsp_${id}">
@@ -5078,7 +5078,7 @@ function openDojoSelectInPage(subject) {
       <div id="dsp_unitRange" style="display:flex;padding:10px 12px;background:#EFF6FF;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:6px;">
           <button id="dsp_uTypeBtnTan" onclick="switchUnitRangeType('tan','dsp_unitFrom','dsp_unitTo','dsp_uTypeBtnTan','dsp_uTypeBtnGak')"
-            style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+            style="flex:1;padding:6px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">グノ</button>
           <button id="dsp_uTypeBtnGak" onclick="switchUnitRangeType('gak','dsp_unitFrom','dsp_unitTo','dsp_uTypeBtnTan','dsp_uTypeBtnGak')"
             style="flex:1;padding:6px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:13px;font-weight:700;color:#555;cursor:pointer;">学校</button>
         </div>
@@ -5438,7 +5438,7 @@ function dojoPageShowUnitMethod(unitFrom, unitTo) {
           <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ</div>
         </div>
         <div style="margin-bottom:14px;">
-          <span style="font-size:13px;color:#999;font-family:${ZMG};">単元 ${unitFrom}〜${unitTo}</span>
+          <span style="font-size:13px;color:#999;font-family:${ZMG};">グノ ${unitFrom}〜${unitTo}</span>
         </div>
 
         <div class="dojoAcc" data-name="miss" style="border:1.5px solid #ccd6e0;border-radius:999px;margin-bottom:10px;overflow:hidden;">
@@ -5811,11 +5811,11 @@ function renderDojoStartCard() {
   card.innerHTML = `
     <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};margin-bottom:10px;">出題する問題は、どうする？</div>
     ${sectionHeader('普段の練習')}
-    ${radioItem('unit','unit',true,'単元で、範囲を指定する')}
+    ${radioItem('unit','unit',true,'グノで、範囲を指定する')}
     <div id="ds_unitRange" style="display:flex;padding:8px 10px;background:#f0f6ff;border-radius:8px;margin-bottom:8px;flex-direction:column;gap:8px;">
       <div style="display:flex;gap:6px;">
         <button id="ds_uTypeBtnTan" onclick="switchUnitRangeType('tan','ds_unitFrom','ds_unitTo','ds_uTypeBtnTan','ds_uTypeBtnGak')"
-          style="flex:1;padding:5px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">単元</button>
+          style="flex:1;padding:5px;border-radius:8px;border:2px solid #1a6fc4;background:#e8f0fb;font-family:${ZMG};font-size:13px;font-weight:700;color:#1a3060;cursor:pointer;">グノ</button>
         <button id="ds_uTypeBtnGak" onclick="switchUnitRangeType('gak','ds_unitFrom','ds_unitTo','ds_uTypeBtnTan','ds_uTypeBtnGak')"
           style="flex:1;padding:5px;border-radius:8px;border:2px solid #ccd6e0;background:#f8fafc;font-family:${ZMG};font-size:13px;font-weight:700;color:#555;cursor:pointer;">学校</button>
       </div>
@@ -5865,7 +5865,7 @@ function dojoNext() {
         <button onclick="openDojoSelectInPage()" style="background:none;border:none;cursor:pointer;padding:0;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};">出題方法を選ぶ（単元${unitFrom}〜${unitTo}）</div>
+        <div style="font-size:13px;font-weight:700;color:#1a3060;font-family:${ZMG};">出題方法を選ぶ（グノ${unitFrom}〜${unitTo}）</div>
       </div>
       <button onclick="dojoStartUnit('all','${unitFrom}','${unitTo}',0)"
         style="width:100%;padding:13px;background:#fff;border:1.5px solid #1a6fc4;border-radius:10px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:8px;">
@@ -6142,7 +6142,7 @@ function showDayDetailModal(dateStr) {
     if (cnt > 0) {
       entries.push({
         subject: '国語',
-        unitLabel: getUnitLabel(item) || '単元未設定',
+        unitLabel: getUnitLabel(item) || 'グノ未設定',
         qNo: item.unit ? unitPosMap.get(item) : null,
         answer: (item.answerKanji || []).join('') || item.reading || '',
         count: cnt,
@@ -6303,7 +6303,7 @@ function showDayDetailModal(dateStr) {
     });
     listEl.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;padding:0 4px 8px;font-size:11px;color:#bbb;font-family:${ZMG};border-bottom:1.5px solid #e8edf2;">
-        <div style="flex:0 0 72px;">単元</div>
+        <div style="flex:0 0 72px;">グノ</div>
         <div style="flex:0 0 20px;">何問目</div>
         <div style="flex:1;">正解</div>
         <div style="flex:0 0 90px;">他にでてくる時代</div>
@@ -7261,7 +7261,7 @@ function renderStatsPage() {
     data.forEach(q => {
       (q.answerKanji||[]).forEach(k => {
         const miss = (q.charMiss||{})[k] || 0;
-        if (miss > 0) { kanjiMap[k] = (kanjiMap[k]||0) + miss; kanjiUnit[k] = q.unit ? `単元${q.unit}` : ''; }
+        if (miss > 0) { kanjiMap[k] = (kanjiMap[k]||0) + miss; kanjiUnit[k] = q.unit ? `グノ${q.unit}` : ''; }
       });
     });
   }
