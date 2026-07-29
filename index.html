@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.0850</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.0926</div>
   </div>
 </div>
 
@@ -2373,28 +2373,82 @@ function sortUnitsByOrder(units, unitType) {
   return [...units].sort((a, b) => getUnitOrderValue(a, unitType) - getUnitOrderValue(b, unitType));
 }
 
-// 新しいグループ（例：「夏」）を初めて使うとき、並び順の数字を確認・登録する
-// 既に登録済みなら何もせずその値を返す
-function ensureUnitGroupOrder(group, unitType) {
-  if (!group) return null;
+// 新しいグループ（例：「夏」）を初めて使うとき、「どの単元の後ろに入れるか」を選択式で確認する
+// 登録済みならモーダルを出さずすぐにcallback(order)を呼ぶ
+function ensureUnitGroupOrderAsync(group, unitType, callback) {
+  if (!group) { callback(null); return; }
   const map = getUnitGroupOrderMap(unitType);
-  if (map[group] !== undefined) return map[group];
+  if (map[group] !== undefined) { callback(map[group]); return; }
+  showUnitGroupOrderModal(group, unitType, callback);
+}
+
+// 「単元Xのあと」を選ぶモーダル（新しい単元グループの挿入位置決め）
+function showUnitGroupOrderModal(group, unitType, onDone) {
+  const ZMG = "'Zen Maru Gothic',serif";
   const data = loadPracticeData();
   const relevant = data.filter(q => unitType === 'gak' ? q.unitType === 'gak' : (!q.unitType || q.unitType === 'tan'));
-  const existingUnits = [...new Set(relevant.map(q => q.unit).filter(Boolean))];
-  let maxOrder = 0;
-  existingUnits.forEach(u => { const v = getUnitOrderValue(u, unitType); if (v > maxOrder) maxOrder = v; });
-  Object.values(map).forEach(v => { if (v > maxOrder) maxOrder = v; });
-  const suggested = Math.floor(maxOrder) + 1;
-  const input = prompt(
-    `新しい単元「${group}」の並び順を数字で入力してください。\n数字が大きいほど後ろに並びます。\n（例：単元19と単元20の間に入れたい場合は「19.5」）\nこのままでよければ${suggested}のままでOKです。`,
-    String(suggested)
-  );
-  let order = input !== null ? parseFloat(input) : suggested;
-  if (isNaN(order)) order = suggested;
+  const existingUnits = sortUnitsByOrder([...new Set(relevant.map(q => q.unit).filter(Boolean))], unitType);
+  window._unitGroupOrderExistingUnits = existingUnits;
+  window._unitGroupOrderCallback = onDone;
+  const overlay = document.createElement('div');
+  overlay.id = 'unitGroupOrderOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:950;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const optsHtml = existingUnits.map(u => {
+    const lbl = getUnitLabel({ unit: u, unitType });
+    return `<option value="${encodeURIComponent(String(u))}">${lbl}</option>`;
+  }).join('');
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:360px;padding:20px;">
+      <div style="font-size:16px;font-weight:700;font-family:${ZMG};margin-bottom:4px;">「${group}」をどこに入れますか？</div>
+      <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:14px;">選んだ2つの単元の間に入ります</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <select id="unitGroupInsertFrom" style="flex:1;min-width:0;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;font-family:${ZMG};">
+          <option value="__start__">（いちばん はじめ）</option>
+          ${optsHtml}
+        </select>
+        <span style="font-size:13px;font-family:${ZMG};flex-shrink:0;">〜</span>
+        <select id="unitGroupInsertTo" style="flex:1;min-width:0;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;font-family:${ZMG};">
+          ${optsHtml}
+          <option value="__end__">（いちばん さいご）</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:#999;font-family:${ZMG};margin-bottom:16px;">左＝この単元の後ろ／右＝この単元の前　に入ります</div>
+      <button onclick="confirmUnitGroupInsert('${encodeURIComponent(group)}','${unitType}')" style="width:100%;padding:13px;background:#1a6fc4;color:#fff;border:none;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};cursor:pointer;">これで決定</button>
+    </div>`;
+  const toSel = overlay.querySelector('#unitGroupInsertTo');
+  if (toSel) toSel.value = '__end__';
+  document.body.appendChild(overlay);
+}
+
+function confirmUnitGroupInsert(encodedGroup, unitType) {
+  const group = decodeURIComponent(encodedGroup);
+  const fromSel = document.getElementById('unitGroupInsertFrom');
+  const toSel = document.getElementById('unitGroupInsertTo');
+  const fromVal = fromSel ? fromSel.value : '__start__';
+  const toVal = toSel ? toSel.value : '__end__';
+  const existingUnits = window._unitGroupOrderExistingUnits || [];
+  const map = getUnitGroupOrderMap(unitType);
+
+  const existingOrders = existingUnits.map(u => getUnitOrderValue(u, unitType)).concat(Object.values(map));
+  const minOrder = existingOrders.length ? Math.min(...existingOrders) : 0;
+  const maxOrder = existingOrders.length ? Math.max(...existingOrders) : 0;
+
+  const startOrder = fromVal === '__start__' ? minOrder - 1 : getUnitOrderValue(decodeURIComponent(fromVal), unitType);
+  const endOrder = toVal === '__end__' ? maxOrder + 1 : getUnitOrderValue(decodeURIComponent(toVal), unitType);
+
+  if (startOrder >= endOrder) {
+    showToast('選んだ2つの単元の順番が逆になっています。選び直してください');
+    return;
+  }
+  const order = (startOrder + endOrder) / 2;
   map[group] = order;
   saveUnitGroupOrderMap(unitType, map);
-  return order;
+  const overlay = document.getElementById('unitGroupOrderOverlay');
+  if (overlay) overlay.remove();
+  const cb = window._unitGroupOrderCallback;
+  window._unitGroupOrderCallback = null;
+  window._unitGroupOrderExistingUnits = null;
+  if (typeof cb === 'function') cb(order);
 }
 
 // 単元の範囲（from〜to）を並び順の数値で算出
@@ -3038,34 +3092,36 @@ function saveRakurakuQuestions() {
   const trimmed = unitStr.trim();
   const { group, num } = parseUnitLabel(trimmed);
   if (isNaN(num)) { showToast('末尾に数字を含めて入力してください（例：16、夏1）'); return; }
-  if (group) ensureUnitGroupOrder(group, 'tan');
   const unit = group ? trimmed : num;
-  const grade = getCurrentGrade();
-  const today = getTodayJST();
-  const existing = loadPracticeData();
-  const newItems = rakuraku.answerResults.map((q, i) => ({
-    id: q.no || (i + 1),
-    _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
-    grade,
-    unit,
-    registeredAt: today,
-    type: q.type,
-    question: q.question,
-    underline: q.underline,
-    answerKanji: q.answerKanji || [],
-    answerText: q.answerText || '',
-    answerPairs: q.answerPairs || [],
-    missCount: 0,
-    charMiss: {},
-    totalCount: 0,
-    correctCount: 0
-  }));
-  const updated = [...existing, ...newItems];
-  savePracticeData(updated);
-  closeRakuraku();
-  showToast(`✅ ${newItems.length}問を保存しました！`);
-  switchTab('practice', document.querySelectorAll('.tab')[1]);
-  setTimeout(() => initPractice(), 100);
+  const finishSaveRakuraku = () => {
+    const grade = getCurrentGrade();
+    const today = getTodayJST();
+    const existing = loadPracticeData();
+    const newItems = rakuraku.answerResults.map((q, i) => ({
+      id: q.no || (i + 1),
+      _uid: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,7),
+      grade,
+      unit,
+      registeredAt: today,
+      type: q.type,
+      question: q.question,
+      underline: q.underline,
+      answerKanji: q.answerKanji || [],
+      answerText: q.answerText || '',
+      answerPairs: q.answerPairs || [],
+      missCount: 0,
+      charMiss: {},
+      totalCount: 0,
+      correctCount: 0
+    }));
+    const updated = [...existing, ...newItems];
+    savePracticeData(updated);
+    closeRakuraku();
+    showToast(`✅ ${newItems.length}問を保存しました！`);
+    switchTab('practice', document.querySelectorAll('.tab')[1]);
+    setTimeout(() => initPractice(), 100);
+  };
+  ensureUnitGroupOrderAsync(group, 'tan', () => finishSaveRakuraku());
 }
 
 // ===== Claude API（答え調べ）=====
@@ -3947,33 +4003,35 @@ function execMoveUnit() {
   if (!unitStr) { showToast('単元番号を入力してください'); return; }
   const { group: newUnitGroup, num: newUnitNum } = parseUnitLabel(unitStr);
   if (isNaN(newUnitNum)) { showToast('末尾に数字を含めて入力してください（例：16、夏1）'); return; }
-  if (newUnitGroup) ensureUnitGroupOrder(newUnitGroup, newUnitType);
   const newUnit = newUnitGroup ? unitStr : newUnitNum;
-  const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
-  const data = loadPracticeData();
-  const targets = data.filter((_, i) => idxSet.has(i));
-  const lines = targets.map(q => {
-    const grade = q.grade ? `${q.grade}年` : '?年';
-    const unit = q.unit ? ` ${getUnitLabel(q)}` : '';
-    return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
-  });
-  const newUnitDisplay = newUnitGroup ? newUnit : `${newUnitType === 'gak' ? '学校' : '単元'}${newUnit}`;
-  showConfirmModal(
-    `${targets.length}問を ${newGrade}年 ${newUnitDisplay} に移動します`,
-    lines,
-    '変更する',
-    () => {
-      const newData = data.map((q, i) => {
-        if (!idxSet.has(i)) return q;
-        return { ...q, grade: newGrade, unit: newUnit, unitType: newUnitType || q.unitType || 'tan' };
-      });
-      savePracticeData(newData);
-      document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
-      showToast(`${idxSet.size}問の種別・単元を変更しました`);
-      if (typeof renderStatsPage === 'function') renderStatsPage();
-      initPractice();
-    }
-  );
+  const doMove = () => {
+    const idxSet = new Set(checked.map(cb => parseInt(cb.dataset.idx)));
+    const data = loadPracticeData();
+    const targets = data.filter((_, i) => idxSet.has(i));
+    const lines = targets.map(q => {
+      const grade = q.grade ? `${q.grade}年` : '?年';
+      const unit = q.unit ? ` ${getUnitLabel(q)}` : '';
+      return `<span style="color:#999;font-size:13px;">${grade}${unit}　</span>${q.question || ''}`;
+    });
+    const newUnitDisplay = newUnitGroup ? newUnit : `${newUnitType === 'gak' ? '学校' : '単元'}${newUnit}`;
+    showConfirmModal(
+      `${targets.length}問を ${newGrade}年 ${newUnitDisplay} に移動します`,
+      lines,
+      '変更する',
+      () => {
+        const newData = data.map((q, i) => {
+          if (!idxSet.has(i)) return q;
+          return { ...q, grade: newGrade, unit: newUnit, unitType: newUnitType || q.unitType || 'tan' };
+        });
+        savePracticeData(newData);
+        document.querySelectorAll('[style*="position: fixed"]').forEach(el => el.remove());
+        showToast(`${idxSet.size}問の種別・単元を変更しました`);
+        if (typeof renderStatsPage === 'function') renderStatsPage();
+        initPractice();
+      }
+    );
+  };
+  ensureUnitGroupOrderAsync(newUnitGroup, newUnitType, () => doMove());
 }
 
 // ===== 出題選択 =====
