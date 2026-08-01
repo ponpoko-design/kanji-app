@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260729.1111</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260801.1821</div>
   </div>
 </div>
 
@@ -5158,10 +5158,10 @@ function openDojoSelectInPage(subject) {
                 ${SHAKAI_ERA_GROUPS.map(g => {
                   const c = getShakaiEraCount(g.key);
                   if (!c) return '';
-                  return `<button onclick="dojoPageShowAnswerTimingAllShakaiEra('${g.key}')" style="padding:10px;border-radius:8px;border:1px solid #ccd6e0;background:#fff;font-size:13px;font-family:${ZMG};text-align:left;cursor:pointer;">${g.label}（${c}問）</button>`;
+                  return `<button onclick="dojoPageShowEraMethod('${g.key}')" style="padding:10px;border-radius:8px;border:1px solid #ccd6e0;background:#fff;font-size:13px;font-family:${ZMG};text-align:left;cursor:pointer;">${g.label}（${c}問）</button>`;
                 }).join('')}
               </div>
-              <div style="font-size:11px;color:#999;font-family:${ZMG};margin-top:8px;">タップすると、その時代の問題が全部出題されます</div>
+              <div style="font-size:11px;color:#999;font-family:${ZMG};margin-top:8px;">タップすると、出題方法（全部／問題番号を指定）を選べます</div>
             </div>
           </div>` : ''}
         </div>
@@ -5236,6 +5236,103 @@ function getShakaiEraCount(era) {
   const data = loadShakaiData(window._pendingShakaiCategory || 'chiri');
   return era === 'all' ? data.length : data.filter(q => eraMatches(q.prefecture, era)).length;
 }
+
+// ===== 社会（歴史）：時代を選んだあと、出題方法（全部／問題番号で範囲指定）を選ぶ画面 =====
+function dojoPageShowEraMethod(era) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  const eraGroup = getEraGroup(era);
+  const total = getShakaiEraCount(era);
+  const defaultTo = Math.min(10, total || 1);
+  renderSelectAreaPage(`
+    <div style="max-width:480px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <button onclick="openDojoSelectInPage('shakai')" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">出題方法を選ぶ</div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <span style="font-size:13px;color:#999;font-family:${ZMG};">${eraGroup ? eraGroup.label : ''}</span>
+      </div>
+
+      <div class="dojoAcc" data-name="eraAll" style="border:2px solid #1a6fc4;border-radius:20px;margin-bottom:10px;overflow:hidden;">
+        <button onclick="toggleDojoAcc('eraAll')" style="width:100%;text-align:left;padding:14px 18px 14px 24px;border:none;background:#fff;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+          <span>ぜんぶ</span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:700;background:#EFF6FF;color:#1a6fc4;padding:3px 12px;border-radius:999px;">全${total}問</span>
+            <span style="font-size:12px;color:#999;">▼</span>
+          </span>
+        </button>
+        <div class="dojoAccPanel" data-panel="eraAll" style="display:block;padding:0 18px 14px;">
+          <button onclick="dojoPageShowAnswerTimingAllShakaiEra('${era}')" style="width:100%;padding:13px 16px;background:#fff;border:1px solid #ccd6e0;border-radius:16px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">全部を出題する</button>
+
+          <div style="border:1px solid #ccd6e0;border-radius:16px;padding:12px 14px;">
+            <div style="font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:8px;">順番に：○問目〜○問目</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <input type="number" id="dojoOrderFrom" value="1" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+              <span style="font-size:13px;font-family:${ZMG};color:#666;">問目 〜</span>
+              <input type="number" id="dojoOrderTo" value="${defaultTo}" min="1" max="${total}" oninput="updateDojoOrderPreview(${total})" style="width:58px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:14px;text-align:center;">
+              <span style="font-size:13px;font-family:${ZMG};color:#666;">問目</span>
+            </div>
+            <div style="font-size:12px;color:#999;font-family:${ZMG};margin-bottom:10px;">並び順：登録した順　・　選んだ範囲：<span id="dojoOrderCount" style="font-weight:700;color:#1a2a3a;">${defaultTo}問</span></div>
+            <button onclick="dojoPageEraOrderStart('${era}')" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:14px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
+          </div>
+        </div>
+      </div>
+    </div>`, '');
+}
+
+function dojoPageEraOrderStart(era) {
+  const fromEl = document.getElementById('dojoOrderFrom');
+  const toEl = document.getElementById('dojoOrderTo');
+  const total = getShakaiEraCount(era);
+  const f = Math.max(1, Math.min(total || 1, parseInt(fromEl?.value) || 1));
+  const t = Math.max(1, Math.min(total || 1, parseInt(toEl?.value) || 1));
+  const lo = Math.min(f, t), hi = Math.max(f, t);
+  dojoPageShowAnswerTimingEraOrder(era, lo, hi);
+}
+
+function dojoPageShowAnswerTimingEraOrder(era, lo, hi) {
+  const ZMG = "'Zen Maru Gothic',serif";
+  window._pendingAnswerTiming = 'perQ';
+  renderSelectAreaPage(`
+    <div style="max-width:480px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button onclick="dojoPageShowEraMethod('${era}')" style="background:none;border:none;cursor:pointer;padding:4px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a3060" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="font-size:17px;font-weight:700;font-family:${ZMG};color:#1a3060;">答えを出すタイミングは？</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button id="timingBtn_perQ" onclick="selectAnswerTiming('perQ')" style="padding:20px 20px 20px 26px;background:#1a6fc4;border:1.5px solid #1a6fc4;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};color:#fff;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">一問毎に出す<br><span style="font-size:12px;font-weight:400;opacity:0.85;">（問題1 → 1の答え → 問題2 → 2の答え…）</span></button>
+        <button id="timingBtn_bulk" onclick="selectAnswerTiming('bulk')" style="padding:20px 20px 20px 26px;background:#fff;border:1.5px solid #1a6fc4;border-radius:999px;font-size:15px;font-weight:700;font-family:${ZMG};color:#1a3060;cursor:pointer;text-align:left;transition:background 0.15s,color 0.15s;">まとめて出す<br><span style="font-size:12px;font-weight:400;opacity:0.7;">（問題まとめて → 回答まとめて）</span></button>
+      </div>
+    </div>`,
+    `<div style="max-width:480px;margin:0 auto;">
+      <button id="timingStartBtn" onclick="startFromTimingSelectEraOrder('${era}', ${lo}, ${hi})" style="width:100%;padding:15px;background:#3B82F6;color:#fff;border:none;border-radius:999px;font-size:16px;font-weight:700;font-family:${ZMG};cursor:pointer;">はじめる →</button>
+    </div>`);
+}
+
+function startFromTimingSelectEraOrder(era, lo, hi) {
+  const timing = window._pendingAnswerTiming || 'perQ';
+  window._answerTiming = timing;
+  window._bulkPhase = (timing === 'bulk') ? 'question' : null;
+  const generator = () => {
+    const data = loadShakaiData('rekishi');
+    // 登録順のまま絞り込む（日別詳細画面の「何問目」と同じ並び順にするため、あえて並び替えしない）
+    const filtered = data.filter(q => eraMatches(q.prefecture, era));
+    const slice = filtered.slice(lo - 1, hi);
+    return slice.map(q => {
+      const sessionItem = shakaiToSessionItem(q);
+      sessionItem._selectedEraKey = era;
+      return sessionItem;
+    });
+  };
+  const pool = generator();
+  if (!pool.length) { alert('該当する問題がありません'); return; }
+  dojoStartPool(pool, generator);
+}
+
 function shakaiChipRow(group, total, ZMG) {
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
     ${[5,10,15].map(n => `<button class="dojoChip" data-group="${group}" data-val="${n}" onclick="dojoPickChip(this)" style="padding:7px 14px;border-radius:999px;border:1.5px solid #ccd6e0;background:#fff;font-size:13px;font-family:${ZMG};cursor:pointer;">${n}問</button>`).join('')}
