@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1510</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1532</div>
   </div>
 </div>
 
@@ -5216,6 +5216,37 @@ function getShakaiGyouCount(gyou) {
   const data = loadShakaiData(window._pendingShakaiCategory || 'chiri');
   return gyou === 'all' ? data.length : data.filter(q => getKanaGyou(q.kana) === gyou).length;
 }
+// ===== 社会（歴史）：時代別で範囲を指定する（10グループ） =====
+const SHAKAI_ERA_GROUPS = [
+  { key: 'kofun',     label: '旧石器〜飛鳥時代',        eras: ['縄文','弥生','古墳','飛鳥'] },
+  { key: 'nara',      label: '奈良時代',                eras: ['奈良'] },
+  { key: 'heian',     label: '平安時代',                eras: ['平安'] },
+  { key: 'kamakura',  label: '鎌倉時代',                eras: ['鎌倉'] },
+  { key: 'muromachi', label: '室町時代',                eras: ['室町'] },
+  { key: 'azuchi',    label: '戦国〜安土桃山時代',      eras: ['安土桃山'] },
+  { key: 'edo',       label: '江戸時代',                eras: ['江戸'] },
+  { key: 'meiji',     label: '明治時代',                eras: ['明治'] },
+  { key: 'taisho',    label: '大正時代',                eras: ['大正'] },
+  { key: 'showa',     label: '昭和・平成（戦前〜戦後）', eras: ['昭和','平成'] }
+];
+function getEraGroup(key) { return SHAKAI_ERA_GROUPS.find(g => g.key === key); }
+function eraMatches(itemEra, key) {
+  const g = getEraGroup(key);
+  if (!g) return false;
+  const tags = (itemEra || '').split('･');
+  return g.eras.some(e => tags.includes(e));
+}
+
+function shakaiChipRow(group, total, ZMG) {
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+    ${[5,10,15].map(n => `<button class="dojoChip" data-group="${group}" data-val="${n}" onclick="dojoPickChip(this)" style="padding:7px 14px;border-radius:999px;border:1.5px solid #ccd6e0;background:#fff;font-size:13px;font-family:${ZMG};cursor:pointer;">${n}問</button>`).join('')}
+    <span style="display:flex;align-items:center;gap:6px;">
+      <input type="number" class="dojoFreeInput" data-group="${group}" min="1" max="${total}" placeholder="自由" oninput="dojoPickFreeCount(this)" style="width:56px;padding:6px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
+      <span style="font-size:13px;font-family:${ZMG};color:#666;">問</span>
+    </span>
+  </div>`;
+}
+
 // ===== 社会：グループ（全部／時代／あ〜わ行）に依らない共通の「範囲」概念 =====
 // scopeType: 'all' | 'era' | 'gyou'　　scopeValue: null | 時代キー | 行（あ行など）
 function getShakaiScopeData(scopeType, scopeValue) {
