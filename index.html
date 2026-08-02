@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1549</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1557</div>
   </div>
 </div>
 
@@ -5293,9 +5293,9 @@ function renderShakaiMethodBlock(scopeType, scopeValue, ZMG) {
         <div style="border:1px solid #ccd6e0;border-radius:14px;padding:10px 12px;">
           <div style="font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:6px;">順番に：○問目〜○問目</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <input type="number" id="orderFrom_${uid}" value="1" min="1" max="${count}" oninput="updateGenericOrderPreview('orderFrom_${uid}','orderTo_${uid}','orderCount_${uid}',${count})" style="width:52px;padding:5px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
+            <input type="number" id="orderFrom_${uid}" value="1" min="1" max="${count}" oninput="updateGenericOrderPreview('orderFrom_${uid}','orderTo_${uid}','orderCount_${uid}',${count})" onfocus="window._shakaiRangeActive=true;updateShakaiBreadcrumb();" onblur="window._shakaiRangeActive=false;updateShakaiBreadcrumb();" style="width:52px;padding:5px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
             <span style="font-size:12px;font-family:${ZMG};color:#666;">問目〜</span>
-            <input type="number" id="orderTo_${uid}" value="${defaultTo}" min="1" max="${count}" oninput="updateGenericOrderPreview('orderFrom_${uid}','orderTo_${uid}','orderCount_${uid}',${count})" style="width:52px;padding:5px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
+            <input type="number" id="orderTo_${uid}" value="${defaultTo}" min="1" max="${count}" oninput="updateGenericOrderPreview('orderFrom_${uid}','orderTo_${uid}','orderCount_${uid}',${count})" onfocus="window._shakaiRangeActive=true;updateShakaiBreadcrumb();" onblur="window._shakaiRangeActive=false;updateShakaiBreadcrumb();" style="width:52px;padding:5px;border-radius:6px;border:1px solid #ccc;font-family:${ZMG};font-size:13px;text-align:center;">
             <span style="font-size:12px;font-family:${ZMG};color:#666;">問目</span>
           </div>
           <div style="font-size:11px;color:#999;font-family:${ZMG};margin-bottom:8px;">並び順：登録した順　・　選んだ範囲：<span id="orderCount_${uid}" style="font-weight:700;color:#1a2a3a;">${defaultTo}問</span></div>
@@ -5564,7 +5564,7 @@ function updateShakaiBreadcrumb() {
         const n = openMethod.dataset.panel;
         if (n.startsWith('missAcc_')) parts.push('間違いが多い順');
         else if (n.startsWith('randomAcc_')) parts.push('ランダム');
-        else if (n.startsWith('allAcc_')) parts.push('ぜんぶ');
+        else if (n.startsWith('allAcc_') && !window._shakaiRangeActive) parts.push('ぜんぶ');
       }
     }
   }
