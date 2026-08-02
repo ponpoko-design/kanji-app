@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1532</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1538</div>
   </div>
 </div>
 
@@ -5279,24 +5279,6 @@ function renderShakaiMethodBlock(scopeType, scopeValue, ZMG) {
   const defaultTo = Math.min(10, count || 1);
   const sv = scopeValue || '';
   return `<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-    <div class="dojoAcc" data-name="missAcc_${uid}" style="border:1.5px solid #ccd6e0;border-radius:16px;overflow:hidden;">
-      <button onclick="toggleDojoAcc('missAcc_${uid}')" style="width:100%;text-align:left;padding:12px 16px;border:none;background:#fff;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-        <span>間違いが多い順</span><span style="font-size:12px;color:#999;">▼</span>
-      </button>
-      <div class="dojoAccPanel" data-panel="missAcc_${uid}" style="display:none;padding:0 16px 12px;">
-        ${shakaiChipRow('chip_miss_' + uid, count, ZMG)}
-        <button onclick="dojoPageShakaiScopeCountStart('scopeMiss','${scopeType}','${sv}','chip_miss_${uid}')" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
-      </div>
-    </div>
-    <div class="dojoAcc" data-name="randomAcc_${uid}" style="border:1.5px solid #ccd6e0;border-radius:16px;overflow:hidden;">
-      <button onclick="toggleDojoAcc('randomAcc_${uid}')" style="width:100%;text-align:left;padding:12px 16px;border:none;background:#fff;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-        <span>ランダム</span><span style="font-size:12px;color:#999;">▼</span>
-      </button>
-      <div class="dojoAccPanel" data-panel="randomAcc_${uid}" style="display:none;padding:0 16px 12px;">
-        ${shakaiChipRow('chip_random_' + uid, count, ZMG)}
-        <button onclick="dojoPageShakaiScopeCountStart('scopeRandom','${scopeType}','${sv}','chip_random_${uid}')" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
-      </div>
-    </div>
     <div class="dojoAcc" data-name="allAcc_${uid}" style="border:2px solid #1a6fc4;border-radius:16px;overflow:hidden;">
       <button onclick="toggleDojoAcc('allAcc_${uid}')" style="width:100%;text-align:left;padding:12px 16px;border:none;background:#fff;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
         <span>ぜんぶ</span>
@@ -5318,6 +5300,24 @@ function renderShakaiMethodBlock(scopeType, scopeValue, ZMG) {
           <div style="font-size:11px;color:#999;font-family:${ZMG};margin-bottom:8px;">並び順：登録した順　・　選んだ範囲：<span id="orderCount_${uid}" style="font-weight:700;color:#1a2a3a;">${defaultTo}問</span></div>
           <button onclick="dojoPageShakaiScopeOrderStart('${scopeType}','${sv}','orderFrom_${uid}','orderTo_${uid}',${count})" style="width:100%;padding:9px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;">この範囲で出題する</button>
         </div>
+      </div>
+    </div>
+    <div class="dojoAcc" data-name="missAcc_${uid}" style="border:1.5px solid #ccd6e0;border-radius:16px;overflow:hidden;">
+      <button onclick="toggleDojoAcc('missAcc_${uid}')" style="width:100%;text-align:left;padding:12px 16px;border:none;background:#fff;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+        <span>間違いが多い順</span><span style="font-size:12px;color:#999;">▼</span>
+      </button>
+      <div class="dojoAccPanel" data-panel="missAcc_${uid}" style="display:none;padding:0 16px 12px;">
+        ${shakaiChipRow('chip_miss_' + uid, count, ZMG)}
+        <button onclick="dojoPageShakaiScopeCountStart('scopeMiss','${scopeType}','${sv}','chip_miss_${uid}')" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
+      </div>
+    </div>
+    <div class="dojoAcc" data-name="randomAcc_${uid}" style="border:1.5px solid #ccd6e0;border-radius:16px;overflow:hidden;">
+      <button onclick="toggleDojoAcc('randomAcc_${uid}')" style="width:100%;text-align:left;padding:12px 16px;border:none;background:#fff;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+        <span>ランダム</span><span style="font-size:12px;color:#999;">▼</span>
+      </button>
+      <div class="dojoAccPanel" data-panel="randomAcc_${uid}" style="display:none;padding:0 16px 12px;">
+        ${shakaiChipRow('chip_random_' + uid, count, ZMG)}
+        <button onclick="dojoPageShakaiScopeCountStart('scopeRandom','${scopeType}','${sv}','chip_random_${uid}')" style="width:100%;padding:10px;border-radius:999px;background:#3B82F6;color:#fff;border:none;font-size:13px;font-weight:700;font-family:${ZMG};cursor:pointer;">この条件で出題する</button>
       </div>
     </div>
   </div>`;
