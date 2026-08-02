@@ -1793,7 +1793,7 @@ if (localStorage.getItem('kanji_auth')==='ok') {
       <span class="menu-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
       設定
     </div>
-    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1538</div>
+    <div style="text-align:center;padding:10px 0 4px;font-size:10px;color:#ccc;font-family:'Zen Maru Gothic',serif;">build 260802.1549</div>
   </div>
 </div>
 
@@ -5071,6 +5071,7 @@ function openDojoSelectInPage(subject) {
   renderSelectAreaPage(`
     <div style="max-width:480px;margin:0 auto;">
       <div style="font-size:19px;font-weight:700;font-family:${ZMG};color:#1a3060;margin-bottom:16px;">出題する問題は、どうする？${sub==='shakai' ? `（${SHAKAI_CATEGORY_LABEL[window._pendingShakaiCategory||'chiri']}）` : ''}</div>
+      ${sub === 'shakai' ? `<div id="shakaiBreadcrumb" style="position:sticky;top:0;z-index:5;background:#EFF6FF;color:#1a6fc4;font-size:12px;font-weight:700;font-family:${ZMG};padding:8px 14px;border-radius:10px;margin-bottom:14px;">グループを選んでください</div>` : ''}
       ${sub === 'kokugo' ? `
       ${sectionHeader('普段の練習')}
       ${radioItem('unit','unit',true,rangeLabel)}
@@ -5514,6 +5515,60 @@ function toggleDojoAcc(name) {
     target.style.display = 'block';
     if (targetWrap) targetWrap.style.borderRadius = '20px';
   }
+  updateShakaiBreadcrumb();
+}
+
+// 社会の出題選択画面：今どこを開いているか（時代別＞江戸時代＞ぜんぶ、等）を上部の固定バーに表示する
+function updateShakaiBreadcrumb() {
+  const bar = document.getElementById('shakaiBreadcrumb');
+  if (!bar) return; // 社会以外の画面では何もしない
+  const isOpen = (panelName) => {
+    const p = document.querySelector('.dojoAccPanel[data-panel="' + panelName + '"]');
+    return p && p.style.display !== 'none';
+  };
+  const findOpenChild = (wrapperPanelName, prefix) => {
+    const wrapper = document.querySelector('.dojoAccPanel[data-panel="' + wrapperPanelName + '"]');
+    if (!wrapper) return null;
+    const openPanel = [...wrapper.querySelectorAll('.dojoAccPanel')].find(p => p.dataset.panel && p.dataset.panel.startsWith(prefix) && p.style.display !== 'none');
+    return openPanel ? openPanel.dataset.panel.slice(prefix.length) : null;
+  };
+  const parts = [];
+  let methodWrapperPanel = null;
+  if (isOpen('eraNested')) {
+    parts.push('時代別');
+    const eraKey = findOpenChild('eraNested', 'era_');
+    if (eraKey) {
+      const g = getEraGroup(eraKey);
+      if (g) parts.push(g.label);
+      methodWrapperPanel = 'era_' + eraKey;
+    }
+  } else if (isOpen('scopeAll')) {
+    parts.push('全部');
+    methodWrapperPanel = 'scopeAll';
+  } else if (isOpen('gyouNested')) {
+    parts.push('あ〜わ別');
+    const gyou = findOpenChild('gyouNested', 'gyou_');
+    if (gyou) {
+      parts.push(gyou);
+      methodWrapperPanel = 'gyou_' + gyou;
+    }
+  }
+  if (methodWrapperPanel) {
+    const wrapper = document.querySelector('.dojoAccPanel[data-panel="' + methodWrapperPanel + '"]');
+    if (wrapper) {
+      const openMethod = [...wrapper.querySelectorAll('.dojoAccPanel')].find(p => {
+        const n = p.dataset.panel || '';
+        return (n.startsWith('missAcc_') || n.startsWith('randomAcc_') || n.startsWith('allAcc_')) && p.style.display !== 'none';
+      });
+      if (openMethod) {
+        const n = openMethod.dataset.panel;
+        if (n.startsWith('missAcc_')) parts.push('間違いが多い順');
+        else if (n.startsWith('randomAcc_')) parts.push('ランダム');
+        else if (n.startsWith('allAcc_')) parts.push('ぜんぶ');
+      }
+    }
+  }
+  bar.textContent = parts.length ? parts.join(' ＞ ') : 'グループを選んでください';
 }
 
 function dojoPickChip(btn) {
