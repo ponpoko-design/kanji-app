@@ -2845,6 +2845,12 @@ function parseOcrLines(text) {
     .map((line, i) => ({ num: i + 1, text: line }));
 }
 
+// 写真の読み取り（×番号確認・OCR）に使うOpenAIのモデル。
+// GPT-4oはAPIが2027年1月14日に終了するため、GPT-6系に切り替えた（2026年11月）。
+// 現在の設定：'gpt-6-luna'（最安：入力$0.10／出力$0.50 per 100万トークン）。精度が足りなければ上げる（料金は事前に確認すること）。
+// 候補と料金（入力／出力 per 100万トークン）：'gpt-6.1-terra' $1／$5（視覚が得意）、'gpt-6.1-sol' $2／$10（より高精度）、'gpt-6-astra' $10／$50（最高精度）
+const RAKURAKU_OCR_MODEL = 'gpt-6-luna';
+
 async function callOpenAI(messages) {
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -2852,12 +2858,13 @@ async function callOpenAI(messages) {
       mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getOpenAIKey()}`,
-        'OpenAI-Beta': 'assistants=v2'
+        'Authorization': `Bearer ${getOpenAIKey()}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: 2000,
+        model: RAKURAKU_OCR_MODEL,
+        // GPT-6系は「考える」モデルのため、max_tokens ではなく max_completion_tokens を使う（考える分の枠も含むので余裕を持たせる）
+        // ※ temperature は、考える設定のときは指定できないため付けない
+        max_completion_tokens: 8000,
         messages: [
           { role: 'system', content: rakuraku.testType === 'hira' ? RAKURAKU_SYSTEM_PROMPT_HIRA : RAKURAKU_SYSTEM_PROMPT },
           ...messages
