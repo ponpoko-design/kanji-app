@@ -4195,7 +4195,7 @@ function goToShutsudaiStep2(btn) {
               </span>
             </button>
             <div class="dojoAccPanel" data-panel="all" style="display:block;padding:0 18px 14px;">
-              <button onclick="applyShutsudaiUnit('all','${unitFrom}','${unitTo}',0,this)" style="width:100%;padding:13px 16px;background:#fff;border:1px solid #ccd6e0;border-radius:16px;text-align:left;cursor:pointer;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:10px;">範囲の問題を全部を出題する</button>
+              <button onclick="applyShutsudaiUnit('all','${unitFrom}','${unitTo}',0,this)" style="width:100%;padding:13px 16px;background:#fff;border:2px solid #1a6fc4;border-radius:16px;text-align:left;cursor:pointer;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:10px;">範囲の問題を全部出題</button>
 
               <div style="border:1px solid #ccd6e0;border-radius:16px;overflow:hidden;">
                 <button type="button" onclick="toggleDojoOrderBox(this)" style="width:100%;text-align:left;padding:12px 14px;border:none;background:#fff;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
@@ -5301,7 +5301,7 @@ function renderShakaiMethodBlock(scopeType, scopeValue, ZMG) {
         </span>
       </button>
       <div class="dojoAccPanel" data-panel="allAcc_${uid}" style="display:none;padding:0 16px 12px;">
-        <button onclick="dojoPageShakaiScopeAllStart('${scopeType}','${sv}')" onmouseenter="window._shakaiAllBtnActive=true;updateShakaiBreadcrumb();" onmouseleave="window._shakaiAllBtnActive=false;updateShakaiBreadcrumb();" onfocus="window._shakaiAllBtnActive=true;updateShakaiBreadcrumb();" onblur="window._shakaiAllBtnActive=false;updateShakaiBreadcrumb();" style="width:100%;padding:11px 14px;background:#fff;border:1px solid #ccd6e0;border-radius:14px;text-align:left;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:8px;">全部を出題する</button>
+        <button onclick="dojoPageShakaiScopeAllStart('${scopeType}','${sv}')" onmouseenter="window._shakaiAllBtnActive=true;updateShakaiBreadcrumb();" onmouseleave="window._shakaiAllBtnActive=false;updateShakaiBreadcrumb();" onfocus="window._shakaiAllBtnActive=true;updateShakaiBreadcrumb();" onblur="window._shakaiAllBtnActive=false;updateShakaiBreadcrumb();" style="width:100%;padding:11px 14px;background:#fff;border:2px solid #1a6fc4;border-radius:14px;text-align:left;font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:8px;">全部を出題する</button>
         <div style="border:1px solid #ccd6e0;border-radius:14px;padding:10px 12px;">
           <div style="font-size:13px;font-weight:700;font-family:${ZMG};color:#1a2a3a;margin-bottom:6px;">順番に：○問目〜○問目</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
@@ -5471,7 +5471,7 @@ function dojoPageShowUnitMethod(unitFrom, unitTo) {
             </span>
           </button>
           <div class="dojoAccPanel" data-panel="all" style="display:block;padding:0 18px 14px;">
-            <button onclick="dojoPageShowAnswerTimingAll('${unitFrom}','${unitTo}')" style="width:100%;padding:13px 16px;background:#fff;border:1px solid #ccd6e0;border-radius:16px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部を出題する</button>
+            <button onclick="dojoPageShowAnswerTimingAll('${unitFrom}','${unitTo}')" style="width:100%;padding:13px 16px;background:#fff;border:2px solid #1a6fc4;border-radius:16px;text-align:left;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;margin-bottom:10px;display:block;">範囲の問題を全部出題</button>
 
             <div style="border:1px solid #ccd6e0;border-radius:16px;overflow:hidden;">
               <button type="button" onclick="toggleDojoOrderBox(this)" style="width:100%;text-align:left;padding:12px 14px;border:none;background:#fff;font-size:14px;font-weight:700;font-family:${ZMG};color:#1a2a3a;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
